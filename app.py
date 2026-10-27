@@ -422,9 +422,7 @@ if "corrente_armi" not in st.session_state:
 if "form_version" not in st.session_state:
     st.session_state["form_version"] = 0
 
-# ==========================================
-# SIDEBAR: DIRECTORY TREE PER FAZIONE
-# ==========================================
+
 # ==========================================
 # SIDEBAR: DIRECTORY E GUIDA RAPIDA
 # ==========================================
@@ -476,16 +474,26 @@ if st.sidebar.button("🔄 Reset Campi (Nuova Unità)"):
     st.session_state["form_version"] += 1
     st.rerun()
 
+# Eliminazione Unità nel DB
 st.sidebar.markdown("---")
+st.sidebar.subheader("🗑️ Gestione / Elimina Unità")
 
-# 3. Cheat Sheet / Promemoria Rapido per la Campagna
-with st.sidebar.expander("📖 Promemoria Regole AoS 4e"):
-    st.markdown("""
-    - **Cover (+1 Save):** Si applica se il bersaglio è parzialmente coperto da terreno scenico o da unità interposte (escluso in mischia se attaccato dallo stesso nemico).
-    - **All-out Attack/Defence:** Costa 1 Punto Comando. Aggiunge +1 ai tiri per Colpire (Hit) o +1 al Tiro Salvezza (Save) nel rispettivo turno.
-    - **Tiro Ward:** Si tira *dopo* che il Save è fallito. Non risente del modificatore di Rend (penetrazione).
-    - **Companion Weapons:** Le armi con tag *Companion* non beneficiano dei bonus ai tiri per colpire o ferire impartiti dai comandi o dagli eroi alleati.
-    """)
+# Mostra tutte le unità salvate nel DB per la cancellazione
+tutte_le_unita = list(st.session_state["db_unita"].keys())
+if tutte_le_unita:
+    unita_da_eliminare = st.sidebar.selectbox("Scegli unità da rimuovere", tutte_le_unita, key="del_select")
+    
+    # Pulsante di eliminazione con conferma visiva
+    if st.sidebar.button("❌ Elimina Unità dal DB", type="secondary"):
+        if unita_da_eliminare in st.session_state["db_unita"]:
+            del st.session_state["db_unita"][unita_da_eliminare]
+            
+            # Salva il database aggiornato (locale + GitHub cloud)
+            salva_nel_database(st.session_state["db_unita"])
+            st.sidebar.success(f"Eliminata: {unita_da_eliminare}")
+            st.rerun()
+else:
+    st.sidebar.caption("Nessuna unità nel database.")
 
 st.sidebar.markdown("---")
 # Controllo dinamico dello stato della sincronizzazione
@@ -493,7 +501,7 @@ if "GITHUB_TOKEN" in st.secrets and "GITHUB_REPO" in st.secrets:
     st.sidebar.success("🌐 Cloud Sync: Attivo (GitHub)")
 else:
     st.sidebar.info("💻 Modalità Locale (Offline)")
-    
+
 # ==========================================
 # PANNELLO PRINCIPALE
 # ==========================================
@@ -690,13 +698,32 @@ with st.container(border=True):
             for err in errori: st.error(f"❌ {err}")
         else:
             chiave_db = f"{fazione_scelta}: {nuovo_nome.strip()}"
+            
+            # Verifichiamo se l'unità esiste già nel database (per capire se stiamo sovrascrivendo)
+            gia_esistente = chiave_db in st.session_state["db_unita"]
+            
+            # Salvataggio/Aggiornamento nel dizionario del database
             st.session_state["db_unita"][chiave_db] = {
-                "fazione": fazione_scelta, "n_modelli": n_modelli_base, "campione": campione, 
-                "punti": punti_unita, "difesa": difesa_corrente, "armi": st.session_state["corrente_armi"]
+                "fazione": fazione_scelta, 
+                "n_modelli": n_modelli_base, 
+                "campione": campione, 
+                "punti": punti_unita, 
+                "difesa": difesa_corrente, 
+                "armi": st.session_state["corrente_armi"]
             }
-            salva_nel_database(st.session_state["db_unita"])
-            st.success(f"✅ Unità '{chiave_db}' salvata con successo nel Database!")
-
+            
+            # Esegue il salvataggio (locale e cloud GitHub)
+            successo, messaggio = salva_nel_database(st.session_state["db_unita"])
+            
+            if successo:
+                if gia_esistente:
+                    st.success(f"🔄 Unità '{chiave_db}' aggiornata con successo (sovrascritta)!")
+                else:
+                    st.success(f"✨ Nuova unità '{chiave_db}' aggiunta con successo al database!")
+                st.rerun()
+            else:
+                st.error(f"❌ Errore durante il salvataggio: {messaggio}")
+                
 # ==========================================
 # SEZIONE 2: UNITÀ BERSAGLIO
 # ==========================================
