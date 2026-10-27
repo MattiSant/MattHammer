@@ -11,7 +11,7 @@ import requests
 # CONFIGURAZIONE PAGINA
 # ==========================================
 st.set_page_config(
-    page_title="MattHammer v4.5 - AoS Optimizer",
+    page_title="MattHammer v4.11 - AoS Optimizer",
     page_icon="🔨",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -31,7 +31,7 @@ st.markdown("""
 DB_FILE = "units_db.json"
 
 # ==========================================
-# UNITÀ DI DEFAULT
+# UNITÀ DI DEFAULT (Nomi Ufficiali Armate)
 # ==========================================
 DEFAULT_PRESETS = {
     "Personalizzato (Manuale)": {
@@ -47,11 +47,11 @@ DEFAULT_PRESETS = {
         "n_modelli": 1, "campione": False, "punti": 200,
         "difesa": {"salute_per_modello": 7, "save": 4, "ward": 5},
         "armi": [
-            {"nome": "Sepulchral Sceptre", "attiva": True, "ranged": False, "atk": "5", "hit": 3, "wnd": 3, "rend": 2, "dmg": "3", "crit_type": "Crit (Auto-wound)", "anti_target": "Nessuno", "charge_dmg": False, "anti_charge": False, "companion": False},
+            {"nome": "Sepulchral Sceptre", "attiva": True, "ranged": False, "atk": "5", "hit": 3, "wnd": 3, "rend": 2, "dmg": "3", "crit_type": "Crit (Auto-wound)", "anti_target": "HERO", "charge_dmg": False, "anti_charge": False, "companion": False},
         ]
     },
     "Khorne: Warlord Tank (2+ Save)": {
-        "fazione": "Khorne",
+        "fazione": "Blades of Khorne",
         "n_modelli": 1, "campione": False, "punti": 250,
         "difesa": {"salute_per_modello": 8, "save": 2, "ward": 7},
         "armi": [
@@ -168,30 +168,31 @@ def analizza_testo_copiato(testo_grezzo):
 # MOTORE MATEMATICO & MONTE CARLO
 # ==========================================
 def media_dado(val_str):
-    mappa = {
-        "1": 1.0, "2": 2.0, "3": 3.0, "4": 4.0, "5": 5.0, "6": 6.0,
-        "7": 7.0, "8": 8.0, "10": 10.0, "12": 12.0, "14": 14.0,
-        "D3": 2.0, "D3+1": 3.0, "D6": 3.5, "D6+1": 4.5, "D6+2": 5.5,
-        "2D3": 4.0, "2D6": 7.0
-    }
-    return mappa.get(str(val_str), float(val_str) if str(val_str).isdigit() else 1.0)
+    val_str = str(val_str).upper().replace(" ", "")
+    if val_str.isdigit(): return float(val_str)
+    match = re.match(r"^(\d*)D([36])(?:\+(\d+))?$", val_str)
+    if match:
+        n_dadi = int(match.group(1)) if match.group(1) else 1
+        tipo = int(match.group(2))
+        bonus = int(match.group(3)) if match.group(3) else 0
+        return n_dadi * (2.0 if tipo == 3 else 3.5) + bonus
+    return 0.0
 
 def tira_dado_mc(val_str, size):
-    val_str = str(val_str)
-    if val_str.isdigit():
-        return np.full(size, int(val_str))
-    elif val_str == "D3": return np.random.randint(1, 4, size=size)
-    elif val_str == "D3+1": return np.random.randint(1, 4, size=size) + 1
-    elif val_str == "D6": return np.random.randint(1, 7, size=size)
-    elif val_str == "D6+1": return np.random.randint(1, 7, size=size) + 1
-    elif val_str == "D6+2": return np.random.randint(1, 7, size=size) + 2
-    elif val_str == "2D3": return np.random.randint(1, 4, size=size) + np.random.randint(1, 4, size=size)
-    elif val_str == "2D6": return np.random.randint(1, 7, size=size) + np.random.randint(1, 7, size=size)
-    return np.ones(size, dtype=int)
+    val_str = str(val_str).upper().replace(" ", "")
+    if val_str.isdigit(): return np.full(size, int(val_str))
+    match = re.match(r"^(\d*)D([36])(?:\+(\d+))?$", val_str)
+    if match:
+        n_dadi = int(match.group(1)) if match.group(1) else 1
+        tipo = int(match.group(2))
+        bonus = int(match.group(3)) if match.group(3) else 0
+        if n_dadi == 0: return np.full(size, bonus)
+        lanci = np.random.randint(1, tipo + 1, size=(n_dadi, size))
+        return np.sum(lanci, axis=0) + bonus
+    return np.zeros(size, dtype=int)
 
 def calcola_arma_analitico(arma, mod_globali, bersaglio):
-    if not arma["attiva"]:
-        return {"attacchi": 0, "hits": 0, "wounds": 0, "unsaved": 0, "mortal": 0, "danno_netto": 0}
+    if not arma["attiva"]: return {"attacchi": 0, "hits": 0, "wounds": 0, "unsaved": 0, "mortal": 0, "danno_netto": 0}
 
     atk_per_modello = media_dado(arma["atk"])
     if not arma["companion"]: atk_per_modello += mod_globali["bonus_atk"]
@@ -243,14 +244,12 @@ def calcola_arma_analitico(arma, mod_globali, bersaglio):
     colpi_non_salvati = wounds_totali * prob_save_fallito
     danni_normali_lordi = colpi_non_salvati * danno_per_colpo
 
-    if bersaglio["blocca_ward"]:
-        prob_ward_fallito = 1.0
+    if bersaglio["blocca_ward"]: prob_ward_fallito = 1.0
     else:
         ward_effettivo = bersaglio["ward"] + bersaglio["mod_ward_penalita"]
         prob_ward_fallito = 1.0 if (bersaglio["ward"] >= 7 or ward_effettivo > 6) else 1.0 - ((7 - max(2, ward_effettivo)) / 6.0)
         
     danno_netto = (danni_normali_lordi + mortal_da_crit) * prob_ward_fallito
-
     return {"attacchi": atk_totali, "hits": hits_totali_visivi, "wounds": wounds_totali, "unsaved": colpi_non_salvati, "mortal": mortal_da_crit, "danno_netto": danno_netto}
 
 def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
@@ -285,8 +284,7 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
         hits_to_wound = n_norm_hits.copy()
         bonus_dmg_fisso = (1 if (arma["charge_dmg"] and mod_globali["ha_caricato"]) else 0) + (mod_globali["bonus_dmg"] if not arma["companion"] else 0)
 
-        if arma["crit_type"] == "Crit (Mortal)":
-            mortal_wounds_sim = n_crits * (tira_dado_mc(arma["dmg"], n_sim) + bonus_dmg_fisso)
+        if arma["crit_type"] == "Crit (Mortal)": mortal_wounds_sim = n_crits * (tira_dado_mc(arma["dmg"], n_sim) + bonus_dmg_fisso)
         elif arma["crit_type"] == "Crit (Auto-wound)": auto_wounds_sim = n_crits
         elif arma["crit_type"] == "Crit (2 Hits)": hits_to_wound += n_crits * 2
         else: hits_to_wound += n_crits
@@ -308,7 +306,22 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
 
         danni_totali_sim += (np.random.binomial(wounds_sim.astype(int), prob_fail_save) * (tira_dado_mc(arma["dmg"], n_sim) + bonus_dmg_fisso)) + mortal_wounds_sim
 
-    if mod_globali["mortal_extra"] != "0": danni_totali_sim += tira_dado_mc(mod_globali["mortal_extra"], n_sim)
+    # --- SIMULAZIONE MONTE CARLO: DANNI AGGIUNTIVI STOCASTICI ---
+    mortal_extra_dadi = mod_globali.get("mortal_extra_dadi", 0)
+    mortal_extra_tipo = mod_globali.get("mortal_extra_tipo", 6)
+    mortal_extra_soglia = mod_globali.get("mortal_extra_soglia", "Nessuna (Somma i valori)")
+    mortal_extra_fisso = mod_globali.get("mortal_extra_fisso", 0)
+
+    danni_totali_sim += mortal_extra_fisso
+    if mortal_extra_dadi > 0:
+        if mortal_extra_soglia == "Nessuna (Somma i valori)":
+            lanci_extra = np.random.randint(1, mortal_extra_tipo + 1, size=(mortal_extra_dadi, n_sim))
+            danni_totali_sim += np.sum(lanci_extra, axis=0)
+        else:
+            target_val = int(mortal_extra_soglia[0])
+            prob = max(0.0, (mortal_extra_tipo - target_val + 1) / float(mortal_extra_tipo))
+            danni_totali_sim += np.random.binomial(mortal_extra_dadi, prob, n_sim)
+
     if ha_ward: danni_totali_sim = np.random.binomial(danni_totali_sim.astype(int), 1.0 - ((7 - ward_target) / 6.0))
     return danni_totali_sim
 
@@ -329,27 +342,38 @@ if "form_version" not in st.session_state:
     st.session_state["form_version"] = 0
 
 # ==========================================
-# SIDEBAR
+# SIDEBAR: DIRECTORY TREE PER FAZIONE
 # ==========================================
-st.sidebar.title("🔨 MattHammer v4.5")
+st.sidebar.title("🔨 MattHammer v4.11")
+st.sidebar.caption("Tactical Optimizer & Custom Logic")
 
-albero_fazioni = {"👻 Nighthaunt": [], "🩸 Khorne": [], "👹 Kruleboyz": [], "🌲 Sylvaneth": [], "📁 Personale / Altro": []}
+# Organizziamo le cartelle con i nomi ufficiali
+albero_fazioni = {
+    "👻 Nighthaunt": [], 
+    "🩸 Blades of Khorne": [], 
+    "👹 Orruk Kruleboyz": [], 
+    "🌲 Sylvaneth": [], 
+    "📁 Personale / Altro": []
+}
+
+# Smistiamo le unità in modo elastico per leggere anche i vecchi salvataggi
 for nome_unita, dati_u in st.session_state["db_unita"].items():
-    fazione_u = dati_u.get("fazione", "").lower()
-    if "nighthaunt" in fazione_u: albero_fazioni["👻 Nighthaunt"].append(nome_unita)
-    elif "khorne" in fazione_u: albero_fazioni["🩸 Khorne"].append(nome_unita)
-    elif "kruleboyz" in fazione_u: albero_fazioni["👹 Kruleboyz"].append(nome_unita)
-    elif "sylvaneth" in fazione_u: albero_fazioni["🌲 Sylvaneth"].append(nome_unita)
+    # Legge la fazione salvata nel DB e la converte in minuscolo per evitare errori
+    fazione_salvata = dati_u.get("fazione", "").lower()
+    
+    if "nighthaunt" in fazione_salvata:
+        albero_fazioni["👻 Nighthaunt"].append(nome_unita)
+    elif "khorne" in fazione_salvata or "armata b" in fazione_salvata:
+        albero_fazioni["🩸 Blades of Khorne"].append(nome_unita)
+    elif "kruleboyz" in fazione_salvata or "armata c" in fazione_salvata:
+        albero_fazioni["👹 Orruk Kruleboyz"].append(nome_unita)
+    elif "sylvaneth" in fazione_salvata:
+        albero_fazioni["🌲 Sylvaneth"].append(nome_unita)
     else:
-        nome_up = nome_unita.upper()
-        if "NIGHTHAUNT" in nome_up: albero_fazioni["👻 Nighthaunt"].append(nome_unita)
-        elif "KHORNE" in nome_up: albero_fazioni["🩸 Khorne"].append(nome_unita)
-        elif "KRULEBOYZ" in nome_up: albero_fazioni["👹 Kruleboyz"].append(nome_unita)
-        elif "SYLVANETH" in nome_up: albero_fazioni["🌲 Sylvaneth"].append(nome_unita)
-        else: albero_fazioni["📁 Personale / Altro"].append(nome_unita)
+        albero_fazioni["📁 Personale / Altro"].append(nome_unita)
 
+# Rimuove le categorie vuote
 albero_fazioni_attive = {k: v for k, v in albero_fazioni.items() if len(v) > 0}
-
 st.sidebar.subheader("📂 Directory Database")
 fazione_selezionata = st.sidebar.selectbox("Seleziona Fazione", list(albero_fazioni_attive.keys()))
 unita_della_fazione = albero_fazioni_attive[fazione_selezionata]
@@ -371,22 +395,14 @@ if st.sidebar.button("Carica Unità Selezionata"):
 # ==========================================
 st.title("🔨 MattHammer - AoS 4e Tactical Optimizer")
 
-# ==========================================
-# SEZIONE 1: UNITÀ DA ANALIZZARE
-# ==========================================
 st.markdown("---")
-st.markdown("### UNITÀ ATTACCANTE")
+st.markdown("### ⚔️ 1. Unità da Analizzare")
 
 with st.container(border=True):
-    st.subheader("📋Riconoscimento Intelligente Armi")
-    st.caption("Incolla qui il profilo armi copiato direttamente da Wahapedia e importalo automaticamente completo per la tua unità! ")
-    st.caption("NB: inserisci tutti i profili armi contemporaneamente, copiandoli esattamente dalla warscroll")
+    st.subheader("📋 Copia-Incolla Intelligente (Smart Text Parser)")
+    st.caption("Incolla qui il testo copiato dai manuali.")
     
-    testo_copiato = st.text_area(
-        "Incolla qui il testo:",
-        placeholder="Es: Phantasmal Torture Crit (Auto-wound), Shoot in Combat	12\"	4	3+	3+	2	1",
-        height=80
-    )
+    testo_copiato = st.text_area("Incolla qui il testo:", placeholder="Es: Arma Potente 5 3+ 3+ 2 2", height=80)
     
     if st.button("⚡ Applica ai Profili Attivi", type="primary"):
         armi_estratte = analizza_testo_copiato(testo_copiato)
@@ -424,13 +440,8 @@ with col_armi:
             s1, s2, s3, s4, s5 = st.columns(5)
             atk_str = str(p_arma["atk"])
             idx_atk = opzioni_dadi.index(atk_str) if atk_str in opzioni_dadi else 0
-            
-            hit_val = int(p_arma["hit"])
-            idx_hit = max(0, min(4, hit_val - 2))
-            
-            wnd_val = int(p_arma["wnd"])
-            idx_wnd = max(0, min(4, wnd_val - 2))
-            
+            idx_hit = max(0, min(4, int(p_arma["hit"]) - 2))
+            idx_wnd = max(0, min(4, int(p_arma["wnd"]) - 2))
             rend_val = int(p_arma["rend"])
             dmg_str = str(p_arma["dmg"])
             idx_dmg = opzioni_dadi.index(dmg_str) if dmg_str in opzioni_dadi else 0
@@ -444,18 +455,16 @@ with col_armi:
             ab1, ab2, ab3 = st.columns(3)
             opz_crit = ["Nessuno", "Crit (Mortal)", "Crit (Auto-wound)", "Crit (2 Hits)"]
             opz_anti = ["Nessuno", "HERO", "INFANTRY", "CAVALRY", "MONSTER", "WAR MACHINE"]
-            
             idx_crit = opz_crit.index(p_arma["crit_type"]) if p_arma["crit_type"] in opz_crit else 0
             idx_anti = opz_anti.index(p_arma["anti_target"]) if p_arma["anti_target"] in opz_anti else 0
 
             crit_a = ab1.selectbox("Abilità Critico", opz_crit, index=idx_crit, key=f"crit_{idx}_v{v_key}")
             anti_a = ab2.selectbox("Anti-X (+1 Rend)", opz_anti, index=idx_anti, key=f"anti_{idx}_v{v_key}")
-            ranged_a = ab3.checkbox("Arma da Tiro (Ranged)", value=p_arma["ranged"], key=f"rng_{idx}_v{v_key}")
+            ranged_a = ab3.checkbox("Arma da Tiro", value=p_arma["ranged"], key=f"rng_{idx}_v{v_key}")
 
             ch1, ch2, ch_del = st.columns(3)
             chrg_dmg_a = ch1.checkbox("Charge (+1 Dmg)", value=p_arma["charge_dmg"], key=f"cdmg_{idx}_v{v_key}")
             anti_chrg_a = ch2.checkbox("Anti-Charge", value=p_arma["anti_charge"], key=f"achrg_{idx}_v{v_key}")
-            
             if ch_del.button("🗑️ Elimina", key=f"del_{idx}_v{v_key}"):
                 st.session_state["corrente_armi"].pop(idx)
                 st.session_state["form_version"] += 1
@@ -472,25 +481,20 @@ with col_armi:
 with col_difesa_unita:
     st.subheader("🛡️ Caratteristiche Difensive Unità")
     with st.container(border=True):
-        st.caption("Parametri difensivi intrinseci salvati nel Database.")
         d_corrente = st.session_state["corrente_difesa"]
-        
-        salute_modello = st.number_input("Punti Ferita (Health) per Modello", 1, 30, int(d_corrente.get("salute_per_modello", 2)), key=f"def_salute_v{v_key}")
+        salute_modello = st.number_input("Punti Ferita per Modello", 1, 30, int(d_corrente.get("salute_per_modello", 2)), key=f"def_salute_v{v_key}")
         save_nativo = st.selectbox("Tiro Salvezza Base (Save X+)", [2, 3, 4, 5, 6], index=max(0, min(4, int(d_corrente.get("save", 4)) - 2)), key=f"def_save_v{v_key}")
         ward_nativo = st.selectbox("Tiro Ward Nativo (X+)", [7, 6, 5, 4], index=0, format_func=lambda x: f"{x}+" if x < 7 else "Nessuno (-)", key=f"def_ward_v{v_key}")
-        
         st.session_state["corrente_difesa"] = {"salute_per_modello": salute_modello, "save": save_nativo, "ward": ward_nativo}
 
 col_comp, col_comandi = st.columns(2)
-
 with col_comp:
     st.subheader("👥 Composizione Unità")
     with st.container(border=True):
-        col_s1, col_s2 = st.columns(2)
-        n_modelli_base = col_s1.number_input("Modelli Base", min_value=1, max_value=60, value=int(st.session_state["corrente_modelli"]))
-        rinforzata = col_s2.checkbox("Rinforzata (x2)", value=False)
+        cs1, cs2 = st.columns(2)
+        n_modelli_base = cs1.number_input("Modelli Base", min_value=1, max_value=60, value=int(st.session_state["corrente_modelli"]))
+        rinforzata = cs2.checkbox("Rinforzata (x2)", value=False)
         n_modelli = n_modelli_base * 2 if rinforzata else n_modelli_base
-
         campione = st.checkbox("Presenza Campione (+1 Atk)", value=bool(st.session_state["corrente_campione"]))
         punti_unita = st.number_input("Costo in Punti", min_value=40, max_value=1200, value=int(st.session_state["corrente_punti"]) * (2 if rinforzata else 1), step=10)
 
@@ -499,59 +503,67 @@ with col_comandi:
     with st.container(border=True):
         ha_caricato = st.checkbox("🏇 L'unità ha Caricato questo turno", value=False)
         all_out_attack = st.checkbox("🎯 Comando: All-out Attack (+1 Hit)", value=False)
-
-        with st.expander("✨ Altri Buff Fazione / Artefatti"):
+        with st.expander("✨ Altri Buff / Modificatori"):
             mod_hit_extra = st.slider("Altri Modificatori Hit", -2, 2, 0)
             mod_wnd_extra = st.slider("Modificatori Wound", -2, 2, 0)
             bonus_atk = st.number_input("Bonus Attacchi", 0, 5, 0)
             bonus_rend = st.number_input("Bonus Rend Globale", 0, 3, 1)
             bonus_dmg = st.number_input("Bonus Danno Globale", 0, 3, 0)
             crit_on_5 = st.checkbox("Critico al 5+", value=False)
-            mortal_extra = st.selectbox("Danni Mortali Extra", ["0", "1", "D3", "D6", "2D3"], index=0)
+
+st.subheader("💥 Danni Aggiuntivi (Magie / Abilità)")
+with st.container(border=True):
+    st.caption("Aggiungi danni extra derivanti da abilità speciali o altre fonti esterne. Lascia a 0 se non applicabile.")
+    
+    mortal_extra_dadi = 0
+    mortal_extra_tipo = 6
+    mortal_extra_soglia = "Nessuna (Somma i valori)"
+    mortal_extra_fisso = 0
+    
+    st.markdown("**1. Parte Stocastica (Lancio Dadi)**")
+    c1, c2, c3 = st.columns(3)
+    mortal_extra_dadi = c1.number_input("Numero Dadi", min_value=0, max_value=100, value=0)
+    mortal_extra_tipo = c2.selectbox("Tipo Dado", [3, 6], index=1, format_func=lambda x: f"D{x}")
+    mortal_extra_soglia = c3.selectbox("Valore di Successo", ["Nessuna (Somma i valori)", "2+", "3+", "4+", "5+", "6+"])
+    
+    st.markdown("**2. Parte Arbitraria (Fissa)**")
+    mortal_extra_fisso = st.number_input("Numero fisso da aggiungere ai danni", min_value=0, max_value=100, value=0)
 
 mod_globali = {
     "n_modelli": n_modelli, "campione": campione, "ha_caricato": ha_caricato,
     "all_out_attack": all_out_attack, "mod_hit": mod_hit_extra + (1 if all_out_attack else 0),
     "mod_wnd": mod_wnd_extra, "bonus_atk": bonus_atk, "bonus_rend": bonus_rend,
-    "bonus_dmg": bonus_dmg, "crit_on": 5 if crit_on_5 else 6, "mortal_extra": mortal_extra
+    "bonus_dmg": bonus_dmg, "crit_on": 5 if crit_on_5 else 6,
+    "mortal_extra_dadi": mortal_extra_dadi,
+    "mortal_extra_tipo": mortal_extra_tipo,
+    "mortal_extra_soglia": mortal_extra_soglia,
+    "mortal_extra_fisso": mortal_extra_fisso
 }
 
 st.subheader("🗄️ Salva Unità Corrente nel Database")
-st.caption("Necessario solo se si vuole salvare il preset attuale dell'unità.")
-st.caption("NB: CONTROLLA TUTTE LE STATISTICHE OFFENSIVE E DIFENSIVE PRIMA DI SALVARE !")
-
 with st.container(border=True):
     db_c1, db_c2 = st.columns(2)
-    fazione_scelta = db_c1.selectbox("Seleziona Fazione di Appartenenza", ["Nighthaunt", "Khorne", "Kruleboyz", "Sylvaneth", "Personale / Altro"])
-    nuovo_nome = db_c2.text_input("Nome Specifico dell'Unità:", placeholder="Es. Grimghast Reapers")
+    fazione_scelta = db_c1.selectbox("Seleziona Fazione", ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Personale / Altro"])
+    nuovo_nome = db_c2.text_input("Nome Specifico dell'Unità:", placeholder="Es. Spirit Hosts")
     
     if st.button("💾 Valida e Salva nel DB", type="primary"):
         errori = []
-        if not nuovo_nome.strip():
-            errori.append("Inserisci un nome valido per l'unità.")
-        if not st.session_state["corrente_armi"] or len(st.session_state["corrente_armi"]) == 0:
-            errori.append("Devi specificare almeno un profilo arma.")
-        if n_modelli <= 0:
-            errori.append("Il numero di modelli deve essere maggiore di zero.")
-        if punti_unita <= 0:
-            errori.append("Il costo in punti deve essere specificato.")
+        if not nuovo_nome.strip(): errori.append("Inserisci un nome valido per l'unità.")
+        if not st.session_state["corrente_armi"] or len(st.session_state["corrente_armi"]) == 0: errori.append("Specifica almeno un'arma.")
+        if n_modelli <= 0: errori.append("Il numero di modelli deve essere maggiore di zero.")
+        if punti_unita <= 0: errori.append("Il costo in punti deve essere specificato.")
         
         difesa_corrente = st.session_state["corrente_difesa"]
         if not difesa_corrente.get("salute_per_modello") or not difesa_corrente.get("save"):
             errori.append("Mancano i dati difensivi (Salute per modello o Tiro Salvezza base).")
 
         if len(errori) > 0:
-            for err in errori:
-                st.error(f"❌ {err}")
+            for err in errori: st.error(f"❌ {err}")
         else:
             chiave_db = f"{fazione_scelta}: {nuovo_nome.strip()}"
             st.session_state["db_unita"][chiave_db] = {
-                "fazione": fazione_scelta,
-                "n_modelli": n_modelli_base, 
-                "campione": campione, 
-                "punti": punti_unita,
-                "difesa": difesa_corrente,
-                "armi": st.session_state["corrente_armi"]
+                "fazione": fazione_scelta, "n_modelli": n_modelli_base, "campione": campione, 
+                "punti": punti_unita, "difesa": difesa_corrente, "armi": st.session_state["corrente_armi"]
             }
             salva_nel_database(st.session_state["db_unita"])
             st.success(f"✅ Unità '{chiave_db}' salvata con successo!")
@@ -560,14 +572,13 @@ with st.container(border=True):
 # SEZIONE 2: UNITÀ BERSAGLIO
 # ==========================================
 st.markdown("---")
-st.markdown("### UNITÀ BERSAGLIO")
+st.markdown("### 🎯 2. Unità Bersaglio")
 
 with st.container(border=True):
     b1, b2, b3 = st.columns(3)
     save_b = b1.selectbox("Save Base Bersaglio", [2, 3, 4, 5, 6, 7], index=2, format_func=lambda x: f"{x}+" if x < 7 else "Nessuno (-)")
     ward_b = b2.selectbox("Ward Base Bersaglio", [7, 6, 5, 4], index=0, format_func=lambda x: f"{x}+" if x < 7 else "Nessuno (-)")
     salute_b = b3.number_input("Salute Totale Bersaglio", min_value=1, max_value=100, value=10)
-
     keywords_b = st.multiselect("Keywords del Bersaglio", ["INFANTRY", "HERO", "CAVALRY", "MONSTER", "WAR MACHINE"], default=["INFANTRY", "HERO"])
 
     st.markdown("---")
@@ -591,8 +602,7 @@ bersaglio_dict = {
     "cover": cover_b, "aod": aod_b, "bonus_save_extra": 1 if extra_save_b else 0,
     "obscuring": obscuring_b, "bersaglio_ha_caricato": bersaglio_carica,
     "mod_ward_penalita": 1 if debuff_ward else 0,
-    "blocca_ward": blocca_ward_b,
-    "mod_wnd_nerf": nerf_wound
+    "blocca_ward": blocca_ward_b, "mod_wnd_nerf": nerf_wound
 }
 mod_globali["bersaglio_ha_caricato"] = bersaglio_carica
 
@@ -605,7 +615,18 @@ danno_atteso_armi = sum(r["danno_netto"] for r in risultati_armi)
 
 ward_eff = bersaglio_dict["ward"] + bersaglio_dict["mod_ward_penalita"]
 moltiplicatore_ward = 0.0 if bersaglio_dict["blocca_ward"] else (1.0 if (bersaglio_dict["ward"] >= 7 or ward_eff > 6) else 1.0 - ((7 - max(2, ward_eff)) / 6.0))
-danno_extra_atteso = (media_dado(mortal_extra) if mortal_extra != "0" else 0.0) * moltiplicatore_ward
+
+# --- CALCOLO ANALITICO: DANNI AGGIUNTIVI ---
+danno_extra_base = float(mortal_extra_fisso)
+if mortal_extra_dadi > 0:
+    if mortal_extra_soglia == "Nessuna (Somma i valori)":
+        danno_extra_base += mortal_extra_dadi * (2.0 if mortal_extra_tipo == 3 else 3.5)
+    else:
+        target_val = int(mortal_extra_soglia[0])
+        prob = max(0.0, (mortal_extra_tipo - target_val + 1) / float(mortal_extra_tipo))
+        danno_extra_base += mortal_extra_dadi * prob
+
+danno_extra_atteso = danno_extra_base * moltiplicatore_ward
 danno_totale_atteso = danno_atteso_armi + danno_extra_atteso
 
 campioni_mc = simula_monte_carlo(armi_attive_calcolo, mod_globali, bersaglio_dict, n_sim=10000)
@@ -619,12 +640,9 @@ roi_punti = (danno_totale_atteso / punti_unita) * 100.0
 st.markdown("---")
 st.markdown("### 📊 3. Analisi comparativa")
 
-# --- LOGICA DINAMICA: IL VERDETTO STRATEGICO (ROLE TAGS) ---
 attacchi_totali = sum(r['attacchi'] for r in risultati_armi)
 max_rend = max([int(a['rend']) for a in armi_attive_calcolo if a['attiva']] + [0])
 ha_crit_mortal = any(a['crit_type'] == 'Crit (Mortal)' and a['attiva'] for a in armi_attive_calcolo)
-
-# Raccoglie tutti i target Anti-X univoci presenti nelle armi attive
 anti_targets = list(set([a['anti_target'] for a in armi_attive_calcolo if a['attiva'] and a['anti_target'] != 'Nessuno']))
 
 difesa_corrente = st.session_state["corrente_difesa"]
@@ -632,35 +650,43 @@ ward_unita = int(difesa_corrente.get("ward", 7))
 save_unita = int(difesa_corrente.get("save", 4))
 salute_totale_unita = int(difesa_corrente.get("salute_per_modello", 2)) * mod_globali["n_modelli"]
 
-# Assegnazione del ruolo tattico in base alle statistiche
+ruoli_trovati = []
+
+# MULTIPLA ASSEGNAZIONE DEI RUOLI
 if ward_unita <= 5 or (save_unita <= 3 and salute_totale_unita >= 15):
-    st.info("**🧠 Il Verdetto Strategico: 🛡️ Tank / Ancoraggio Difensivo**\n\nOttima resistenza. Utilizza questa unità per presidiare gli obiettivi centrali, bloccare le unità più pericolose dell'avversario o fare da scudo ai tuoi eroi di supporto. Evita di sprecarla in inseguimenti.")
-elif len(anti_targets) > 0:
+    ruoli_trovati.append("🛡️ **Ancoraggio Difensivo (Tank)**: Ottima resistenza. Utilizza questa unità per presidiare gli obiettivi centrali, bloccare le truppe avversarie o fare da scudo alle tue retrovie.")
+
+if len(anti_targets) > 0:
     targets_str = ", ".join(anti_targets)
-    st.warning(f"**🧠 Il Verdetto Strategico: 🎯 Specialista Anti-{targets_str}**\n\nUnità letale contro {targets_str} grazie al bonus di penetrazione dell'armatura (+1 Rend). Focalizza i suoi attacchi e i suoi movimenti di carica esclusivamente su questi bersagli per massimizzarne l'efficienza.")
-elif ha_crit_mortal or max_rend >= 2:
-    st.error("**🧠 Il Verdetto Strategico: ⚔️ Cacciatore Corazzati / Bypassa-Armatura**\n\nEccelle contro bersagli con Tiro Salvezza (Save) elevato. Ignora le truppe leggere e punta dritto alle unità d'élite pesantemente corazzate per capitalizzare i danni mortali o l'alta penetrazione.")
-elif attacchi_totali >= 20:
-    st.success("**🧠 Il Verdetto Strategico: 🗡️ Sfoltiscitore d'Orde**\n\nSfrutta l'enorme volume di dadi per saturare le difese nemiche. L'ideale è lanciarla contro unità composte da molti modelli leggeri per massimizzare i danni ed evitare che l'avversario contesti gli obiettivi.")
-elif danno_totale_atteso >= 12:
-    st.error("**🧠 Il Verdetto Strategico: 💥 Damage Dealer Puro**\n\nUnità d'urto ad altissimo impatto. Infligge danni massicci in modo costante. Supportala con incantesimi o buff per farla arrivare intatta in mischia e scatenala contro le minacce principali.")
-else:
-    st.success("**🧠 Il Verdetto Strategico: ⚖️ Combattente Flessibile / Supporto**\n\nUnità tattica bilanciata. Utilizzala per contestare obiettivi secondari, schermare i fianchi o fornire supporto alleato dove la linea di battaglia ne ha più bisogno.")
+    ruoli_trovati.append(f"🎯 **Specialista Anti-{targets_str}**: Letale contro questi bersagli specifici grazie al bonus di penetrazione dell'armatura. Focalizza i suoi attacchi su di essi per massimizzarne l'efficienza.")
+
+if attacchi_totali >= 20:
+    ruoli_trovati.append("🗡️ **Sfoltiscitore d'Orde**: Sfrutta l'enorme volume di dadi per saturare le difese nemiche. L'ideale contro unità leggere e numerose.")
+
+if ha_crit_mortal or max_rend >= 2:
+    ruoli_trovati.append("⚔️ **Bypassa-Armatura**: Eccelle contro bersagli con armature pesanti (Tiro Salvezza elevato). Ignora la truppa leggera e punta alle unità d'élite.")
+
+if danno_totale_atteso >= 12:
+    ruoli_trovati.append("💥 **Damage Dealer Puro**: Unità d'urto ad altissimo impatto offensivo. Infligge danni massicci in modo costante, scatenala contro le minacce principali.")
+
+# Se non rientra in nessuno dei parametri estremi, viene catalogata come flessibile
+if not ruoli_trovati:
+    ruoli_trovati.append("⚖️ **Combattente Flessibile / Supporto**: Unità tattica bilanciata. Utilizzala per contestare obiettivi secondari, schermare i fianchi o fornire supporto tattico alla linea di battaglia.")
+
+with st.container(border=True):
+    st.markdown("**🧠 Il Verdetto Strategico (Ruoli individuati):**")
+    for ruolo in ruoli_trovati:
+        st.markdown(f"- {ruolo}")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# --- METRICHE AVANZATE ---
 m1, m2, m3, m4 = st.columns(4)
 m1.metric("💥 Danno Medio Atteso", f"{danno_totale_atteso:.2f} ferite", f"± {dev_std:.1f} (Std)")
 m2.metric("☠️ Prob. Kill (1 Turno)", f"{prob_uccisione:.1f}%", f"vs {salute_b} Salute")
 m3.metric("⚖️ ROI Danni (per 100 pt)", f"{roi_punti:.2f} Danni", f"Costo: {punti_unita} pt")
 m4.metric("🎲 Attacchi Totali", f"{attacchi_totali:.0f} dadi")
 
-tab1, tab2, tab3 = st.tabs([
-    "📊 Analisi Funnel & Armi",
-    "🎲 Distribuzione Monte Carlo",
-    "🧠 Consigliere Tattico & Time-to-Kill"
-])
+tab1, tab2, tab3 = st.tabs(["📊 Analisi Funnel & Armi", "🎲 Distribuzione Monte Carlo", "🧠 Consigliere Tattico & Time-to-Kill"])
 
 with tab1:
     col_t1, col_t2 = st.columns(2)
@@ -690,7 +716,7 @@ with tab1:
 
 with tab2:
     st.subheader("Curva di Probabilità Cumulativa (Monte Carlo)")
-    max_danno_grafico = int(np.percentile(campioni_mc, 99.5)) + 2
+    max_danno_grafico = int(np.percentile(campioni_mc, 99.5)) + 2 if len(campioni_mc) > 0 else 10
     asse_x = np.arange(1, max(10, max_danno_grafico))
     prob_almeno_x = [np.mean(campioni_mc >= x) * 100.0 for x in asse_x]
     st.line_chart(pd.DataFrame({"Danni Minimi (X)": asse_x, "Probabilità (%)": prob_almeno_x}).set_index("Danni Minimi (X)"))
@@ -699,15 +725,11 @@ with tab3:
     st.subheader("⏱️ Stima Sopravvivenza Bersaglio (Time-to-Kill)")
     ttk = salute_b / danno_totale_atteso if danno_totale_atteso > 0 else 99
     
-    if ttk <= 1.0:
-        st.success(f"**🔥 Letale!** Questa unità dovrebbe eliminare il bersaglio in **1 singolo turno di combattimento** (Danno atteso {danno_totale_atteso:.1f} vs Salute {salute_b}).")
-    elif ttk <= 2.0:
-        st.warning(f"**⚔️ Logoramento:** Saranno necessari circa **2 turni di combattimento** per abbattere questo bersaglio. Seleziona il target con cautela.")
-    else:
-        st.error(f"**🛡️ Inefficiente:** Serviranno circa **{int(ttk)+1} turni** per uccidere questo bersaglio. Sconsigliato ingaggiarlo in 1v1 senza supporto magico o alleati.")
+    if ttk <= 1.0: st.success(f"**🔥 Letale!** Questa unità dovrebbe eliminare il bersaglio in **1 singolo turno di combattimento** (Danno atteso {danno_totale_atteso:.1f} vs Salute {salute_b}).")
+    elif ttk <= 2.0: st.warning(f"**⚔️ Logoramento:** Saranno necessari circa **2 turni di combattimento** per abbattere questo bersaglio. Seleziona il target con cautela.")
+    else: st.error(f"**🛡️ Inefficiente:** Serviranno circa **{int(ttk)+1} turni** per uccidere questo bersaglio. Sconsigliato ingaggiarlo in 1v1 senza supporto alleato.")
         
     st.markdown("---")
-    
     st.subheader("🎯 Matrice Target Priority")
     st.caption("Efficacia del danno netto in base a Save e Ward del bersaglio.")
     saves_lista = [2, 3, 4, 5, 6, 7]

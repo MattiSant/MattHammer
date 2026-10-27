@@ -1,211 +1,98 @@
 {
-    "Personalizzato (Manuale)": {
-        "n_modelli": 10,
-        "campione": true,
-        "punti": 150,
-        "armi": [
-            {
-                "nome": "Arma Principale",
-                "attiva": true,
-                "ranged": false,
-                "atk": "2",
-                "hit": 3,
-                "wnd": 3,
-                "rend": 1,
-                "dmg": "1",
-                "crit_type": "Nessuno",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": false
-            },
-            {
-                "nome": "Arma Cavalcatura / Secondaria",
-                "attiva": false,
-                "ranged": false,
-                "atk": "2",
-                "hit": 4,
-                "wnd": 4,
-                "rend": 0,
-                "dmg": "1",
-                "crit_type": "Nessuno",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": true
-            }
-        ]
-    },
-    "Nighthaunt: Kurdoss Valentian": {
+    "Nighthaunt: Knight of Shrouds": {
+        "fazione": "Nighthaunt",
         "n_modelli": 1,
         "campione": false,
-        "punti": 200,
+        "punti": 100,
+        "difesa": {
+            "salute_per_modello": 5,
+            "save": 5,
+            "ward": 5
+        },
         "armi": [
             {
-                "nome": "Sepulchral Sceptre",
+                "nome": "Sword of Stolen Hours",
                 "attiva": true,
                 "ranged": false,
                 "atk": "5",
-                "hit": 3,
+                "hit": 4,
                 "wnd": 3,
-                "rend": 2,
-                "dmg": "3",
+                "rend": 1,
+                "dmg": "2",
                 "crit_type": "Crit (Auto-wound)",
                 "anti_target": "Nessuno",
                 "charge_dmg": false,
                 "anti_charge": false,
                 "companion": false
-            },
-            {
-                "nome": "Nessuna",
-                "attiva": false,
-                "ranged": false,
-                "atk": "1",
-                "hit": 4,
-                "wnd": 4,
-                "rend": 0,
-                "dmg": "1",
-                "crit_type": "Nessuno",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": false
             }
         ]
     },
-    "Khorne: Warlord Tank (2+ Save)": {
-        "fazione": "Khorne",
+    "Nighthaunt: Guardian of Souls": {
+        "fazione": "Nighthaunt",
         "n_modelli": 1,
         "campione": false,
-        "punti": 250,
+        "punti": 100,
         "difesa": {
-            "salute_per_modello": 8,
-            "save": 2,
-            "ward": 7
+            "salute_per_modello": 5,
+            "save": 5,
+            "ward": 5
         },
         "armi": [
             {
-                "nome": "Lama Sanguinaria",
-                "attiva": true,
-                "ranged": false,
-                "atk": "4",
-                "hit": 3,
-                "wnd": 3,
-                "rend": 1,
-                "dmg": "2",
-                "crit_type": "Nessuno",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": false
-            }
-        ]
-    },
-    "Khorne: Warlord Custom Tank (2+ Save)": {
-        "n_modelli": 1,
-        "campione": false,
-        "punti": 250,
-        "difesa": {
-            "salute_per_modello": 8,
-            "save": 2,
-            "ward": 7
-        },
-        "armi": [
-            {
-                "nome": "Lama Sanguinaria",
-                "attiva": true,
-                "ranged": false,
-                "atk": "4",
-                "hit": 3,
-                "wnd": 3,
-                "rend": 1,
-                "dmg": "2",
-                "crit_type": "Nessuno",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": false
-            }
-        ]
-    },
-    "Nighthaunt: Reikenor The Grimhailer": {
-        "n_modelli": 1,
-        "campione": false,
-        "punti": 210,
-        "armi": [
-            {
-                "nome": "Fellreaper",
-                "attiva": true,
-                "ranged": false,
-                "atk": "5",
-                "hit": 3,
-                "wnd": 3,
-                "rend": 2,
-                "dmg": "2",
-                "crit_type": "Crit (Auto-wound)",
-                "anti_target": "Nessuno",
-                "charge_dmg": true,
-                "anti_charge": false,
-                "companion": false
-            },
-            {
-                "nome": "Kyllaron's Ghostly Hooves",
+                "nome": "Chill Blade",
                 "attiva": true,
                 "ranged": false,
                 "atk": "3",
-                "hit": 5,
+                "hit": 4,
                 "wnd": 3,
-                "rend": 0,
-                "dmg": "1",
+                "rend": 1,
+                "dmg": "2",
                 "crit_type": "Crit (Auto-wound)",
                 "anti_target": "Nessuno",
                 "charge_dmg": false,
                 "anti_charge": false,
-                "companion": true
+                "companion": false
             }
         ]
     },
-    "Nighthaunt: Hexwraiths (5 Modelli)": {
-        "n_modelli": 5,
-        "campione": true,
-        "punti": 200,
+    "Nighthaunt: Scriptor Mortis": {
+        "fazione": "Nighthaunt",
+        "n_modelli": 1,
+        "campione": false,
+        "punti": 90,
+        "difesa": {
+            "salute_per_modello": 5,
+            "save": 5,
+            "ward": 5
+        },
         "armi": [
             {
-                "nome": "Spectral Scythe",
+                "nome": "Malicious Quill",
                 "attiva": true,
                 "ranged": false,
-                "atk": "2",
+                "atk": "3",
                 "hit": 4,
                 "wnd": 4,
                 "rend": 1,
                 "dmg": "1",
                 "crit_type": "Crit (Auto-wound)",
                 "anti_target": "Nessuno",
-                "charge_dmg": true,
-                "anti_charge": false,
-                "companion": false
-            },
-            {
-                "nome": "Ethereal Steed's Hooves",
-                "attiva": true,
-                "ranged": false,
-                "atk": "2",
-                "hit": 5,
-                "wnd": 3,
-                "rend": 0,
-                "dmg": "1",
-                "crit_type": "Crit (Auto-wound)",
-                "anti_target": "Nessuno",
                 "charge_dmg": false,
                 "anti_charge": false,
-                "companion": true
+                "companion": false
             }
         ]
     },
-    "Nighthaunt: Bladegheist Revenants (10 Modelli)": {
+    "Nighthaunt: Bladegheist Revenants": {
+        "fazione": "Nighthaunt",
         "n_modelli": 10,
         "campione": true,
-        "punti": 180,
+        "punti": 200,
+        "difesa": {
+            "salute_per_modello": 2,
+            "save": 6,
+            "ward": 5
+        },
         "armi": [
             {
                 "nome": "Tomb Greatblade",
@@ -221,102 +108,91 @@
                 "charge_dmg": false,
                 "anti_charge": false,
                 "companion": false
-            },
+            }
+        ]
+    },
+    "Nighthaunt: Grimghast Reapers": {
+        "fazione": "Nighthaunt",
+        "n_modelli": 10,
+        "campione": true,
+        "punti": 190,
+        "difesa": {
+            "salute_per_modello": 2,
+            "save": 6,
+            "ward": 5
+        },
+        "armi": [
             {
-                "nome": "Nessuna",
-                "attiva": false,
+                "nome": "Tomb Greatblade",
+                "attiva": true,
                 "ranged": false,
-                "atk": "1",
+                "atk": "2",
                 "hit": 4,
-                "wnd": 4,
-                "rend": 0,
+                "wnd": 3,
+                "rend": 1,
                 "dmg": "1",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "INFANTRY",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ]
+    },
+
+    "Sylvaneth: Grove Guardian": {
+        "fazione": "Sylvaneth",
+        "n_modelli": 1,
+        "campione": false,
+        "punti": 200,
+        "difesa": {
+            "salute_per_modello": 7,
+            "save": 5,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Grove Sickle or Shears",
+                "attiva": true,
+                "ranged": false,
+                "atk": "3",
+                "hit": 3,
+                "wnd": 4,
+                "rend": 1,
+                "dmg": "D3",
                 "crit_type": "Nessuno",
                 "anti_target": "Nessuno",
                 "charge_dmg": false,
                 "anti_charge": false,
                 "companion": false
-            }
-        ]
-    },
-    "Kruleboyz: Gobsprakk, The Mouth of Mork": {
-        "n_modelli": 1,
-        "campione": false,
-        "punti": 380,
-        "armi": [
+            },
             {
-                "nome": "Bogbark Staff",
+                "nome": "Guardian Spites",
                 "attiva": true,
                 "ranged": false,
-                "atk": "3",
+                "atk": "6",
                 "hit": 4,
-                "wnd": 3,
-                "rend": 0,
+                "wnd": 4,
+                "rend": 1,
                 "dmg": "D3",
                 "crit_type": "Crit (Mortal)",
                 "anti_target": "Nessuno",
                 "charge_dmg": false,
                 "anti_charge": false,
-                "companion": false
-            },
-            {
-                "nome": "Killabeak's Stinger",
-                "attiva": true,
-                "ranged": false,
-                "atk": "1",
-                "hit": 3,
-                "wnd": 2,
-                "rend": 1,
-                "dmg": "D6",
-                "crit_type": "Crit (Mortal)",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
                 "companion": true
-            }
-        ]
-    },
-    "Kruleboyz: Swampboss Skumdrekk": {
-        "n_modelli": 1,
-        "campione": false,
-        "punti": 220,
-        "armi": [
-            {
-                "nome": "Sloppklaw's Talons",
-                "attiva": true,
-                "ranged": false,
-                "atk": "6",
-                "hit": 4,
-                "wnd": 2,
-                "rend": 1,
-                "dmg": "2",
-                "crit_type": "Crit (Mortal)",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": true
-            },
-            {
-                "nome": "Snatcha-stikk",
-                "attiva": true,
-                "ranged": false,
-                "atk": "4",
-                "hit": 4,
-                "wnd": 3,
-                "rend": 1,
-                "dmg": "2",
-                "crit_type": "Crit (Mortal)",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": false
             }
         ]
     },
     "Sylvaneth: Branchwych": {
+        "fazione": "Sylvaneth",
         "n_modelli": 1,
         "campione": false,
-        "punti": 120,
+        "punti": 100,
+        "difesa": {
+            "salute_per_modello": 5,
+            "save": 5,
+            "ward": 7
+        },
         "armi": [
             {
                 "nome": "Greenwood Scythe and Bittergrub",
@@ -332,14 +208,126 @@
                 "charge_dmg": false,
                 "anti_charge": false,
                 "companion": false
-            },
+            }
+        ]
+    },
+    "Sylvaneth: Dryads": {
+        "fazione": "Sylvaneth",
+        "n_modelli": 10,
+        "campione": true,
+        "punti": 100,
+        "difesa": {
+            "salute_per_modello": 1,
+            "save": 5,
+            "ward": 7
+        },
+        "armi": [
             {
-                "nome": "Nessuna",
-                "attiva": false,
+                "nome": "Wracking Talons",
+                "attiva": true,
                 "ranged": false,
-                "atk": "1",
+                "atk": "2",
+                "hit": 3,
+                "wnd": 4,
+                "rend": 1,
+                "dmg": "1",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ]
+    },
+    "Sylvaneth: Kurnoth Hunters With Greatswords": {
+        "fazione": "Sylvaneth",
+        "n_modelli": 3,
+        "campione": true,
+        "punti": 220,
+        "difesa": {
+            "salute_per_modello": 5,
+            "save": 4,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Kurnoth Greatsword",
+                "attiva": true,
+                "ranged": false,
+                "atk": "4",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "2",
+                "crit_type": "Crit (Mortal)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ]
+    },
+    "Orruk Kruleboyz: Hobgrot Slittaboss": {
+        "fazione": "Orruk Kruleboyz",
+        "n_modelli": 1,
+        "campione": false,
+        "punti": 60,
+        "difesa": {
+            "salute_per_modello": 5,
+            "save": 6,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Toxin-smeared Slitta-sword",
+                "attiva": true,
+                "ranged": false,
+                "atk": "4",
                 "hit": 4,
                 "wnd": 4,
+                "rend": 1,
+                "dmg": "D3",
+                "crit_type": "Crit (Mortal)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ]
+    },
+    "Orruk Kruleboyz: Hobgrot Slittaz": {
+        "fazione": "Orruk Kruleboyz",
+        "n_modelli": 10,
+        "campione": true,
+        "punti": 70,
+        "difesa": {
+            "salute_per_modello": 1,
+            "save": 6,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Scrap-grenades",
+                "attiva": true,
+                "ranged": true,
+                "atk": "1",
+                "hit": 4,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "1",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Slitta-knives",
+                "attiva": true,
+                "ranged": false,
+                "atk": "2",
+                "hit": 4,
+                "wnd": 5,
                 "rend": 0,
                 "dmg": "1",
                 "crit_type": "Nessuno",
@@ -350,121 +338,70 @@
             }
         ]
     },
-    "Blades of Khorne: Khornate Warlord on Juggernaut": {
-        "n_modelli": 1,
-        "campione": false,
-        "punti": 250,
+    "Orruk Kruleboyz: Gutrippaz": {
+        "fazione": "Orruk Kruleboyz",
+        "n_modelli": 10,
+        "campione": true,
+        "punti": 150,
+        "difesa": {
+            "salute_per_modello": 2,
+            "save": 5,
+            "ward": 7
+        },
         "armi": [
             {
-                "nome": "Great Blood-slick Weapon",
-                "attiva": true,
-                "ranged": false,
-                "atk": "5",
-                "hit": 3,
-                "wnd": 3,
-                "rend": 1,
-                "dmg": "2",
-                "crit_type": "Crit (2 Hits)",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": false
-            },
-            {
-                "nome": "Juggernaut's Brass-shod Hooves",
+                "nome": "Stikka or Hacka",
                 "attiva": true,
                 "ranged": false,
                 "atk": "2",
                 "hit": 4,
                 "wnd": 3,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Crit (Mortal)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ]
+    },
+    "Orruk Kruleboyz: Killaboss on Great Gnashtoof": {
+        "fazione": "Orruk Kruleboyz",
+        "n_modelli": 1,
+        "campione": false,
+        "punti": 130,
+        "difesa": {
+            "salute_per_modello": 10,
+            "save": 3,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Great Gnashtoof's Jaws",
+                "attiva": true,
+                "ranged": false,
+                "atk": "5",
+                "hit": 4,
+                "wnd": 3,
                 "rend": 1,
-                "dmg": "D3",
+                "dmg": "2",
                 "crit_type": "Nessuno",
                 "anti_target": "Nessuno",
                 "charge_dmg": false,
                 "anti_charge": false,
                 "companion": true
-            }
-        ]
-    },
-    "NIghtHaunt, Krulghast Cruciator": {
-        "n_modelli": 1,
-        "campione": false,
-        "punti": 160,
-        "difesa": {
-            "salute_per_modello": 6,
-            "save": 5,
-            "ward": 5
-        },
-        "armi": [
-            {
-                "nome": "Phantasmal Torture",
-                "attiva": true,
-                "ranged": true,
-                "atk": "4",
-                "hit": 3,
-                "wnd": 3,
-                "rend": 2,
-                "dmg": "1",
-                "crit_type": "Crit (Auto-wound)",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": false
             },
             {
-                "nome": "Talons and Flensing Knives",
+                "nome": "Boss-stikka",
                 "attiva": true,
                 "ranged": false,
-                "atk": "4",
+                "atk": "5",
                 "hit": 4,
                 "wnd": 3,
                 "rend": 1,
                 "dmg": "2",
-                "crit_type": "Crit (Auto-wound)",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": false
-            }
-        ]
-    },
-    "Nighthaunt: Krulghast Cruciator": {
-        "fazione": "Nighthaunt",
-        "n_modelli": 1,
-        "campione": false,
-        "punti": 150,
-        "difesa": {
-            "salute_per_modello": 5,
-            "save": 5,
-            "ward": 5
-        },
-        "armi": [
-            {
-                "nome": "Phantasmal Torture",
-                "attiva": true,
-                "ranged": true,
-                "atk": "4",
-                "hit": 3,
-                "wnd": 3,
-                "rend": 2,
-                "dmg": "1",
-                "crit_type": "Crit (Auto-wound)",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": false
-            },
-            {
-                "nome": "Talons and Flensing Knives",
-                "attiva": true,
-                "ranged": false,
-                "atk": "4",
-                "hit": 4,
-                "wnd": 3,
-                "rend": 1,
-                "dmg": "2",
-                "crit_type": "Crit (Auto-wound)",
+                "crit_type": "Crit (Mortal)",
                 "anti_target": "Nessuno",
                 "charge_dmg": false,
                 "anti_charge": false,
