@@ -17,6 +17,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Collegamento al manifest per la PWA e l'icona personalizzata
+st.markdown(
+    '<link rel="manifest" href="https://raw.githubusercontent.com/TuoUsername/MattHammer/main/manifest.json">',
+    unsafe_allow_html=True
+)
+
 # Stile CSS Avanzato: Tema Pergamena Antica & Input Arancio Scuro/Bronzo
 st.markdown("""
 <style>
