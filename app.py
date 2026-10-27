@@ -720,15 +720,15 @@ with st.container(border=True):
          }
 
          successo, messaggio = salva_nel_database(st.session_state["db_unita"])
-
-         if successo:
-             if gia_esistente:
-                 st.session_state["notifica_salvataggio"] = f"🔄 Unità '{chiave_db}' aggiornata con successo (sovrascritta)!"
-             else:
-                 st.session_state["notifica_salvataggio"] = f"✨ Nuova unità '{chiave_db}' aggiunta con successo al database!"
-             st.rerun()
-         else:
-             st.error(f"❌ Errore durante il salvataggio: {messaggio}")
+            
+        if successo:
+            if gia_esistente:
+                st.toast(f"🔄 Unità '{chiave_db}' aggiornata con successo (sovrascritta)!", icon="✅")
+            else:
+                st.toast(f"✨ Nuova unità '{chiave_db}' aggiunta con successo al database!", icon="🎉")
+            st.rerun()
+        else:
+            st.error(f"❌ Errore durante il salvataggio: {messaggio}")
 
 # ==========================================
 # SEZIONE 2: UNITÀ BERSAGLIO
