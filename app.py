@@ -19,7 +19,7 @@ st.set_page_config(
 
 # Collegamento al manifest per la PWA e l'icona personalizzata
 st.markdown(
-    '<link rel="manifest" href="https://raw.githubusercontent.com/TuoUsername/MattHammer/main/manifest.json">',
+    '<link rel="manifest" href="https://raw.githubusercontent.com/MattSant/MattHammer/main/manifest.json">',
     unsafe_allow_html=True
 )
 
