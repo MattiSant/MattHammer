@@ -408,5 +408,34 @@
                 "companion": false
             }
         ]
+    },
+    "Khorne: Warlord Tank (2+ Save)": {
+        "fazione": "Blades of Khorne",
+        "n_modelli": 1,
+        "campione": false,
+        "punti": 250,
+        "difesa": {
+            "salute_per_modello": 8,
+            "save": 2,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Lama Sanguinaria",
+                "attiva": true,
+                "ranged": false,
+                "atk": "4",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "2",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ]
     }
+    
 }
