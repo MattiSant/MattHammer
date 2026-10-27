@@ -1,0 +1,335 @@
+{
+    "Personalizzato (Manuale)": {
+        "n_modelli": 10,
+        "campione": true,
+        "punti": 150,
+        "armi": [
+            {
+                "nome": "Arma Principale",
+                "attiva": true,
+                "ranged": false,
+                "atk": "2",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "1",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Arma Cavalcatura / Secondaria",
+                "attiva": false,
+                "ranged": false,
+                "atk": "2",
+                "hit": 4,
+                "wnd": 4,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": true
+            }
+        ]
+    },
+    "Nighthaunt: Kurdoss Valentian": {
+        "n_modelli": 1,
+        "campione": false,
+        "punti": 200,
+        "armi": [
+            {
+                "nome": "Sepulchral Sceptre",
+                "attiva": true,
+                "ranged": false,
+                "atk": "5",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 2,
+                "dmg": "3",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Nessuna",
+                "attiva": false,
+                "ranged": false,
+                "atk": "1",
+                "hit": 4,
+                "wnd": 4,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ]
+    },
+    "Nighthaunt: Reikenor The Grimhailer": {
+        "n_modelli": 1,
+        "campione": false,
+        "punti": 210,
+        "armi": [
+            {
+                "nome": "Fellreaper",
+                "attiva": true,
+                "ranged": false,
+                "atk": "5",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 2,
+                "dmg": "2",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "Nessuno",
+                "charge_dmg": true,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Kyllaron's Ghostly Hooves",
+                "attiva": true,
+                "ranged": false,
+                "atk": "3",
+                "hit": 5,
+                "wnd": 3,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": true
+            }
+        ]
+    },
+    "Nighthaunt: Hexwraiths (5 Modelli)": {
+        "n_modelli": 5,
+        "campione": true,
+        "punti": 200,
+        "armi": [
+            {
+                "nome": "Spectral Scythe",
+                "attiva": true,
+                "ranged": false,
+                "atk": "2",
+                "hit": 4,
+                "wnd": 4,
+                "rend": 1,
+                "dmg": "1",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "Nessuno",
+                "charge_dmg": true,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Ethereal Steed's Hooves",
+                "attiva": true,
+                "ranged": false,
+                "atk": "2",
+                "hit": 5,
+                "wnd": 3,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": true
+            }
+        ]
+    },
+    "Nighthaunt: Bladegheist Revenants (10 Modelli)": {
+        "n_modelli": 10,
+        "campione": true,
+        "punti": 180,
+        "armi": [
+            {
+                "nome": "Tomb Greatblade",
+                "attiva": true,
+                "ranged": false,
+                "atk": "2",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "1",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Nessuna",
+                "attiva": false,
+                "ranged": false,
+                "atk": "1",
+                "hit": 4,
+                "wnd": 4,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ]
+    },
+    "Kruleboyz: Gobsprakk, The Mouth of Mork": {
+        "n_modelli": 1,
+        "campione": false,
+        "punti": 380,
+        "armi": [
+            {
+                "nome": "Bogbark Staff",
+                "attiva": true,
+                "ranged": false,
+                "atk": "3",
+                "hit": 4,
+                "wnd": 3,
+                "rend": 0,
+                "dmg": "D3",
+                "crit_type": "Crit (Mortal)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Killabeak's Stinger",
+                "attiva": true,
+                "ranged": false,
+                "atk": "1",
+                "hit": 3,
+                "wnd": 2,
+                "rend": 1,
+                "dmg": "D6",
+                "crit_type": "Crit (Mortal)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": true
+            }
+        ]
+    },
+    "Kruleboyz: Swampboss Skumdrekk": {
+        "n_modelli": 1,
+        "campione": false,
+        "punti": 220,
+        "armi": [
+            {
+                "nome": "Sloppklaw's Talons",
+                "attiva": true,
+                "ranged": false,
+                "atk": "6",
+                "hit": 4,
+                "wnd": 2,
+                "rend": 1,
+                "dmg": "2",
+                "crit_type": "Crit (Mortal)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": true
+            },
+            {
+                "nome": "Snatcha-stikk",
+                "attiva": true,
+                "ranged": false,
+                "atk": "4",
+                "hit": 4,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "2",
+                "crit_type": "Crit (Mortal)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ]
+    },
+    "Sylvaneth: Branchwych": {
+        "n_modelli": 1,
+        "campione": false,
+        "punti": 120,
+        "armi": [
+            {
+                "nome": "Greenwood Scythe and Bittergrub",
+                "attiva": true,
+                "ranged": false,
+                "atk": "3",
+                "hit": 3,
+                "wnd": 4,
+                "rend": 1,
+                "dmg": "D3",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Nessuna",
+                "attiva": false,
+                "ranged": false,
+                "atk": "1",
+                "hit": 4,
+                "wnd": 4,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ]
+    },
+    "Blades of Khorne: Khornate Warlord on Juggernaut": {
+        "n_modelli": 1,
+        "campione": false,
+        "punti": 250,
+        "armi": [
+            {
+                "nome": "Great Blood-slick Weapon",
+                "attiva": true,
+                "ranged": false,
+                "atk": "5",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "2",
+                "crit_type": "Crit (2 Hits)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Juggernaut's Brass-shod Hooves",
+                "attiva": true,
+                "ranged": false,
+                "atk": "2",
+                "hit": 4,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "D3",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": true
+            }
+        ]
+    }
+}

@@ -441,17 +441,48 @@ if "db_unita" not in st.session_state:
     st.session_state["db_unita"] = carica_database()
 
 # ==========================================
-# SIDEBAR: SELEZIONE UNITA' E BUFF
+# SIDEBAR: SELEZIONE UNITA' (Directory Tree per Fazione)
 # ==========================================
 st.sidebar.title("🔨 MattHammer v3.0")
-st.sidebar.caption("Community DB & Wahapedia Importer")
 
 lista_nomi_unita = list(st.session_state["db_unita"].keys())
 idx_default = st.session_state.get("idx_selezionato", 0)
 if idx_default >= len(lista_nomi_unita):
     idx_default = 0
 
-preset_scelto = st.sidebar.selectbox("📂 Seleziona Unità dal Database", lista_nomi_unita, index=idx_default)
+# Organizziamo le unità del database in categorie (Directory Tree)
+albero_fazioni = {
+    "👻 Nighthaunt": [],
+    "🩸 Khorne": [],
+    "👹 Kruleboyz": [],
+    "🌲 Sylvaneth": [],
+    "📁 Personale / Altro": []
+}
+
+# Suddivide automaticamente le unità del DB nelle rispettive cartelle in base al nome
+for nome_unita in st.session_state["db_unita"].keys():
+    nome_up = nome_unita.upper()
+    if "NIGHTHAUNT" in nome_up:
+        albero_fazioni["👻 Nighthaunt"].append(nome_unita)
+    elif "KHORNE" in nome_up:
+        albero_fazioni["🩸 Khorne"].append(nome_unita)
+    elif "KRULEBOYZ" in nome_up:
+        albero_fazioni["👹 Kruleboyz"].append(nome_unita)
+    elif "SYLVANETH" in nome_up:
+        albero_fazioni["🌲 Sylvaneth"].append(nome_unita)
+    else:
+        albero_fazioni["📁 Personale / Altro"].append(nome_unita)
+
+# Rimuove le categorie vuote se non contengono unità
+albero_fazioni_attive = {k: v for k, v in albero_fazioni.items() if len(v) > 0}
+
+st.sidebar.subheader("📂 Directory Database")
+fazione_selezionata = st.sidebar.selectbox("Seleziona Fazione", list(albero_fazioni_attive.keys()))
+
+# Sotto-menu con le unità della fazione scelta
+unita_della_fazione = albero_fazioni_attive[fazione_selezionata]
+preset_scelto = st.sidebar.selectbox(f"Unità ({fazione_selezionata})", unita_della_fazione)
+
 dati_preset = st.session_state["db_unita"][preset_scelto]
 
 st.sidebar.divider()
@@ -472,11 +503,11 @@ all_out_attack = st.sidebar.checkbox("🎯 Comando: All-out Attack (+1 Hit)", va
 with st.sidebar.expander("✨ Altri Buff Fazione / Artefatti"):
     mod_hit_extra = st.slider("Altri Modificatori Hit", -2, 2, 0)
     mod_wnd_extra = st.slider("Modificatori Wound", -2, 2, 0)
-    bonus_atk = st.number_input("Bonus Attacchi (es. Lightshard +1)", 0, 5, 0)
+    bonus_atk = st.number_input("Bonus Attacchi", 0, 5, 0)
     bonus_rend = st.number_input("Bonus Rend Globale", 0, 3, 0)
     bonus_dmg = st.number_input("Bonus Danno Globale", 0, 3, 0)
     crit_on_5 = st.checkbox("Critico al 5+", value=False)
-    mortal_extra = st.selectbox("Danni Mortali Extra (Carica/Magia)", ["0", "1", "D3", "D6", "2D3"], index=0)
+    mortal_extra = st.selectbox("Danni Mortali Extra", ["0", "1", "D3", "D6", "2D3"], index=0)
 
 mod_globali = {
     "n_modelli": n_modelli, "campione": campione, "ha_caricato": ha_caricato,
