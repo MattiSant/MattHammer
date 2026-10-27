@@ -17,11 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Collegamento al manifest per la PWA e l'icona personalizzata
-st.markdown(
-    '<link rel="manifest" href="https://raw.githubusercontent.com/MattSant/MattHammer/main/manifest.json">',
-    unsafe_allow_html=True
-)
+
 
 # Stile CSS Avanzato: Tema Pergamena Antica & Input Arancio Scuro/Bronzo
 st.markdown("""
@@ -429,7 +425,17 @@ if "form_version" not in st.session_state:
 # ==========================================
 # SIDEBAR: DIRECTORY TREE PER FAZIONE
 # ==========================================
-st.sidebar.title("🔨 MattHammer v1.0 BETA")
+# ==========================================
+# SIDEBAR: DIRECTORY E GUIDA RAPIDA
+# ==========================================
+st.sidebar.title("🔨 MattHammer")
+st.sidebar.caption("AoS 4e Tactical Optimizer v4.16")
+
+st.sidebar.markdown("---")
+
+# 1. Directory Database
+st.sidebar.subheader("📂 Directory Database")
+st.sidebar.caption("Seleziona e carica un'unità salvata.")
 
 albero_fazioni = {"👻 Nighthaunt": [], "🩸 Blades of Khorne": [], "👹 Orruk Kruleboyz": [], "🌲 Sylvaneth": [], "📁 Personale / Altro": []}
 for nome_unita, dati_u in st.session_state["db_unita"].items():
@@ -441,14 +447,12 @@ for nome_unita, dati_u in st.session_state["db_unita"].items():
     else: albero_fazioni["📁 Personale / Altro"].append(nome_unita)
 
 albero_fazioni_attive = {k: v for k, v in albero_fazioni.items() if len(v) > 0}
-
-st.sidebar.subheader("📂 Unità nel Database")
 fazione_selezionata = st.sidebar.selectbox("Seleziona Fazione", list(albero_fazioni_attive.keys()))
 unita_della_fazione = albero_fazioni_attive[fazione_selezionata]
 
 preset_scelto = st.sidebar.selectbox(f"Unità ({fazione_selezionata})", unita_della_fazione)
 
-if st.sidebar.button("Carica Unità Selezionata"):
+if st.sidebar.button("📥 Carica Unità Selezionata", type="primary"):
     dati_sel = st.session_state["db_unita"][preset_scelto]
     st.session_state["corrente_armi"] = [dict(a) for a in dati_sel["armi"]]
     st.session_state["corrente_modelli"] = dati_sel["n_modelli"]
@@ -458,6 +462,38 @@ if st.sidebar.button("Carica Unità Selezionata"):
     st.session_state["form_version"] += 1
     st.rerun()
 
+st.sidebar.markdown("---")
+
+# 2. Pulsante Reset Totale
+if st.sidebar.button("🔄 Reset Campi (Nuova Unità)"):
+    st.session_state["corrente_armi"] = [
+        {"nome": "---", "attiva": False, "ranged": False, "atk": "---", "hit": "---", "wnd": "---", "rend": "---", "dmg": "---", "crit_type": "Nessuno", "anti_target": "Nessuno", "charge_dmg": False, "anti_charge": False, "companion": False}
+    ]
+    st.session_state["corrente_modelli"] = 0
+    st.session_state["corrente_campione"] = False
+    st.session_state["corrente_punti"] = 0
+    st.session_state["corrente_difesa"] = {"salute_per_modello": 0, "save": "---", "ward": "---"}
+    st.session_state["form_version"] += 1
+    st.rerun()
+
+st.sidebar.markdown("---")
+
+# 3. Cheat Sheet / Promemoria Rapido per la Campagna
+with st.sidebar.expander("📖 Promemoria Regole AoS 4e"):
+    st.markdown("""
+    - **Cover (+1 Save):** Si applica se il bersaglio è parzialmente coperto da terreno scenico o da unità interposte (escluso in mischia se attaccato dallo stesso nemico).
+    - **All-out Attack/Defence:** Costa 1 Punto Comando. Aggiunge +1 ai tiri per Colpire (Hit) o +1 al Tiro Salvezza (Save) nel rispettivo turno.
+    - **Tiro Ward:** Si tira *dopo* che il Save è fallito. Non risente del modificatore di Rend (penetrazione).
+    - **Companion Weapons:** Le armi con tag *Companion* non beneficiano dei bonus ai tiri per colpire o ferire impartiti dai comandi o dagli eroi alleati.
+    """)
+
+st.sidebar.markdown("---")
+# Controllo dinamico dello stato della sincronizzazione
+if "GITHUB_TOKEN" in st.secrets and "GITHUB_REPO" in st.secrets:
+    st.sidebar.success("🌐 Cloud Sync: Attivo (GitHub)")
+else:
+    st.sidebar.info("💻 Modalità Locale (Offline)")
+    
 # ==========================================
 # PANNELLO PRINCIPALE
 # ==========================================
@@ -465,10 +501,10 @@ st.title("🔨 MattHammer - AoS 4e Tactical Optimizer")
 
 st.markdown("---")
 st.markdown("### ⚔️ 1. Unità da Analizzare")
-
+st.caption("Inserisci qui le statistiche dell'unità che vuoi testare in combattimento.")
 with st.container(border=True):
-    st.subheader("📋 Copia-Incolla Intelligente (Smart Text Parser)")
-    st.caption("Incolla qui il testo copiato dai manuali.")
+    st.subheader("📋 Inserimento Rapido da Warscroll")
+    st.caption("Copia il blocco di testo dal manuale o da Wahapedia e incollalo qui per compilare automaticamente le armi.")
     
     testo_copiato = st.text_area("Incolla qui il testo:", placeholder="Es: Arma Potente 5 3+ 3+ 2 2", height=80)
     
@@ -491,7 +527,8 @@ opzioni_ward = ["---", 7, 6, 5, 4]
 v_key = st.session_state["form_version"]
 
 with col_armi:
-    st.subheader("⚔️ Profili Armi dell'Unità")
+    st.subheader("⚔️ Profili Armi ")
+    st.caption("Verifica o modifica i valori di ciascuna arma.")
     if st.button("➕ Aggiungi Nuova Arma"):
         st.session_state["corrente_armi"].append({
             "nome": "---", "attiva": True, "ranged": False, "atk": "---",
@@ -559,6 +596,7 @@ with col_armi:
 with col_difesa_unita:
     st.subheader("🛡️ Caratteristiche Difensive Unità")
     with st.container(border=True):
+        st.caption("Imposta le statistiche difensive per ciascun modello dell'unità")
         d_corrente = st.session_state["corrente_difesa"]
         salute_modello = st.number_input("Punti Ferita per Modello", 0, 30, int(d_corrente.get("salute_per_modello", 0)), key=f"def_salute_v{v_key}")
         
@@ -576,6 +614,7 @@ col_comp, col_comandi = st.columns(2)
 with col_comp:
     st.subheader("👥 Composizione Unità")
     with st.container(border=True):
+        st.caption("Indica quanti modelli compongono l'unità (o se è rinforzata) e il costo totale in punti.")
         cs1, cs2 = st.columns(2)
         n_modelli_base = cs1.number_input("Modelli Base", min_value=0, max_value=60, value=int(st.session_state["corrente_modelli"]))
         rinforzata = cs2.checkbox("Rinforzata (x2)", value=False)
@@ -584,8 +623,9 @@ with col_comp:
         punti_unita = st.number_input("Costo in Punti", min_value=0, max_value=1200, value=int(st.session_state["corrente_punti"]) * (2 if rinforzata else 1), step=10)
 
 with col_comandi:
-    st.subheader("⚡ Comandi, Carica e Buff")
+    st.subheader("⚡ Comandi e Buff")
     with st.container(border=True):
+        st.caption("Attiva se l'unità ha caricato, ha ricevuto comandi o ha bonus speciali.")
         ha_caricato = st.checkbox("🏇 L'unità ha Caricato questo turno", value=False)
         all_out_attack = st.checkbox("🎯 Comando: All-out Attack (+1 Hit)", value=False)
         with st.expander("✨ Altri Buff / Modificatori"):
@@ -596,22 +636,21 @@ with col_comandi:
             bonus_dmg = st.number_input("Bonus Danno Globale", 0, 3, 0)
             crit_on_5 = st.checkbox("Critico al 5+", value=False)
 
-st.subheader("💥 Danni Aggiuntivi (Magie / Abilità)")
+st.subheader("💥 Danni Aggiuntivi ")
 with st.container(border=True):
-    st.caption("Aggiungi danni extra derivanti da abilità speciali o altre fonti esterne. Lascia a 0 se non applicabile.")
-    
+    st.caption("Aggiungi danni extra derivanti da abilità speciali o altre fonti esterne. Lascia a 0 se non applicabile.") 
     mortal_extra_dadi = 0
     mortal_extra_tipo = 6
     mortal_extra_soglia = "Nessuna (Somma i valori)"
     mortal_extra_fisso = 0
     
-    st.markdown("**1. Parte Stocastica (Lancio Dadi)**")
+    st.markdown("**1. Parte Casuale**")
     c1, c2, c3 = st.columns(3)
     mortal_extra_dadi = c1.number_input("Numero Dadi", min_value=0, max_value=100, value=0)
     mortal_extra_tipo = c2.selectbox("Tipo Dado", [3, 6], index=1, format_func=lambda x: f"D{x}")
     mortal_extra_soglia = c3.selectbox("Valore di Successo", ["Nessuna (Somma i valori)", "2+", "3+", "4+", "5+", "6+"])
     
-    st.markdown("**2. Parte Arbitraria (Fissa)**")
+    st.markdown("**2. Parte Fissa**")
     mortal_extra_fisso = st.number_input("Numero fisso da aggiungere ai danni", min_value=0, max_value=100, value=0)
 
 mod_globali = {
@@ -625,8 +664,9 @@ mod_globali = {
     "mortal_extra_fisso": mortal_extra_fisso
 }
 
-st.subheader("🗄️ Salva Unità Corrente nel Database")
+st.subheader("🗄️ Salva Unità nel Database Locale")
 with st.container(border=True):
+    st.caption("Seleziona la fazione, dai un nome all'unità e salvala per poterla ricaricare rapidamente in futuro.")
     db_c1, db_c2 = st.columns(2)
     fazione_scelta = db_c1.selectbox("Seleziona Fazione", ["---", "Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Personale / Altro"])
     nuovo_nome = db_c2.text_input("Nome Specifico dell'Unità:", placeholder="Es. Spirit Hosts")
@@ -662,7 +702,7 @@ with st.container(border=True):
 # ==========================================
 st.markdown("---")
 st.markdown("### 🎯 2. Unità Bersaglio")
-
+st.caption("Configura le difese, i terreni (Cover) e i debuff dell'unità nemica che vuoi attaccare.")
 with st.container(border=True):
     b1, b2, b3 = st.columns(3)
     save_b = b1.selectbox("Save Base Bersaglio", [2, 3, 4, 5, 6, 7], index=2, format_func=lambda x: f"{x}+" if x < 7 else "Nessuno (-)")
@@ -671,7 +711,7 @@ with st.container(border=True):
     keywords_b = st.multiselect("Keywords del Bersaglio", ["INFANTRY", "HERO", "CAVALRY", "MONSTER", "WAR MACHINE"], default=["INFANTRY", "HERO"])
 
     st.markdown("---")
-    st.markdown("**🛡️ Buff Difensivi / Terreni del Bersaglio:**")
+    st.markdown("**🛡️ Buff Difensivi del bersaglio:**")
     dt1, dt2, dt3 = st.columns(3)
     cover_b = dt1.checkbox("🌲 Cover (+1 Save)", value=False)
     aod_b = dt2.checkbox("🛡️ All-out Defence (+1 Save)", value=False)
@@ -680,7 +720,7 @@ with st.container(border=True):
     bersaglio_carica = dt2.checkbox("⚡ Il Bersaglio ha Caricato", value=False)
 
     st.markdown("---")
-    st.markdown("**💀 Nerf / Debuff applicati al Bersaglio:**")
+    st.markdown("**💀 Debuff applicati al Bersaglio:**")
     nd1, nd2, nd3 = st.columns(3)
     debuff_ward = nd1.checkbox("💀 Debuff: -1 al tiro Ward", value=False)
     blocca_ward_b = nd2.checkbox("🚫 Ward Annullati", value=False)
@@ -726,7 +766,7 @@ roi_punti = (danno_totale_atteso / punti_unita) * 100.0 if punti_unita > 0 else 
 # SEZIONE 3: ANALISI COMPARATIVA
 # ==========================================
 st.markdown("---")
-st.markdown("### 📊 3. Analisi comparativa")
+st.markdown("### 📊 3. Risultati e Statistiche di Combattimento")
 
 attacchi_totali = sum(r['attacchi'] for r in risultati_armi)
 max_rend = max([int(a['rend']) for a in armi_attive_calcolo if a['attiva'] and str(a['rend']) != "---"] + [0])
@@ -772,7 +812,7 @@ m2.metric("☠️ Prob. Kill (1 Turno)", f"{prob_uccisione:.1f}%", f"vs {salute_
 m3.metric("⚖️ ROI Danni (per 100 pt)", f"{roi_punti:.2f} Danni", f"Costo: {punti_unita} pt")
 m4.metric("🎲 Attacchi Totali", f"{attacchi_totali:.0f} dadi")
 
-tab1, tab2, tab3 = st.tabs(["📊 Analisi & Scomposizione Perdite", "🎲 Distribuzione Monte Carlo", "🧠 Consigliere Tattico & Time-to-Kill"])
+tab1, tab2, tab3 = st.tabs(["🎲 Ripartizione Dadi", "📊 Distribuzione Monte Carlo", "🧠 Consigliere Tattico & Time-to-Kill"])
 
 with tab1:
     col_t1, col_t2 = st.columns(2)
@@ -780,31 +820,38 @@ with tab1:
         st.subheader("Ripartizione Danni per Arma")
         righe_armi = []
         for a, r in zip(armi_attive_calcolo, risultati_armi):
-            if a["attiva"]:
+            if a["attiva"] and str(a["hit"]) != "---":
                 righe_armi.append({
                     "Arma": a["nome"], "Attacchi": round(r["attacchi"], 1),
                     "Hits": round(r["hits"], 2), "Wounds": round(r["wounds"], 2),
                     "Save Falliti": round(r["unsaved"], 2), "Danno Netto": round(r["danno_netto"], 2)
                 })
-        st.dataframe(pd.DataFrame(righe_armi), use_container_width=True, hide_index=True)
+        if righe_armi:
+            st.dataframe(pd.DataFrame(righe_armi), use_container_width=True, hide_index=True)
+        else:
+            st.info("ℹ️ Inserisci i dati dell'unità e attiva almeno un'arma per vedere il dettaglio.")
 
     with col_t2:
-        st.subheader("📉 Scomposizione delle Perdite di Dadi")
-        st.caption("Analisi visiva di quanti dadi sopravvivono o si perdono ad ogni fase di combattimento.")
+        st.subheader("📉 Scomposizione del Flusso d'Attacco")
+        st.caption("Mostra quanti dadi/colpi sopravvivono progressivamente in ogni fase del combattimento.")
         
         tot_atk = sum(r["attacchi"] for r in risultati_armi)
         tot_hits = sum(r["hits"] for r in risultati_armi)
         tot_wounds = sum(r["wounds"] for r in risultati_armi)
         tot_unsaved = sum(r["unsaved"] for r in risultati_armi)
         
-        df_perdite = pd.DataFrame({
-            "Fase": ["Attacchi Inziali", "Colpi a Segno (Hits)", "Ferite Inflitte (Wounds)", "Colpi Non Salvati (Unsaved)"],
-            "Dadi / Colpi": [tot_atk, tot_hits, tot_wounds, tot_unsaved]
-        })
-        st.bar_chart(df_perdite.set_index("Fase"), color="#b38b4d")
+        if tot_atk > 0:
+            # Ordine logico sequenziale delle fasi d'attacco
+            df_perdite = pd.DataFrame({
+                "Fase": ["1. Attacchi", "2. Colpi (Hit)", "3. Ferite (Wound)", "4. Non Salvati"],
+                "Valore": [round(tot_atk, 1), round(tot_hits, 1), round(tot_wounds, 1), round(tot_unsaved, 1)]
+            })
+            st.bar_chart(df_perdite.set_index("Fase"), color="#b38b4d")
+        else:
+            st.warning("⚠️ Dati non ancora inseriti o incompleti. Compila i campi dell'unità per visualizzare il grafico.")
 
 with tab2:
-    st.subheader("Curva di Probabilità Cumulativa (Monte Carlo)")
+    st.subheader("📊Curva di Probabilità Cumulativa (Monte Carlo)")
     max_danno_grafico = int(np.percentile(campioni_mc, 99.5)) + 2 if len(campioni_mc) > 0 else 10
     asse_x = np.arange(1, max(10, max_danno_grafico))
     prob_almeno_x = [np.mean(campioni_mc >= x) * 100.0 for x in asse_x]
