@@ -422,6 +422,9 @@ if "corrente_armi" not in st.session_state:
 if "form_version" not in st.session_state:
     st.session_state["form_version"] = 0
 
+if "notifica_salvataggio" not in st.session_state:
+    st.session_state["notifica_salvataggio"] = None
+
 
 # ==========================================
 # SIDEBAR: DIRECTORY E GUIDA RAPIDA
@@ -496,6 +499,13 @@ else:
     st.sidebar.caption("Nessuna unità nel database.")
 
 st.sidebar.markdown("---")
+
+if st.session_state["notifica_salvataggio"]:
+    st.success(st.session_state["notifica_salvataggio"])
+    st.session_state["notifica_salvataggio"] = None  # La pulisce dopo averla mostrata
+
+st.sidebar.markdown("---")
+
 # Controllo dinamico dello stato della sincronizzazione
 if "GITHUB_TOKEN" in st.secrets and "GITHUB_REPO" in st.secrets:
     st.sidebar.success("🌐 Cloud Sync: Attivo (GitHub)")
@@ -695,35 +705,31 @@ with st.container(border=True):
                 errori.append(f"L'Arma {idx+1} ({arm['nome']}) ha parametri non compilati ('---').")
 
         if len(errori) > 0:
-            for err in errori: st.error(f"❌ {err}")
+         for err in errori: st.error(f"❌ {err}")
         else:
-            chiave_db = f"{fazione_scelta}: {nuovo_nome.strip()}"
-            
-            # Verifichiamo se l'unità esiste già nel database (per capire se stiamo sovrascrivendo)
-            gia_esistente = chiave_db in st.session_state["db_unita"]
-            
-            # Salvataggio/Aggiornamento nel dizionario del database
-            st.session_state["db_unita"][chiave_db] = {
-                "fazione": fazione_scelta, 
-                "n_modelli": n_modelli_base, 
-                "campione": campione, 
-                "punti": punti_unita, 
-                "difesa": difesa_corrente, 
-                "armi": st.session_state["corrente_armi"]
-            }
-            
-            # Esegue il salvataggio (locale e cloud GitHub)
-            successo, messaggio = salva_nel_database(st.session_state["db_unita"])
-            
-            if successo:
-                if gia_esistente:
-                    st.success(f"🔄 Unità '{chiave_db}' aggiornata con successo (sovrascritta)!")
-                else:
-                    st.success(f"✨ Nuova unità '{chiave_db}' aggiunta con successo al database!")
-                st.rerun()
-            else:
-                st.error(f"❌ Errore durante il salvataggio: {messaggio}")
-                
+         chiave_db = f"{fazione_scelta}: {nuovo_nome.strip()}"
+         gia_esistente = chiave_db in st.session_state["db_unita"]
+
+         st.session_state["db_unita"][chiave_db] = {
+             "fazione": fazione_scelta, 
+             "n_modelli": n_modelli_base, 
+             "campione": campione, 
+             "punti": punti_unita, 
+             "difesa": difesa_corrente, 
+             "armi": st.session_state["corrente_armi"]
+         }
+
+         successo, messaggio = salva_nel_database(st.session_state["db_unita"])
+
+         if successo:
+             if gia_esistente:
+                 st.session_state["notifica_salvataggio"] = f"🔄 Unità '{chiave_db}' aggiornata con successo (sovrascritta)!"
+             else:
+                 st.session_state["notifica_salvataggio"] = f"✨ Nuova unità '{chiave_db}' aggiunta con successo al database!"
+             st.rerun()
+         else:
+             st.error(f"❌ Errore durante il salvataggio: {messaggio}")
+
 # ==========================================
 # SEZIONE 2: UNITÀ BERSAGLIO
 # ==========================================
