@@ -1,0 +1,19 @@
+{
+
+    {
+  "name": "MattHammer - AoS Tactical Optimizer",
+  "short_name": "MattHammer",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#16120e",
+  "theme_color": "#3d2817",
+  "icons": [
+    {
+      "src": "https://www.google.com/imgres?q=nighthaunt%20logo&imgurl=http%3A%2F%2Fwuerfel-stube.de%2Fcdn%2Fshop%2Fcollections%2FNighthaunt.png%3Fv%3D1741940801&imgrefurl=https%3A%2F%2Fwuerfel-stube.de%2Fcollections%2Fnighthaunt%3Fsrsltid%3DAYCX9vLfLHHMj8rVwL_9iFg3e1b0GQjhbCk4mn2ordwKtNsQW4ZXZmpV&docid=fjfKXecWp9D1rM&tbnid=dOf2yjg4I7CYpM&vet=12ahUKEwi-waKgkduXAxVBRv4FHQhUCw4QnPAOegUIhwEQAA..i&w=2000&h=2000&hcb=2&ved=2ahUKEwi-waKgkduXAxVBRv4FHQhUCw4QnPAOegUIhwEQAA",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
+
+}
