@@ -370,8 +370,15 @@ def render_sala_di_guerra():
             lc1, lc2 = st.columns([2.5, 1.5])
             lista_scelta_leader = ["--- Scegli Eroe Leader ---"] + eroi_db_filtrati
             idx_lead = lista_scelta_leader.index(reg["leader"]) if reg["leader"] in lista_scelta_leader else 0
-            reg["leader"] = lc1.selectbox("Leader (Solo Eroi)", lista_scelta_leader, index=idx_lead, key=f"reg_lead_{r_idx}")
             
+            # Selectbox Leader con chiave dinamica di versione
+            reg["leader"] = lc1.selectbox(
+                "Leader (Solo Eroi)", 
+                lista_scelta_leader, 
+                index=idx_lead, 
+                key=f"reg_lead_{r_idx}_v{st.session_state['sdg_roster_version']}"
+            )
+
             ruolo_magico_str = "Nessun Potere Arcano"
             if reg["leader"] in st.session_state["db_unita"]:
                 dati_l_db = st.session_state["db_unita"][reg["leader"]]
@@ -389,10 +396,24 @@ def render_sala_di_guerra():
 
             tc1, tc2 = st.columns(2)
             idx_tratto = db_tratti_eroici.index(reg.get("tratto_eroico", "Nessuno")) if reg.get("tratto_eroico", "Nessuno") in db_tratti_eroici else 0
-            reg["tratto_eroico"] = tc1.selectbox("Tratto Eroico (Heroic Trait)", db_tratti_eroici, index=idx_tratto, key=f"reg_trait_{r_idx}")
+            
+            # Selectbox Tratto Eroico con chiave dinamica di versione
+            reg["tratto_eroico"] = tc1.selectbox(
+                "Tratto Eroico (Heroic Trait)", 
+                db_tratti_eroici, 
+                index=idx_tratto, 
+                key=f"reg_trait_{r_idx}_v{st.session_state['sdg_roster_version']}"
+            )
 
             idx_art = db_artefatti.index(reg.get("artefatto", "Nessuno")) if reg.get("artefatto", "Nessuno") in db_artefatti else 0
-            reg["artefatto"] = tc2.selectbox("Artefatto di Potere", db_artefatti, index=idx_art, key=f"reg_art_{r_idx}")
+            
+            # Selectbox Artefatto con chiave dinamica di versione
+            reg["artefatto"] = tc2.selectbox(
+                "Artefatto di Potere", 
+                db_artefatti, 
+                index=idx_art, 
+                key=f"reg_art_{r_idx}_v{st.session_state['sdg_roster_version']}"
+            )
 
             if reg["leader"] in st.session_state["db_unita"]:
                 d_lead = st.session_state["db_unita"][reg["leader"]]
@@ -432,7 +453,11 @@ def render_sala_di_guerra():
             st.markdown(f"**Seguito ({len(reg['seguito'])} / {max_seguito} slot occupati):**")
 
             sc_add1, sc_add2 = st.columns([3, 1])
-            unita_seg_sel = sc_add1.selectbox("Aggiungi unità di seguito:", ["--- Scegli unità ---"] + opzioni_db, key=f"sel_add_seg_{r_idx}")
+            unita_seg_sel = sc_add1.selectbox(
+                "Aggiungi unità di seguito:", 
+                ["--- Scegli unità ---"] + opzioni_db, 
+                key=f"sel_add_seg_{r_idx}_v{st.session_state['sdg_roster_version']}"
+            )    
             if sc_add2.button("➕ Aggiungi", key=f"btn_add_seg_{r_idx}", use_container_width=True):
                 if unita_seg_sel != "--- Scegli unità ---":
                     if len(reg["seguito"]) < max_seguito:
