@@ -92,7 +92,7 @@ def render_testa_a_testa():
         col_armi, col_difesa_unita = st.columns(2)
         opzioni_dadi = ["---", "1", "2", "3", "4", "5", "6", "7", "8", "10", "12", "D3", "D3+1", "D6", "2D6"]
         opzioni_hw = ["---", 2, 3, 4, 5, 6]
-        v_key = st.session_state["form_version"]
+        v_key = st.session_state.get("form_version", 0)
 
         with col_armi:
             st.markdown('<div class="subsection-title">Profili Armi (Modificabili)</div>', unsafe_allow_html=True)
@@ -141,8 +141,13 @@ def render_testa_a_testa():
             st.markdown('<div class="subsection-title">Statistiche e Composizione (Manuale)</div>', unsafe_allow_html=True)
             with st.container(border=True):
                 cs1, cs2 = st.columns(2)
-                st.session_state["corrente_modelli"] = cs1.number_input("Modelli Base", min_value=1, max_value=60, value=st.session_state.get("corrente_modelli", 1))
-                st.session_state["corrente_punti"] = cs2.number_input("Costo in Punti", min_value=0, max_value=2000, value=st.session_state.get("corrente_punti", 100), step=10)
+                
+                # FIX: Clamp dei valori minimi per evitare StreamlitValueBelowMinError
+                val_modelli = max(1, estrai_intero_sicuro(st.session_state.get("corrente_modelli", 1), 1))
+                st.session_state["corrente_modelli"] = cs1.number_input("Modelli Base", min_value=1, max_value=60, value=val_modelli)
+                
+                val_punti = max(0, estrai_intero_sicuro(st.session_state.get("corrente_punti", 100), 0))
+                st.session_state["corrente_punti"] = cs2.number_input("Costo in Punti", min_value=0, max_value=2000, value=val_punti, step=10)
                 
                 rinforzata_att = st.checkbox("Unità Rinforzata (x2)", value=False)
                 st.session_state["corrente_campione"] = st.checkbox("Presenza Campione (+1 Atk)", value=st.session_state.get("corrente_campione", False))
@@ -156,11 +161,12 @@ def render_testa_a_testa():
                 wd_idx = [4, 5, 6, 7, "---"].index(d_corr.get("ward", 7)) if d_corr.get("ward", 7) in [4, 5, 6, 7, "---"] else 3
                 ward_nativo = c_wd.selectbox("Ward Base", [4, 5, 6, 7, "---"], index=wd_idx)
                 
-                salute_modello = c_hp.number_input("Salute", min_value=1, max_value=30, value=d_corr.get("salute_per_modello", 2))
+                val_salute = max(1, estrai_intero_sicuro(d_corr.get("salute_per_modello", 2), 2))
+                salute_modello = c_hp.number_input("Salute", min_value=1, max_value=30, value=val_salute)
                 
                 st.session_state["corrente_difesa"] = {"salute_per_modello": salute_modello, "save": save_nativo, "ward": ward_nativo}
 
-            # FIX WIDGET ERROR: Solo navigazione dello stato pagina, niente modifica al widget radio.
+            # REINDIRIZZAMENTO ALLA FORGIA
             st.markdown("---")
             if st.button("🛠️ Invia Profilo alla Forgia per il Salvataggio", type="primary", use_container_width=True):
                 st.session_state["forgia_armi"] = [dict(a) for a in st.session_state["corrente_armi"]]
@@ -461,7 +467,7 @@ def render_testa_a_testa():
     attacchi_totali = sum(r['attacchi'] for r in risultati_armi)
     tutte_armi_attive = [item["arma"] for item in dettaglio_armi_combinate if item["arma"]["attiva"] and str(item["arma"]["hit"]) != "---"]
     max_rend = max([int(a['rend']) for a in tutte_armi_attive if str(a['rend']) != "---"] + [0])
-    ha_crit_mortal = any(a['crit_type'] == 'Crit (Mortal)' for a in tutte_armi_attive)
+    ha_crit_mortal = any(a.get('crit_type', 'Nessuno') == 'Crit (Mortal)' for a in tutte_armi_attive)
     anti_targets = list(set([a['anti_target'] for a in tutte_armi_attive if a.get('anti_target', 'Nessuno') != 'Nessuno']))
 
     # Recupera i dati difensivi dell'attaccante per i ruoli
@@ -616,7 +622,7 @@ def render_testa_a_testa():
                 st.markdown("---")
 
                 if ttk <= 1.0 and rapporto_punti <= 1.0:
-                    st.success(f"**VERDETTO: SCAMBIO ALTAMENTE VANTAGGIOSO (Trade-Up)**\n\nImpegni {punti_attaccante_totali} pt per spazzare via un bersaglio da {punti_b} pt in 1 turno. Vantaggio netto di {punti_b - punti_attaccante_totali} pt. Ingaggio prioritario raccomandato[cite: 1].")
+                    st.success(f"**VERDETTO: SCAMBIO ALTAMENTE VANTAGGIOSO (Trade-Up)**\n\nImpegni {punti_attaccante_totali} pt per spazzare via un bersaglio da {punti_b} pt in 1 turno. Vantaggio netto di {punti_b - punti_attaccante_totali} pt. Ingaggio prioritario raccomandato.")
                 elif ttk <= 1.0 and rapporto_punti <= 1.5:
                     st.success(f"**VERDETTO: ELIMINAZIONE AFFIDABILE E CONVENIENTE**\n\nEliminazione immediata al Turno 1 (Kill: {prob_uccisione:.1f}%). Rimuove la risposta nemica al costo di un piccolo sovrapprezzo.")
                 elif ttk <= 1.0 and rapporto_punti > 1.5:
