@@ -194,13 +194,13 @@ def render_sala_di_guerra():
 
         st.markdown("---")
         st.markdown('<div class="subsection-title">Formazione di Battaglia (Battle Formation)</div>', unsafe_allow_html=True)
-        st.caption("Seleziona la formazione specifica della fazione, verifica l'effetto passivo e seleziona la fase di attivazione.")
+        st.caption("Formazione ufficiale associata all'armata. Regole, fasi d'attivazione e modificatori numerici sono pre-impostati da database.")
 
-        # Caricamento formazioni dal DB filtrate per fazione
+        # Carica le formazioni dal DB filtrate per fazione
         fazioni_disponibili_db = st.session_state["archivio_formazioni"]
         formazioni_fazione = fazioni_disponibili_db.get(st.session_state["sdg_fazione_armata"], {
             "Formazione Standard": {
-                "effetto_tipo": "Nessuno", "valore_bonus": 0, "fase_attivazione": "Nessuna", "descrizione": "Nessuna abilità speciale attiva."
+                "fase_attivazione": "Nessuna", "monouso": False, "tipo_effetto": "Nessuno", "valore_modificatore": "0", "descrizione": "Nessuna abilità speciale attiva."
             }
         })
 
@@ -211,38 +211,24 @@ def render_sala_di_guerra():
         st.session_state["sdg_formazione_scelta"] = formazione_selezionata
 
         dati_form = formazioni_fazione.get(formazione_selezionata, {
-            "effetto_tipo": "Nessuno", "valore_bonus": 0, "fase_attivazione": "Hero Phase (Fase Eroi Amica)", "descrizione": "Descrizione non disponibile."
+            "fase_attivazione": "Hero Phase", "monouso": False, "tipo_effetto": "Nessuno", "valore_modificatore": "0", "descrizione": "Descrizione non disponibile."
         })
 
-        # Layout a due colonne per Effetto/Fase e Descrizione Completa
-        fc1, fc2 = st.columns([1.5, 2])
+        # Layout strutturato per mostrare le regole built-in della formazione
+        fc1, fc2, fc3 = st.columns([1.2, 1, 1.8])
         
         with fc1:
-            st.markdown(f"**Effetto Principale:** `{dati_form.get('effetto_tipo', 'Nessuno')}`")
-            
-            fasi_gioco_aos = [
-                "Deployment (Schieramento)",
-                "Inizio Round di Battaglia",
-                "Hero Phase (Fase Eroi Amica)",
-                "Hero Phase (Fase Eroi Nemica)",
-                "Movement Phase (Movimento Amico)",
-                "Movement Phase (Movimento Nemico)",
-                "Shooting Phase (Fase di Tiro)",
-                "Charge Phase (Fase di Carica)",
-                "Combat Phase (Fase di Combattimento)",
-                "Fine Turno",
-                "Fine Round di Battaglia"
-            ]
-            
-            fase_salvata_db = dati_form.get("fase_attivazione", "Hero Phase (Fase Eroi Amica)")
-            idx_fase = fasi_gioco_aos.index(fase_salvata_db) if fase_salvata_db in fasi_gioco_aos else 2
-            
-            st.selectbox("Fase di Utilizzo Consigliata", fasi_gioco_aos, index=idx_fase, key=f"fase_form_{formazione_selezionata}")
+            st.markdown(f"**Categoria Effetto:** `{dati_form.get('tipo_effetto', 'Nessuno')}`")
+            st.markdown(f"**Modificatore Fisso:** `{dati_form.get('valore_modificatore', '+0')}`")
 
         with fc2:
-            st.markdown("**Descrizione Completa & Regola:**")
+            st.markdown(f"**Fase di Attivazione:**\n`{dati_form.get('fase_attivazione', 'Nessuna')}`")
+            # Checkbox readonly / informativa sullo stato d'uso (una volta per battaglia o passiva)
+            st.checkbox("Una volta per Battaglia (Monouso)", value=bool(dati_form.get('monouso', False)), disabled=True, key=f"chk_monouso_{formazione_selezionata}")
+
+        with fc3:
+            st.markdown("**Regola & Descrizione Ufficiale:**")
             st.info(dati_form.get('descrizione', 'Nessun dettaglio inserito.'))
-        
     # ==========================================
     # SEZIONE 2: COMPOSIZIONE REGGIMENTI
     # ==========================================

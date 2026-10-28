@@ -1,18 +1,20 @@
 {
     "Nighthaunt": {
         "Death Stalkers": {
-            "effetto_tipo": "+1 Rend",
-            "valore_bonus": 1,
-            "fase_attivazione": "Hero Phase (Fase Eroi Amica)",
-            "descrizione": "Scegli un'unità bersaglio nemica. Le unità amiche con questa formazione ottengono +1 Rend con le armi da mischia contro quel bersaglio finché non viene distrutto[cite: 1]."
+            "fase_attivazione": "Hero Phase (Fase Eroi Amica o Nemica)",
+            "monouso": false,
+            "tipo_effetto": "Rend",
+            "valore_modificatore": "+1",
+            "descrizione": "Scegli un'unità bersaglio nemica. Le unità amiche con questa formazione ottengono +1 Rend con le armi da mischia contro quel bersaglio finché non viene distrutto."
         }
     },
     "Blades of Khorne": {
         "Khorne Bloodbound Hordes": {
-            "effetto_tipo": "+1 Attacchi",
-            "valore_bonus": 1,
-            "fase_attivazione": "Combat Phase (Fase di Combattimento)",
-            "descrizione": "Le unità nel raggio di un eroe ottengono attacchi aggiuntivi quando caricano."
+            "fase_attivazione": "Charge Phase (Fase di Carica)",
+            "monouso": true,
+            "tipo_effetto": "Attacchi",
+            "valore_modificatore": "+1",
+            "descrizione": "Una volta per battaglia, durante la fase di carica, le unità nel raggio di un eroe ottengono attacchi aggiuntivi."
         }
     }
 }
