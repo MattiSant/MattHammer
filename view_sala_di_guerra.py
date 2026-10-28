@@ -175,14 +175,12 @@ def render_sala_di_guerra():
 
         formato_scelto = col_f3.selectbox(
             "Formato Battaglia",
-            ["Path to Glory (720 pt Personalizzati)", "Path to Glory Standard (600 pt)", "Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
+            ["Scuffle (500 pt)", "Skirmish (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
             index=0
         )
 
-        if "720" in formato_scelto:
-            limite_punti = 720
-        elif "600" in formato_scelto:
-            limite_punti = 600
+        if "500" in formato_scelto:
+            limite_punti = 500
         elif "1000" in formato_scelto:
             limite_punti = 1000
         elif "1500" in formato_scelto:
