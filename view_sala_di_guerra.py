@@ -7,6 +7,8 @@ from core_engine import calcola_arma_analitico
 
 ARMIES_DB_FILE = "armies_db.json"
 FORMATIONS_DB_FILE = "formations.json"
+TRAITS_DB_FILE = "heroic_traits_db.json"
+ARTEFACTS_DB_FILE = "artefacts_db.json"
 #
 #
 #
@@ -38,6 +40,18 @@ def carica_formazioni_db():
         except Exception:
             return {}
     return {}
+
+def carica_db_supporto(file_path):
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {"Generali": ["Nessuno"]}
+
+db_tratti_eroici = carica_db_supporto(TRAITS_DB_FILE).get("Generali", ["Nessuno"])
+db_artefatti = carica_db_supporto(ARTEFACTS_DB_FILE).get("Generali", ["Nessuno"])
 
 # Preset di Armate Avversarie Note (basate sulle campagne del notebook)
 ARMATE_NEMICHE_NOTE = {
@@ -277,120 +291,134 @@ def render_sala_di_guerra():
     #
     #
     #
-    st.markdown('<div class="section-header">Composizione Reggimenti</div>', unsafe_allow_html=True)
-    st.caption("Assegna leader, tratti eroici, artefatti magici e unità di seguito per ciascun reggimento dell'armata.")
+    # ==========================================
+# SEZIONE 2: COMPOSIZIONE REGGIMENTI AGGIORNATA
+# ==========================================
+st.markdown('<div class="section-header">Composizione Reggimenti</div>', unsafe_allow_html=True)
+st.caption("Il Reggimento #1 è guidato dal Generale d'Armata. I leader dei reggimenti devono possedere la keyword HERO.")
 
-    col_btn_reg1, col_btn_reg2 = st.columns([1, 3])
-    if col_btn_reg1.button("➕ Aggiungi Reggimento", type="primary", use_container_width=True):
-        st.session_state["sdg_reggimenti"].append({
-            "leader": "--- Scegli Eroe Leader ---",
-            "is_generale": False if len(st.session_state["sdg_reggimenti"]) > 0 else True,
-            "rinforzato": False,
-            "tratto_eroico": "Nessuno",
-            "artefatto": "Nessuno",
-            "livello_mago": 0,
-            "livello_prete": 0,
-            "seguito": []
-        })
-        st.rerun()
+col_btn_reg1, col_btn_reg2 = st.columns([1, 3])
+if col_btn_reg1.button("➕ Aggiungi Reggimento", type="primary", use_container_width=True):
+    st.session_state["sdg_reggimenti"].append({
+        "leader": "--- Scegli Eroe Leader ---",
+        "is_generale": False,
+        "rinforzato": False,
+        "tratto_eroico": "Nessuno",
+        "artefatto": "Nessuno",
+        "livello_mago": 0,
+        "livello_prete": 0,
+        "seguito": []
+    })
+    st.rerun()
 
-    if col_btn_reg2.button("Svuota Roster"):
-        st.session_state["sdg_reggimenti"] = [{
-            "leader": "--- Scegli Eroe Leader ---",
-            "is_generale": True,
-            "rinforzato": False,
-            "tratto_eroico": "Nessuno",
-            "artefatto": "Nessuno",
-            "livello_mago": 0,
-            "livello_prete": 0,
-            "seguito": []
-        }]
-        st.session_state["sdg_ausiliari"] = []
-        st.rerun()
+# Svuota Roster pulisce tutto riportando il Reggimento #1 allo stato iniziale
+if col_btn_reg2.button("Svuota Roster Completo"):
+    st.session_state["sdg_reggimenti"] = [{
+        "leader": "--- Scegli Eroe Leader ---",
+        "is_generale": True,
+        "rinforzato": False,
+        "tratto_eroico": "Nessuno",
+        "artefatto": "Nessuno",
+        "livello_mago": 0,
+        "livello_prete": 0,
+        "seguito": []
+    }]
+    st.session_state["sdg_ausiliari"] = []
+    st.rerun()
 
-    opzioni_tratti = ["Nessuno", "Furia Implacabile (+1 Attacchi)", "Maestro del Campo (+2 OC)", "Cacciatore di Eroi (+1 Rend)", "Tratto Personalizzato"]
-    opzioni_artefatti = ["Nessuno", "Talismano di Guardia (Ward 5+)", "Lama Squarciante (+1 Rend)", "Pietra del Vuoto (Unbind extra)", "Artefatto Personalizzato"]
-    opzioni_ruolo_campo = ["Fanteria Standard (1 OC/mod)", "Cavalleria / Élite (2 OC/mod)", "Mostro (5 OC)", "Eroe (2 OC)", "Macchina da Guerra (3 OC)"]
+opzioni_ruolo_campo = ["Fanteria Standard (1 OC/mod)", "Cavalleria / Élite (2 OC/mod)", "Mostro (5 OC)", "Eroe (2 OC)", "Macchina da Guerra (3 OC)"]
 
-    reggimenti_da_rimuovere = []
+# Filtra dal DB principale solo le unità che contengono la keyword "HERO"
+eroi_db_filtrati = []
+for k_unita in opzioni_db:
+    dati_u_temp = st.session_state["db_unita"].get(k_unita, {})
+    keywords_u = [str(kw).upper() for kw in dati_u_temp.get("keywords", ["HERO"])] # Fallback se mancano keyword salvate
+    if "HERO" in keywords_u or not dati_u_temp.get("keywords"): 
+        eroi_db_filtrati.append(k_unita)
 
-    for r_idx, reg in enumerate(st.session_state["sdg_reggimenti"]):
-        with st.container(border=True):
-            head_c1, head_c2 = st.columns([4, 1])
-            etichetta_gen = " — ★ GENERALE D'ARMATA" if reg.get("is_generale", False) else ""
-            head_c1.markdown(f'<div class="subsection-title">Reggimento #{r_idx+1}{etichetta_gen}</div>', unsafe_allow_html=True)
+if not eroi_db_filtrati:
+    eroi_db_filtrati = opzioni_db # Fallback totale se nessun'unità ha la keyword esplicita
+
+reggimenti_da_rimuovere = []
+
+for r_idx, reg in enumerate(st.session_state["sdg_reggimenti"]):
+    # Forziamo sempre il Reggimento 0 a essere il Generale
+    if r_idx == 0:
+        reg["is_generale"] = True
+
+    with st.container(border=True):
+        head_c1, head_c2 = st.columns([4, 1])
+        etichetta_gen = " — ★ GENERALE D'ARMATA (Reggimento Principale)" if reg.get("is_generale", False) else f" — Reggimento #{r_idx+1}"
+        head_c1.markdown(f'<div class="subsection-title">{etichetta_gen}</div>', unsafe_allow_html=True)
+        
+        # Il pulsante rimuovi appare SOLO dal Reggimento #2 in poi
+        if r_idx > 0:
             if head_c2.button("🗑️ Rimuovi", key=f"del_reg_{r_idx}", use_container_width=True):
                 reggimenti_da_rimuovere.append(r_idx)
 
-            lc1, lc2, lc3, lc4 = st.columns([2.2, 1, 1, 1])
-            lista_scelta_leader = ["--- Scegli Eroe Leader ---"] + opzioni_db
-            idx_lead = lista_scelta_leader.index(reg["leader"]) if reg["leader"] in lista_scelta_leader else 0
-            reg["leader"] = lc1.selectbox("Leader", lista_scelta_leader, index=idx_lead, key=f"reg_lead_{r_idx}")
-            
-            is_gen_chk = lc2.checkbox("Generale", value=reg.get("is_generale", False), key=f"reg_gen_{r_idx}")
-            if is_gen_chk and not reg.get("is_generale", False):
-                for altro_idx, altro_reg in enumerate(st.session_state["sdg_reggimenti"]):
-                    altro_reg["is_generale"] = (altro_idx == r_idx)
-                st.rerun()
-            else:
-                reg["is_generale"] = is_gen_chk
+        lc1, lc2, lc3 = st.columns([2.5, 1, 1])
+        lista_scelta_leader = ["--- Scegli Eroe Leader ---"] + eroi_db_filtrati
+        idx_lead = lista_scelta_leader.index(reg["leader"]) if reg["leader"] in lista_scelta_leader else 0
+        reg["leader"] = lc1.selectbox("Leader (Solo Eroi)", lista_scelta_leader, index=idx_lead, key=f"reg_lead_{r_idx}")
+        
+        # Livelli Wizard e Priest estesi da 0 a 10
+        reg["livello_mago"] = lc2.selectbox("Wizard (Lv 0-10)", list(range(11)), index=int(reg.get("livello_mago", 0)), key=f"reg_wiz_{r_idx}")
+        reg["livello_prete"] = lc3.selectbox("Priest (Lv 0-10)", list(range(11)), index=int(reg.get("livello_prete", 0)), key=f"reg_pri_{r_idx}")
 
-            reg["livello_mago"] = lc3.selectbox("Wizard (Lv)", [0, 1, 2], index=int(reg.get("livello_mago", 0)), key=f"reg_wiz_{r_idx}")
-            reg["livello_prete"] = lc4.selectbox("Priest (Lv)", [0, 1, 2], index=int(reg.get("livello_prete", 0)), key=f"reg_pri_{r_idx}")
+        # Tratti Eroici e Artefatti (assegnabili solo agli Eroi Leader)
+        tc1, tc2 = st.columns(2)
+        idx_tratto = db_tratti_eroici.index(reg.get("tratto_eroico", "Nessuno")) if reg.get("tratto_eroico", "Nessuno") in db_tratti_eroici else 0
+        reg["tratto_eroico"] = tc1.selectbox("Tratto Eroico (Heroic Trait)", db_tratti_eroici, index=idx_tratto, key=f"reg_trait_{r_idx}")
 
-            tc1, tc2 = st.columns(2)
-            idx_tratto = opzioni_tratti.index(reg.get("tratto_eroico", "Nessuno")) if reg.get("tratto_eroico", "Nessuno") in opzioni_tratti else 0
-            reg["tratto_eroico"] = tc1.selectbox("Tratto Eroico", opzioni_tratti, index=idx_tratto, key=f"reg_trait_{r_idx}")
+        idx_art = db_artefatti.index(reg.get("artefatto", "Nessuno")) if reg.get("artefatto", "Nessuno") in db_artefatti else 0
+        reg["artefatto"] = tc2.selectbox("Artefatto di Potere (Artefact of Power)", db_artefatti, index=idx_art, key=f"reg_art_{r_idx}")
 
-            idx_art = opzioni_artefatti.index(reg.get("artefatto", "Nessuno")) if reg.get("artefatto", "Nessuno") in opzioni_artefatti else 0
-            reg["artefatto"] = tc2.selectbox("Artefatto di Potere", opzioni_artefatti, index=idx_art, key=f"reg_art_{r_idx}")
+        if reg["leader"] in st.session_state["db_unita"]:
+            d_lead = st.session_state["db_unita"][reg["leader"]]
+            pt_lead = int(d_lead.get("punti", 0))
+            sal_lead = int(d_lead.get("difesa", {}).get("salute_per_modello", 5)) * max(1, int(d_lead.get("n_modelli", 1)))
+            st.markdown(f"**Costo Leader:** `{pt_lead} pt` | **Salute:** `{sal_lead} PF`")
 
-            if reg["leader"] in st.session_state["db_unita"]:
-                d_lead = st.session_state["db_unita"][reg["leader"]]
-                pt_lead = int(d_lead.get("punti", 0))
-                sal_lead = int(d_lead.get("difesa", {}).get("salute_per_modello", 5)) * max(1, int(d_lead.get("n_modelli", 1)))
-                st.markdown(f"**Costo Leader:** `{pt_lead} pt` | **Salute:** `{sal_lead} PF`")
+        st.markdown("---")
+        max_seguito = 4 if reg.get("is_generale", False) else 3
+        st.markdown(f"**Seguito ({len(reg['seguito'])} / {max_seguito} slot occupati):**")
 
-            st.markdown("---")
-            max_seguito = 4 if reg.get("is_generale", False) else 3
-            st.markdown(f"**Seguito ({len(reg['seguito'])} / {max_seguito} slot):**")
+        sc_add1, sc_add2 = st.columns([3, 1])
+        unita_seg_sel = sc_add1.selectbox("Aggiungi unità di seguito:", ["--- Scegli unità ---"] + opzioni_db, key=f"sel_add_seg_{r_idx}")
+        if sc_add2.button("➕ Aggiungi", key=f"btn_add_seg_{r_idx}", use_container_width=True):
+            if unita_seg_sel != "--- Scegli unità ---":
+                if len(reg["seguito"]) < max_seguito:
+                    reg["seguito"].append({
+                        "nome": unita_seg_sel,
+                        "rinforzata": False,
+                        "ruolo": "Fanteria Standard (1 OC/mod)"
+                    })
+                    st.rerun()
+                else:
+                    st.warning("Limite slot seguito raggiunto per questo reggimento.")
 
-            sc_add1, sc_add2 = st.columns([3, 1])
-            unita_seg_sel = sc_add1.selectbox("Aggiungi unità di seguito:", ["--- Scegli unità ---"] + opzioni_db, key=f"sel_add_seg_{r_idx}")
-            if sc_add2.button("➕ Aggiungi", key=f"btn_add_seg_{r_idx}", use_container_width=True):
-                if unita_seg_sel != "--- Scegli unità ---":
-                    if len(reg["seguito"]) < max_seguito:
-                        reg["seguito"].append({
-                            "nome": unita_seg_sel,
-                            "rinforzata": False,
-                            "ruolo": "Fanteria Standard (1 OC/mod)"
-                        })
-                        st.rerun()
-                    else:
-                        st.warning("Limite slot seguito raggiunto per questo reggimento.")
+        seguito_da_rimuovere = []
+        for f_idx, fol in enumerate(reg["seguito"]):
+            d_fol_db = st.session_state["db_unita"].get(fol["nome"], {})
+            molt = 2 if fol.get("rinforzata", False) else 1
+            fc1, fc2, fc3, fc4 = st.columns([2.5, 1, 1.5, 0.6])
+            fc1.markdown(f"• **{fol['nome']}** ({int(d_fol_db.get('n_modelli', 1))*molt} mod. — `{int(d_fol_db.get('punti', 0))*molt} pt`)")
+            fol["rinforzata"] = fc2.checkbox("Rinforzata", value=fol.get("rinforzata", False), key=f"fol_rinf_{r_idx}_{f_idx}")
+            idx_ruolo = opzioni_ruolo_campo.index(fol.get("ruolo", "Fanteria Standard (1 OC/mod)")) if fol.get("ruolo") in opzioni_ruolo_campo else 0
+            fol["ruolo"] = fc3.selectbox("Ruolo", opzioni_ruolo_campo, index=idx_ruolo, key=f"fol_role_{r_idx}_{f_idx}", label_visibility="collapsed")
+            if fc4.button("✖", key=f"del_fol_{r_idx}_{f_idx}"):
+                seguito_da_rimuovere.append(f_idx)
 
-            seguito_da_rimuovere = []
-            for f_idx, fol in enumerate(reg["seguito"]):
-                d_fol_db = st.session_state["db_unita"].get(fol["nome"], {})
-                molt = 2 if fol.get("rinforzata", False) else 1
-                fc1, fc2, fc3, fc4 = st.columns([2.5, 1, 1.5, 0.6])
-                fc1.markdown(f"• **{fol['nome']}** ({int(d_fol_db.get('n_modelli', 1))*molt} mod. — `{int(d_fol_db.get('punti', 0))*molt} pt`)")
-                fol["rinforzata"] = fc2.checkbox("Rinforzata", value=fol.get("rinforzata", False), key=f"fol_rinf_{r_idx}_{f_idx}")
-                idx_ruolo = opzioni_ruolo_campo.index(fol.get("ruolo", "Fanteria Standard (1 OC/mod)")) if fol.get("ruolo") in opzioni_ruolo_campo else 0
-                fol["ruolo"] = fc3.selectbox("Ruolo", opzioni_ruolo_campo, index=idx_ruolo, key=f"fol_role_{r_idx}_{f_idx}", label_visibility="collapsed")
-                if fc4.button("✖", key=f"del_fol_{r_idx}_{f_idx}"):
-                    seguito_da_rimuovere.append(f_idx)
+        if seguito_da_rimuovere:
+            for idx_f_del in sorted(seguito_da_rimuovere, reverse=True):
+                reg["seguito"].pop(idx_f_del)
+            st.rerun()
 
-            if seguito_da_rimuovere:
-                for idx_f_del in sorted(seguito_da_rimuovere, reverse=True):
-                    reg["seguito"].pop(idx_f_del)
-                st.rerun()
-
-    if reggimenti_da_rimuovere:
-        for idx_r_del in sorted(reggimenti_da_rimuovere, reverse=True):
-            st.session_state["sdg_reggimenti"].pop(idx_r_del)
-        st.rerun()
-
+if reggimenti_da_rimuovere:
+    for idx_r_del in sorted(reggimenti_da_rimuovere, reverse=True):
+        st.session_state["sdg_reggimenti"].pop(idx_r_del)
+    st.rerun()
+    
     # ==========================================
     # AGGREGAZIONE DATI DELL'ARMATA
     # ==========================================
