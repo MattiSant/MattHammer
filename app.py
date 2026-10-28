@@ -425,6 +425,16 @@ if "form_version" not in st.session_state:
 if "notifica_salvataggio" not in st.session_state:
     st.session_state["notifica_salvataggio"] = None
 
+# Inizializzazione stato per il Bersaglio
+if "bersaglio_save" not in st.session_state:
+    st.session_state["bersaglio_save"] = 4
+if "bersaglio_ward" not in st.session_state:
+    st.session_state["bersaglio_ward"] = 7
+if "bersaglio_salute" not in st.session_state:
+    st.session_state["bersaglio_salute"] = 10
+if "target_version" not in st.session_state:
+    st.session_state["target_version"] = 0
+
 
 # ==========================================
 # SIDEBAR: DIRECTORY E GUIDA RAPIDA
@@ -705,30 +715,30 @@ with st.container(border=True):
                 errori.append(f"L'Arma {idx+1} ({arm['nome']}) ha parametri non compilati ('---').")
 
         if len(errori) > 0:
-         for err in errori: st.error(f"❌ {err}")
+            for err in errori: st.error(f"❌ {err}")
         else:
-         chiave_db = f"{fazione_scelta}: {nuovo_nome.strip()}"
-         gia_esistente = chiave_db in st.session_state["db_unita"]
+            chiave_db = f"{fazione_scelta}: {nuovo_nome.strip()}"
+            gia_esistente = chiave_db in st.session_state["db_unita"]
 
-         st.session_state["db_unita"][chiave_db] = {
-             "fazione": fazione_scelta, 
-             "n_modelli": n_modelli_base, 
-             "campione": campione, 
-             "punti": punti_unita, 
-             "difesa": difesa_corrente, 
-             "armi": st.session_state["corrente_armi"]
-         }
+            st.session_state["db_unita"][chiave_db] = {
+                "fazione": fazione_scelta, 
+                "n_modelli": n_modelli_base, 
+                "campione": campione, 
+                "punti": punti_unita, 
+                "difesa": difesa_corrente, 
+                "armi": st.session_state["corrente_armi"]
+            }
 
-         successo, messaggio = salva_nel_database(st.session_state["db_unita"])
-            
-        if successo:
-            if gia_esistente:
-                st.toast(f"🔄 Unità '{chiave_db}' aggiornata con successo (sovrascritta)!", icon="✅")
+            successo, messaggio = salva_nel_database(st.session_state["db_unita"])
+                
+            if successo:
+                if gia_esistente:
+                    st.toast(f"🔄 Unità '{chiave_db}' aggiornata con successo (sovrascritta)!", icon="✅")
+                else:
+                    st.toast(f"✨ Nuova unità '{chiave_db}' aggiunta con successo al database!", icon="🎉")
+                st.rerun()
             else:
-                st.toast(f"✨ Nuova unità '{chiave_db}' aggiunta con successo al database!", icon="🎉")
-            st.rerun()
-        else:
-            st.error(f"❌ Errore durante il salvataggio: {messaggio}")
+                st.error(f"❌ Errore durante il salvataggio: {messaggio}")
 
 # ==========================================
 # SEZIONE 2: UNITÀ BERSAGLIO
@@ -737,10 +747,53 @@ st.markdown("---")
 st.markdown("### 🎯 2. Unità Bersaglio")
 st.caption("Configura le difese, i terreni (Cover) e i debuff dell'unità nemica che vuoi attaccare.")
 with st.container(border=True):
+    st.markdown("**📥 Importa Bersaglio dal Database:**")
+    tb_col1, tb_col2, tb_col3 = st.columns([2, 1, 1])
+    opzioni_bersaglio_db = ["--- Inserimento Manuale ---"] + [k for k in st.session_state["db_unita"].keys() if k != "--- Seleziona o Resetta ---"]
+    bersaglio_scelto_db = tb_col1.selectbox("Seleziona un'unità dal DB per caricarne le difese:", opzioni_bersaglio_db, key="sel_target_db")
+    bersaglio_rinforzato_db = tb_col2.checkbox("Bersaglio Rinforzato (x2 modelli)", value=False, key="chk_target_rinf")
+    
+    if tb_col3.button("🛡️ Applica Difese Bersaglio", type="primary"):
+        if bersaglio_scelto_db != "--- Inserimento Manuale ---":
+            dati_b_db = st.session_state["db_unita"][bersaglio_scelto_db]
+            dif_b_db = dati_b_db.get("difesa", {})
+            
+            # Estrazione Save
+            sv_raw = dif_b_db.get("save", 4)
+            st.session_state["bersaglio_save"] = int(sv_raw) if str(sv_raw).isdigit() and int(sv_raw) in [2, 3, 4, 5, 6, 7] else 7
+            
+            # Estrazione Ward
+            wd_raw = dif_b_db.get("ward", 7)
+            st.session_state["bersaglio_ward"] = int(wd_raw) if str(wd_raw).isdigit() and int(wd_raw) in [4, 5, 6, 7] else 7
+            
+            # Calcolo Salute Totale (Salute per modello * numero modelli)
+            mod_b = max(1, int(dati_b_db.get("n_modelli", 1))) * (2 if bersaglio_rinforzato_db else 1)
+            sal_mod_b = max(1, int(dif_b_db.get("salute_per_modello", 1)))
+            st.session_state["bersaglio_salute"] = min(200, mod_b * sal_mod_b)
+            
+            st.session_state["target_version"] += 1
+            st.toast(f"🛡️ Statistiche difensive di '{bersaglio_scelto_db}' caricate nel Bersaglio!", icon="🎯")
+            st.rerun()
+
+    st.markdown("---")
+    tv_key = st.session_state["target_version"]
     b1, b2, b3 = st.columns(3)
-    save_b = b1.selectbox("Save Base Bersaglio", [2, 3, 4, 5, 6, 7], index=2, format_func=lambda x: f"{x}+" if x < 7 else "Nessuno (-)")
-    ward_b = b2.selectbox("Ward Base Bersaglio", [7, 6, 5, 4], index=0, format_func=lambda x: f"{x}+" if x < 7 else "Nessuno (-)")
-    salute_b = b3.number_input("Salute Totale Bersaglio", min_value=1, max_value=100, value=10)
+    
+    lista_saves_b = [2, 3, 4, 5, 6, 7]
+    idx_save_b = lista_saves_b.index(st.session_state["bersaglio_save"]) if st.session_state["bersaglio_save"] in lista_saves_b else 2
+    save_b = b1.selectbox("Save Base Bersaglio", lista_saves_b, index=idx_save_b, format_func=lambda x: f"{x}+" if x < 7 else "Nessuno (-)", key=f"sb_v{tv_key}")
+    
+    lista_wards_b = [7, 6, 5, 4]
+    idx_ward_b = lista_wards_b.index(st.session_state["bersaglio_ward"]) if st.session_state["bersaglio_ward"] in lista_wards_b else 0
+    ward_b = b2.selectbox("Ward Base Bersaglio", lista_wards_b, index=idx_ward_b, format_func=lambda x: f"{x}+" if x < 7 else "Nessuno (-)", key=f"wb_v{tv_key}")
+    
+    salute_b = b3.number_input("Salute Totale Bersaglio", min_value=1, max_value=200, value=int(st.session_state["bersaglio_salute"]), key=f"salb_v{tv_key}")
+    
+    # Sincronizza eventuali modifiche manuali
+    st.session_state["bersaglio_save"] = save_b
+    st.session_state["bersaglio_ward"] = ward_b
+    st.session_state["bersaglio_salute"] = salute_b
+
     keywords_b = st.multiselect("Keywords del Bersaglio", ["INFANTRY", "HERO", "CAVALRY", "MONSTER", "WAR MACHINE"], default=["INFANTRY", "HERO"])
 
     st.markdown("---")
@@ -845,9 +898,15 @@ m2.metric("☠️ Prob. Kill (1 Turno)", f"{prob_uccisione:.1f}%", f"vs {salute_
 m3.metric("⚖️ ROI Danni (per 100 pt)", f"{roi_punti:.2f} Danni", f"Costo: {punti_unita} pt")
 m4.metric("🎲 Attacchi Totali", f"{attacchi_totali:.0f} dadi")
 
-tab1, tab2, tab3 = st.tabs(["🎲 Ripartizione Dadi", "📊 Distribuzione Monte Carlo", "🧠 Consigliere Tattico & Time-to-Kill"])
+tab1, tab2, tab3 = st.tabs(["🎲 Ripartizione Dadi", "📊 Probabilità cumulativa", "🧠 Consigliere Tattico & Time-to-Kill"])
 
 with tab1:
+    tot_atk = sum(r["attacchi"] for r in risultati_armi)
+    tot_hits = sum(r["hits"] for r in risultati_armi)
+    tot_wounds = sum(r["wounds"] for r in risultati_armi)
+    tot_unsaved = sum(r["unsaved"] for r in risultati_armi)
+    tot_mortal_crit = sum(r["mortal"] for r in risultati_armi)
+
     col_t1, col_t2 = st.columns(2)
     with col_t1:
         st.subheader("Ripartizione Danni per Arma")
@@ -861,46 +920,96 @@ with tab1:
                 })
         if righe_armi:
             st.dataframe(pd.DataFrame(righe_armi), use_container_width=True, hide_index=True)
+            
+            # Analisi dettagliata del flusso d'attacco e investimento Punti Comando (posizionata sotto Ripartizione Danni per Arma)
+            if tot_atk > 0:
+                drop_hit = (1.0 - (tot_hits / tot_atk)) * 100.0 if tot_atk > 0 else 0.0
+                drop_wnd = (1.0 - (tot_wounds / tot_hits)) * 100.0 if tot_hits > 0 else 0.0
+                drop_save = (1.0 - (tot_unsaved / tot_wounds)) * 100.0 if tot_wounds > 0 else 0.0
+                
+                # Calcolo di quanto danno potenziale passa e dove conviene investire Punti Comando (CP)
+                max_drop = max(drop_hit, drop_wnd, drop_save)
+                if max_drop == drop_hit:
+                    fase_critica = "Fase 1 -> 2 (Tiro per Colpire / Hit)"
+                    consiglio_cp = (
+                        "🎯 **Investi in Fase di Hit (Comando: All-out Attack - 1 CP):** "
+                        f"La dispersione maggiore avviene quando cerchi di colpire (**-{drop_hit:.1f}%** di dadi persi). "
+                        + ("Hai già *All-out Attack* attivo: ottima scelta per stabilizzare la base di dadi!" if all_out_attack else "Attivare **All-out Attack (+1 Hit)** è l'investimento di Punti Comando più redditizio perché aumenta il volume di dadi che alimenta tutte le fasi successive (inclusi eventuali effetti sul tiro per ferire).")
+                    )
+                elif max_drop == drop_wnd:
+                    fase_critica = "Fase 2 -> 3 (Tiro per Ferire / Wound)"
+                    consiglio_cp = (
+                        "🩸 **Investi in Fase di Wound (Preghiere / Magie / Buff al Ferire):** "
+                        f"Colpisci con buona precisione, ma perdi il **{drop_wnd:.1f}%** dei colpi validi cercando di ferire. "
+                        "Poiché in AoS 4e non esiste un comando generico per il +1 a Wound, se non hai abilità di fazione che migliorano il Wound ti conviene comunque spendere **1 CP su All-out Attack (+1 Hit)** per forzare più dadi dentro questo imbuto."
+                    )
+                else:
+                    fase_critica = "Fase 3 -> 4 (Tiro Salvezza Nemico / Save)"
+                    consiglio_cp = (
+                        "🛡️ **Investi in Penetrazione (Rend) o Mortal Wounds:** "
+                        f"L'armatura avversaria sta assorbendo il **{drop_save:.1f}%** delle tue ferite! "
+                        "Spendendo CP solo su *All-out Attack* avrai un ritorno marginale se il nemico salva al 2+ o 3+ (magari in *Cover* o *All-out Defence*). "
+                        "Conviene investire risorse in **buff al Rend**, **Crit (Mortal)** o usare **1 CP per Ricaricare/Caricare (Counter-charge / Forward to Victory)** se le tue armi guadagnano Rend o Danno in carica."
+                    )
+
+                with st.container(border=True):
+                    st.markdown("#### 📖 Guida all'Interpretazione & Analisi Tattica del Flusso")
+                    st.markdown(
+                        f"**Come leggere il grafico a barre e quanti danni infliggi davvero:**\n"
+                        f"- **Dadi vs Danni Reali:** Le prime 4 colonne del grafico a destra contano i **dadi fisici** che superano ogni test, mentre la **5ª colonna (Danno Netto)** mostra le **ferite effettive** inflitte al bersaglio:\n"
+                        f"  1. **Attacchi ({tot_atk:.1f} dadi):** Volume iniziale di dadi lanciati.\n"
+                        f"  2. **Colpi / Hit ({tot_hits:.2f} dadi):** Dadi che hanno colpito (scartati: **{drop_hit:.1f}%**).\n"
+                        f"  3. **Ferite / Wound ({tot_wounds:.2f} dadi):** Colpi che hanno ferito con successo (scartati: **{drop_wnd:.1f}%**).\n"
+                        f"  4. **Non Salvati ({tot_unsaved:.2f} colpi):** Ferite che bucano l'armatura nemica (parati dal Save: **{drop_save:.1f}%**).\n"
+                        f"  5. **💥 Danno Inflitto Finale ({danno_totale_atteso:.2f} danni):** I **{tot_unsaved:.2f}** colpi non salvati vengono moltiplicati per la caratteristica *Damage* delle tue armi"
+                        + (f", sommati a **{tot_mortal_crit:.2f}** danni mortali da Critico" if tot_mortal_crit > 0 else "")
+                        + (f" e a **{danno_extra_base:.2f}** danni extra" if danno_extra_base > 0 else "")
+                        + (f", e infine ridotti del **{(1.0 - moltiplicatore_ward)*100:.1f}%** dal tiro Ward nemico." if moltiplicatore_ward < 1.0 else " (nessun Ward attivo sul bersaglio).")
+                    )
+                    st.markdown("---")
+                    st.markdown(f"**⚡ Collo di Bottiglia Individuato:** `{fase_critica}`")
+                    st.markdown(consiglio_cp)
         else:
             st.info("ℹ️ Inserisci i dati dell'unità e attiva almeno un'arma per vedere il dettaglio.")
 
     with col_t2:
         st.subheader("📉 Scomposizione del Flusso d'Attacco")
-        st.caption("Mostra quanti dadi/colpi sopravvivono progressivamente in ogni fase del combattimento.")
-        
-        tot_atk = sum(r["attacchi"] for r in risultati_armi)
-        tot_hits = sum(r["hits"] for r in risultati_armi)
-        tot_wounds = sum(r["wounds"] for r in risultati_armi)
-        tot_unsaved = sum(r["unsaved"] for r in risultati_armi)
+        st.caption("Mostra quanti dadi/colpi sopravvivono progressivamente in ogni fase del combattimento fino al Danno Netto finale.")
         
         if tot_atk > 0:
-            # Ordine logico sequenziale delle fasi d'attacco
+            # Ordine logico sequenziale delle fasi d'attacco + Danno Netto finale
             df_perdite = pd.DataFrame({
-                "Fase": ["1. Attacchi", "2. Colpi (Hit)", "3. Ferite (Wound)", "4. Non Salvati"],
-                "Valore": [round(tot_atk, 1), round(tot_hits, 1), round(tot_wounds, 1), round(tot_unsaved, 1)]
+                "Fase": ["1. Attacchi", "2. Colpi (Hit)", "3. Ferite (Wound)", "4. Non Salvati", "5. Danno Netto"],
+                "Valore": [round(tot_atk, 1), round(tot_hits, 1), round(tot_wounds, 1), round(tot_unsaved, 1), round(danno_totale_atteso, 1)]
             })
-            st.bar_chart(df_perdite.set_index("Fase"), color="#b38b4d")
+            st.bar_chart(df_perdite.set_index("Fase"), x_label="Fase della Sequenza d'Attacco", y_label="Numero di Dadi / Danni Inflitti", color="#b38b4d")
         else:
             st.warning("⚠️ Dati non ancora inseriti o incompleti. Compila i campi dell'unità per visualizzare il grafico.")
 
 with tab2:
-    st.subheader("📊Curva di Probabilità Cumulativa (Monte Carlo)")
+    st.subheader("📊Curva di Probabilità Cumulativa")
+    st.caption("Stima la percentuale per ogni possibilità di danni totali inflitti")
     max_danno_grafico = int(np.percentile(campioni_mc, 99.5)) + 2 if len(campioni_mc) > 0 else 10
     asse_x = np.arange(1, max(10, max_danno_grafico))
     prob_almeno_x = [np.mean(campioni_mc >= x) * 100.0 for x in asse_x]
-    st.line_chart(pd.DataFrame({"Danni Minimi (X)": asse_x, "Probabilità (%)": prob_almeno_x}).set_index("Danni Minimi (X)"), color="#b38b4d")
+    st.line_chart(
+        pd.DataFrame({"Danni Minimi (X)": asse_x, "Probabilità (%)": prob_almeno_x}).set_index("Danni Minimi (X)"),
+        x_label="Danni Minimi Inflitti",
+        y_label="Probabilità di Successo (%)",
+        color="#b38b4d"
+    )
 
 with tab3:
     st.subheader("⏱️ Stima Sopravvivenza Bersaglio (Time-to-Kill)")
     ttk = salute_b / danno_totale_atteso if danno_totale_atteso > 0 else 99
     
     if ttk <= 1.0: st.success(f"**🔥 Letale!** Questa unità dovrebbe eliminare il bersaglio in **1 singolo turno di combattimento** (Danno atteso {danno_totale_atteso:.1f} vs Salute {salute_b}).")
-    elif ttk <= 2.0: st.warning(f"**⚔️ Logoramento:** Saranno necessari circa **2 turni di combattimento** per abbattere questo bersaglio. Seleziona il target con cautela.")
-    else: st.error(f"**🛡️ Inefficiente:** Serviranno circa **{int(ttk)+1} turni** per uccidere questo bersaglio. Sconsigliato ingaggiarlo in 1v1 senza supporto alleato.")
+    elif ttk <= 2.0: st.warning(f"**⚔️ Logoramento:** Saranno necessari circa **2 turni di combattimento** per abbattere questo bersaglio con l'unità selezionata. Seleziona il target con cautela.")
+    else: st.error(f"**🛡️ Inefficiente:** Serviranno circa **{int(ttk)+1} turni** per uccidere questo bersaglio con l'unità selezionata. Sconsigliato ingaggiarlo in 1v1 senza supporto alleato.")
         
     st.markdown("---")
     st.subheader("🎯 Matrice Target Priority")
-    st.caption("Efficacia del danno netto in base a Save e Ward del bersaglio.")
+    st.caption("Scegli il bersaglio migliore per la tua unità selezionata in base al suo Save e Ward.")
     saves_lista = [2, 3, 4, 5, 6, 7]
     wards_lista = [7, 6, 5, 4]
     matrice_dati = {}
