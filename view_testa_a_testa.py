@@ -26,7 +26,7 @@ def render_testa_a_testa():
         .subsection-title {
             font-family: 'Cinzel', serif !important;
             font-size: 1.25rem !important;
-            color: #3d2817 !important;
+            color: #e6c665 !important;
             font-weight: 700 !important;
             letter-spacing: 0.6px !important;
             border-bottom: 1px dashed rgba(140, 109, 70, 0.45);
