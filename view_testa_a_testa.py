@@ -12,7 +12,7 @@ def render_testa_a_testa():
     st.markdown("""
     <style>
         .section-header {
-            font-family: 'Cinzel Decorative', serif !important;
+            font-family: 'Cinzel', serif !important;
             font-size: 1.85rem !important;
             color: #f5d680 !important;
             letter-spacing: 1.5px !important;
