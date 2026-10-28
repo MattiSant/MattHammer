@@ -281,7 +281,7 @@ def render_homepage():
                 "Laboratorio Tattico (Testa a Testa)"
             )
             st.session_state["nav_radio"] = (
-                "Laboratorio Tattico (Testa a Testa)"  # <--- Aggiungi questa riga
+                "Laboratorio Tattico (Testa a Testa)"
             )
             st.rerun()
 
@@ -306,7 +306,7 @@ def render_homepage():
                 "Sala di Guerra (Costruttore Armate)"
             )
             st.session_state["nav_radio"] = (
-                "Sala di Guerra (Costruttore Armate)"  # <--- Aggiungi questa riga
+                "Sala di Guerra (Costruttore Armate)" 
             )
             st.rerun()
 
