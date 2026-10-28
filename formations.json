@@ -3,21 +3,15 @@
         "Death Stalkers": {
             "effetto_tipo": "+1 Rend",
             "valore_bonus": 1,
-            "fase_attivazione": "Hero Phase (Amica o Nemica)",
-            "descrizione": "Scegli un'unità bersaglio nemica. Le unità amiche con questa formazione ottengono +1 Rend con le armi da mischia contro quel bersaglio finché non viene distrutto."
-        },
-        "Royal Procession": {
-            "effetto_tipo": "+1 Save (vs Carica)",
-            "valore_bonus": 1,
-            "fase_attivazione": "Hero Phase Nemica",
-            "descrizione": "Nella fase degli eroi nemica, scegli due tue unità; ottengono abilità difensive e bonus contro le cariche avversarie."
+            "fase_attivazione": "Hero Phase (Fase Eroi Amica)",
+            "descrizione": "Scegli un'unità bersaglio nemica. Le unità amiche con questa formazione ottengono +1 Rend con le armi da mischia contro quel bersaglio finché non viene distrutto[cite: 1]."
         }
     },
     "Blades of Khorne": {
         "Khorne Bloodbound Hordes": {
             "effetto_tipo": "+1 Attacchi",
             "valore_bonus": 1,
-            "fase_attivazione": "Combat Phase",
+            "fase_attivazione": "Combat Phase (Fase di Combattimento)",
             "descrizione": "Le unità nel raggio di un eroe ottengono attacchi aggiuntivi quando caricano."
         }
     }
