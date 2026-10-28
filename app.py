@@ -20,9 +20,9 @@ applica_stile_globale()
 if "db_unita" not in st.session_state:
     st.session_state["db_unita"] = carica_database()
 
-# Unica variabile di stato per la navigazione
-if "nav_radio" not in st.session_state:
-    st.session_state["nav_radio"] = "Portale Principale (Home)"
+# Variabile reale che guida la vista attiva
+if "pagina_selezionata" not in st.session_state:
+    st.session_state["pagina_selezionata"] = "Portale Principale (Home)"
 
 if "corrente_armi" not in st.session_state:
     st.session_state["corrente_armi"] = [
@@ -167,17 +167,23 @@ opzioni_menu = [
     "Sala di Guerra (Costruttore Armate)"
 ]
 
-# Radio button sincronizzato direttamente con st.session_state["nav_radio"]
+def cambio_pagina_da_sidebar():
+    st.session_state["pagina_selezionata"] = st.session_state["menu_sidebar_radio"]
+
+indice_corrente = opzioni_menu.index(st.session_state["pagina_selezionata"]) if st.session_state["pagina_selezionata"] in opzioni_menu else 0
+
 st.sidebar.radio(
     "Navigazione del Tomo",
     opzioni_menu,
-    key="nav_radio"
+    index=indice_corrente,
+    key="menu_sidebar_radio",
+    on_change=cambio_pagina_da_sidebar
 )
 
 st.sidebar.markdown("---")
 
 # Mostra Directory e Gestione Database solo se non siamo sulla Home
-if st.session_state["nav_radio"] != "Portale Principale (Home)":
+if st.session_state["pagina_selezionata"] != "Portale Principale (Home)":
     st.sidebar.subheader("Directory Database")
     st.sidebar.caption("Seleziona e carica un'unità salvata.")
 
@@ -270,7 +276,7 @@ def render_homepage():
         </div>
         """, unsafe_allow_html=True)
         if st.button("Apri Laboratorio Tattico", type="primary", use_container_width=True):
-            st.session_state["nav_radio"] = "Laboratorio Tattico (Testa a Testa)"
+            st.session_state["pagina_selezionata"] = "Laboratorio Tattico (Testa a Testa)"
             st.rerun()
 
     with col_sala:
@@ -284,7 +290,7 @@ def render_homepage():
         </div>
         """, unsafe_allow_html=True)
         if st.button("Entra nella Sala di Guerra", type="primary", use_container_width=True):
-            st.session_state["nav_radio"] = "Sala di Guerra (Costruttore Armate)"
+            st.session_state["pagina_selezionata"] = "Sala di Guerra (Costruttore Armate)"
             st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -311,7 +317,7 @@ def render_homepage():
 # ==========================================
 # ROUTING DELLE PAGINE (MATCH / CASE)
 # ==========================================
-match st.session_state["nav_radio"]:
+match st.session_state["pagina_selezionata"]:
     case "Portale Principale (Home)":
         render_homepage()
 
