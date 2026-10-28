@@ -93,7 +93,7 @@ def render_forgia_db():
     # ==========================================
     # DATI GENERALI E CIRCONFERENZA
     # ==========================================
-    st.markdown('<div class="section-header">1. Generalità e Statistiche Cerchio</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">1. Generalità e Statistiche Difensive</div>', unsafe_allow_html=True)
     
     with st.container(border=True):
         g1, g2, g3 = st.columns([1.5, 2, 1])
@@ -108,7 +108,7 @@ def render_forgia_db():
         campione = g7.checkbox("Presenza Campione (+1 Atk)", value=st.session_state.get("forgia_campione", False), key=f"f_camp_{v_key}")
 
         st.markdown("---")
-        st.markdown("**Statistiche della Circonferenza Tetrapartita (Warscroll)**")
+        st.markdown("**Statistiche difensive**")
         c1, c2, c3, c4, c5 = st.columns(5)
         move = c1.text_input("Movimento (es. 8\" Fly)", value=st.session_state.get("forgia_movimento", "6\""), key=f"f_mov_{v_key}")
         oc = c2.number_input("Controllo (OC)", min_value=0, max_value=20, value=st.session_state.get("forgia_controllo", 1), key=f"f_oc_{v_key}")
