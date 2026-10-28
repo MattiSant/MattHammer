@@ -203,7 +203,8 @@ def render_sala_di_guerra():
         st.session_state["archivio_formazioni"] = carica_formazioni_db()
     if "archivio_armate" not in st.session_state:
         st.session_state["archivio_armate"] = carica_archivio_armate()
-
+    if "sdg_roster_version" not in st.session_state:
+        st.session_state["sdg_roster_version"] = 0
     if "sdg_reggimenti" not in st.session_state or not isinstance(st.session_state["sdg_reggimenti"], list) or len(st.session_state["sdg_reggimenti"]) == 0:
         st.session_state["sdg_reggimenti"] = [
             {
@@ -318,6 +319,15 @@ def render_sala_di_guerra():
         st.rerun()
 
     if col_btn_reg2.button("Svuota Roster Completo"):
+        # 1. Pulisce tutte le chiavi dei widget di Streamlit legate ai reggimenti
+        chiavi_da_eliminare = [
+            k for k in st.session_state.keys()
+            if k.startswith("reg_lead_") or k.startswith("reg_trait_") or k.startswith("reg_art_") or k.startswith("fol_")
+        ]
+        for k in chiavi_da_eliminare:
+            del st.session_state[k]
+
+        # 2. Resetta la struttura dati del Reggimento #1
         st.session_state["sdg_reggimenti"] = [{
             "leader": "--- Scegli Eroe Leader ---",
             "is_generale": True,
@@ -327,6 +337,9 @@ def render_sala_di_guerra():
             "seguito": []
         }]
         st.session_state["sdg_ausiliari"] = []
+        
+        # 3. Incrementa la versione per costringere Streamlit a ricreare i widget da zero
+        st.session_state["sdg_roster_version"] += 1
         st.rerun()
 
     eroi_db_filtrati = []
