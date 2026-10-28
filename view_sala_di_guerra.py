@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import json
 import os
+import re
 from core_engine import calcola_arma_analitico
 
 ARMIES_DB_FILE = "armies_db.json"
@@ -11,7 +12,7 @@ TRAITS_DB_FILE = "heroic_traits_db.json"
 ARTEFACTS_DB_FILE = "artefacts_db.json"
 
 # ==========================================
-# GESTIONE ARCHIVIO LISTE ARMATE (JSON)
+# GESTIONE ARCHIVI JSON E SUPPORTO
 # ==========================================
 def carica_archivio_armate():
     if os.path.exists(ARMIES_DB_FILE):
@@ -48,7 +49,6 @@ def carica_db_supporto(file_path):
 db_tratti_eroici = carica_db_supporto(TRAITS_DB_FILE).get("Generali", ["Nessuno"])
 db_artefatti = carica_db_supporto(ARTEFACTS_DB_FILE).get("Generali", ["Nessuno"])
 
-# Preset di Armate Avversarie Note
 ARMATE_NEMICHE_NOTE = {
     "Khorne: Eroi d'Assalto (720pt)": [
         {"nome": "Blades of Khorne: Bloodsecrator", "rinforzata": False},
@@ -68,17 +68,37 @@ ARMATE_NEMICHE_NOTE = {
 }
 
 # ==========================================
-# FUNZIONI DI SUPPORTO PER ANALISI ROSTER
+# FUNZIONI DI CALCOLO E SUPPORTO TATTICO
 # ==========================================
 def estrai_valore_keyword(keywords, prefisso):
+    if not keywords:
+        return None
     for kw in keywords:
-        if kw.lower().startswith(prefisso.lower()):
-            return kw
+        if str(kw).lower().startswith(prefisso.lower()):
+            return str(kw)
     return None
+
+def estrai_livello_potere(keywords, prefisso):
+    kw_str = estrai_valore_keyword(keywords, prefisso)
+    if not kw_str:
+        return 0
+    match = re.search(r"\((\d+)\)", kw_str)
+    if match:
+        return int(match.group(1))
+    return 1
+
+def estrai_intero_sicuro(valore, default=0):
+    if isinstance(valore, (int, float)):
+        return int(valore)
+    if isinstance(valore, str):
+        match = re.search(r"\d+", valore)
+        if match:
+            return int(match.group(0))
+    return default
 
 def calcola_output_unita_su_bersaglio(dati_unita_db, rinforzata, bersaglio_test):
     armi = dati_unita_db.get("armi", [])
-    n_mod_base = max(1, int(dati_unita_db.get("n_modelli", 1)))
+    n_mod_base = max(1, estrai_intero_sicuro(dati_unita_db.get("n_modelli", 1), default=1))
     n_mod = n_mod_base * (2 if rinforzata else 1)
     campione = bool(dati_unita_db.get("campione", False))
 
@@ -102,7 +122,7 @@ def calcola_output_unita_su_bersaglio(dati_unita_db, rinforzata, bersaglio_test)
             else:
                 danno_melee += ris["danno_netto"]
             attacchi_tot += ris["attacchi"]
-            r_val = 0 if str(a.get("rend", 0)) == "---" else int(a.get("rend", 0))
+            r_val = estrai_intero_sicuro(a.get("rend", 0), default=0)
             if r_val > max_rend:
                 max_rend = r_val
 
@@ -164,17 +184,27 @@ def render_sala_di_guerra():
             margin: 6px 0;
             border-radius: 3px;
         }
+        .ability-box-reaction {
+            background: rgba(55, 18, 18, 0.65);
+            border-left: 4px solid #c0392b;
+            border: 1px solid #78281f;
+            padding: 8px 12px;
+            margin: 6px 0;
+            border-radius: 3px;
+        }
     </style>
     """, unsafe_allow_html=True)
 
     st.title("MattHammer — Sala di Guerra")
-    st.caption("Costruttore d'armata avanzato per Reggimenti, gestione formazioni tattiche e simulatore di Match-Up.")
+    st.caption("Costruttore d'armata avanzato per Reggimenti (AoS 4e), gestione formazioni e simulatore di Match-Up.")
 
-    # --- INIZIALIZZAZIONE SICURA STATI & DATABASE ---
+    # Inizializzazione Session State
     if "archivio_formazioni" not in st.session_state:
         st.session_state["archivio_formazioni"] = carica_formazioni_db()
+    if "archivio_armate" not in st.session_state:
+        st.session_state["archivio_armate"] = carica_archivio_armate()
 
-    if "sdg_reggimenti" not in st.session_state or not isinstance(st.session_state["sdg_reggimenti"], list):
+    if "sdg_reggimenti" not in st.session_state or not isinstance(st.session_state["sdg_reggimenti"], list) or len(st.session_state["sdg_reggimenti"]) == 0:
         st.session_state["sdg_reggimenti"] = [
             {
                 "leader": "--- Scegli Eroe Leader ---",
@@ -256,14 +286,13 @@ def render_sala_di_guerra():
         })
 
         fc1, fc2, fc3 = st.columns([1.2, 1, 1.8])
-        
         with fc1:
             st.markdown(f"**Categoria Effetto:** `{dati_form.get('tipo_effetto', 'Nessuno')}`")
             st.markdown(f"**Modificatore Fisso:** `{dati_form.get('valore_modificatore', '+0')}`")
 
         with fc2:
             st.markdown(f"**Fase di Attivazione:**\n`{dati_form.get('fase_attivazione', 'Nessuna')}`")
-            is_monouso_str = "Sì (Una volta per battaglia)" if dati__form_monouso := dati_form.get('monouso', False) else "No (Ricorrente / Passiva)"
+            is_monouso_str = "Sì (Una volta per battaglia)" if dati_form.get('monouso', False) else "No (Ricorrente / Passiva)"
             st.markdown(f"**Monouso:** `{is_monouso_str}`")
 
         with fc3:
@@ -288,7 +317,6 @@ def render_sala_di_guerra():
         })
         st.rerun()
 
-    # Svuota Roster completo (ripristina il Reggimento #1 e svuota gli altri)
     if col_btn_reg2.button("Svuota Roster Completo"):
         st.session_state["sdg_reggimenti"] = [{
             "leader": "--- Scegli Eroe Leader ---",
@@ -322,7 +350,6 @@ def render_sala_di_guerra():
             etichetta_gen = " — ★ GENERALE D'ARMATA (Reggimento Principale)" if reg.get("is_generale", False) else f" — Reggimento #{r_idx+1}"
             head_c1.markdown(f'<div class="subsection-title">{etichetta_gen}</div>', unsafe_allow_html=True)
             
-            # Il pulsante rimuovi appare SOLO dal Reggimento #2 in poi (mai per il Generale)
             if r_idx > 0:
                 if head_c2.button("🗑️ Rimuovi", key=f"del_reg_{r_idx}", use_container_width=True):
                     reggimenti_da_rimuovere.append(r_idx)
@@ -332,23 +359,21 @@ def render_sala_di_guerra():
             idx_lead = lista_scelta_leader.index(reg["leader"]) if reg["leader"] in lista_scelta_leader else 0
             reg["leader"] = lc1.selectbox("Leader (Solo Eroi)", lista_scelta_leader, index=idx_lead, key=f"reg_lead_{r_idx}")
             
-            # Riconoscimento automatico Wizard / Priest dalle keywords del DB
             ruolo_magico_str = "Nessun Potere Arcano"
             if reg["leader"] in st.session_state["db_unita"]:
                 dati_l_db = st.session_state["db_unita"][reg["leader"]]
                 kw_l = dati_l_db.get("keywords", [])
-                w_val = estrai_valore_keyword(kw_l, "Wizard")
-                p_val = estrai_valore_keyword(kw_l, "Priest")
+                lvl_w = estrai_livello_potere(kw_l, "Wizard")
+                lvl_p = estrai_livello_potere(kw_l, "Priest")
                 
                 pezzi_ruolo = []
-                if w_val: pezzi_ruolo.append(f"🔮 Mago ({w_val.split('(')[1].replace(')', '') if '(' in w_val else '1'})")
-                if p_val: pezzi_ruolo.append(f"✨ Prete ({p_val.split('(')[1].replace(')', '') if '(' in p_val else '1'})")
+                if lvl_w > 0: pezzi_ruolo.append(f"🔮 Mago ({lvl_w})")
+                if lvl_p > 0: pezzi_ruolo.append(f"✨ Prete ({lvl_p})")
                 if pezzi_ruolo:
                     ruolo_magico_str = " | ".join(pezzi_ruolo)
 
             lc2.markdown(f"**Ruolo Magico/Religioso:**\n`{ruolo_magico_str}`")
 
-            # Tratti Eroici e Artefatti
             tc1, tc2 = st.columns(2)
             idx_tratto = db_tratti_eroici.index(reg.get("tratto_eroico", "Nessuno")) if reg.get("tratto_eroico", "Nessuno") in db_tratti_eroici else 0
             reg["tratto_eroico"] = tc1.selectbox("Tratto Eroico (Heroic Trait)", db_tratti_eroici, index=idx_tratto, key=f"reg_trait_{r_idx}")
@@ -356,26 +381,34 @@ def render_sala_di_guerra():
             idx_art = db_artefatti.index(reg.get("artefatto", "Nessuno")) if reg.get("artefatto", "Nessuno") in db_artefatti else 0
             reg["artefatto"] = tc2.selectbox("Artefatto di Potere", db_artefatti, index=idx_art, key=f"reg_art_{r_idx}")
 
-            # Sunto Warscroll Leader in Sola Visione
             if reg["leader"] in st.session_state["db_unita"]:
                 d_lead = st.session_state["db_unita"][reg["leader"]]
                 stat_c = d_lead.get("statistiche_cerchio", {})
+                dif_lead = d_lead.get("difesa", {})
+                
+                mov_val = stat_c.get("movimento", "6\"")
+                oc_val = stat_c.get("controllo", 2)
+                sv_val = stat_c.get("save", f"{dif_lead.get('save', 5)}+")
+                hp_val = stat_c.get("salute", dif_lead.get("salute_per_modello", 5))
+                wd_val = stat_c.get("ward", f"{dif_lead.get('ward', 5)}+")
+
                 st.markdown(f"""
                 <div class="warscroll-box">
                     <strong style="color: #f5d680;">📜 Sunto Warscroll — {reg['leader']}</strong><br>
-                    <b>Punti:</b> {d_lead.get('punti', 0)} pt | <b>Movimento:</b> {stat_c.get('movimento', '6"')} | <b>Controllo (OC):</b> {stat_c.get('controllo', 2)} | <b>Save:</b> {stat_c.get('save', '5+')} | <b>Salute:</b> {stat_c.get('salute', 5)} | <b>Ward:</b> {stat_c.get('ward', '5+')}
+                    <b>Punti:</b> {d_lead.get('punti', 0)} pt | <b>Basetta:</b> {d_lead.get('dimensione_basetta', 'Standard')} | <b>Movimento:</b> {mov_val} | <b>Controllo (OC):</b> {oc_val} | <b>Save:</b> {sv_val} | <b>Salute:</b> {hp_val} | <b>Ward:</b> {wd_val}
                 </div>
                 """, unsafe_allow_html=True)
 
-                # Mostra abilità in riquadri separati
                 abilita_leader = d_lead.get("abilita", [])
                 if abilita_leader:
                     st.markdown("**Abilità della Warscroll:**")
                     for ab in abilita_leader:
-                        reaz_txt = "🔴 Reaction: " if ab.get("reazione", False) else "🟢 "
+                        is_reaz = ab.get("reazione", False)
+                        classe_box = "ability-box-reaction" if is_reaz else "ability-box"
+                        reaz_txt = "🔴 Reaction: " if is_reaz else "🟢 "
                         fasi_txt = ", ".join(ab.get("fasi", ["Generica"]))
                         st.markdown(f"""
-                        <div class="ability-box">
+                        <div class="{classe_box}">
                             <small style="color: #d8c29d;"><b>[{fasi_txt}]</b></small><br>
                             <b>{reaz_txt}{ab.get('nome', 'Abilità')}</b>: {ab.get('descrizione', '')}
                         </div>
@@ -401,11 +434,11 @@ def render_sala_di_guerra():
             seguito_da_rimuovere = []
             for f_idx, fol in enumerate(reg["seguito"]):
                 d_fol_db = st.session_state["db_unita"].get(fol["nome"], {})
-                puo_rinf = d_fol_db.get("può_essere_rinforzata", False)
+                puo_rinf = d_fol_db.get("può_essere_rinforzata", True)
                 molt = 2 if fol.get("rinforzata", False) else 1
                 
                 fc1, fc2, fc3 = st.columns([3, 1.5, 0.6])
-                fc1.markdown(f"• **{fol['nome']}** ({int(d_fol_db.get('n_modelli', 1))*molt} mod. — `{int(d_fol_db.get('punti', 0))*molt} pt`)")
+                fc1.markdown(f"• **{fol['nome']}** ({estrai_intero_sicuro(d_fol_db.get('n_modelli', 1))*molt} mod. — `{estrai_intero_sicuro(d_fol_db.get('punti', 0))*molt} pt`)")
                 
                 if puo_rinf:
                     fol["rinforzata"] = fc2.checkbox("Rinforzata (x2)", value=fol.get("rinforzata", False), key=f"fol_rinf_{r_idx}_{f_idx}")
@@ -416,11 +449,16 @@ def render_sala_di_guerra():
                 if fc3.button("✖", key=f"del_fol_{r_idx}_{f_idx}"):
                     seguito_da_rimuovere.append(f_idx)
 
-                # Sunto warscroll unità di seguito
                 stat_cf = d_fol_db.get("statistiche_cerchio", {})
+                dif_f = d_fol_db.get("difesa", {})
+                m_f = stat_cf.get("movimento", "6\"")
+                oc_f = stat_cf.get("controllo", 1)
+                s_f = stat_cf.get("save", f"{dif_f.get('save', 6)}+")
+                w_f = stat_cf.get("ward", f"{dif_f.get('ward', 5)}+")
+                
                 st.markdown(f"""
-                <div style="font-size: 0.9rem; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px; margin-bottom: 6px;">
-                    <b>{fol['nome']}</b> | Move: {stat_cf.get('movimento', '6"')} | OC: {stat_cf.get('controllo', 1)} | Save: {stat_cf.get('save', '6+')} | Ward: {stat_cf.get('ward', '5+')}
+                <div style="font-size: 0.88rem; background: rgba(0,0,0,0.25); border-left: 2px solid #8c6d46; padding: 5px 8px; border-radius: 4px; margin-bottom: 6px;">
+                    Move: <b>{m_f}</b> | OC Base: <b>{oc_f}</b> | Save: <b>{s_f}</b> | Ward: <b>{w_f}</b> | Basetta: <b>{d_fol_db.get('dimensione_basetta', 'Standard')}</b>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -429,10 +467,10 @@ def render_sala_di_guerra():
                     reg["seguito"].pop(idx_f_del)
                 st.rerun()
 
-if reggimenti_da_rimuovere:
-    for idx_r_del in sorted(reggimenti_da_rimuovere, reverse=True):
-        st.session_state["sdg_reggimenti"].pop(idx_r_del)
-    st.rerun()
+    if reggimenti_da_rimuovere:
+        for idx_r_del in sorted(reggimenti_da_rimuovere, reverse=True):
+            st.session_state["sdg_reggimenti"].pop(idx_r_del)
+        st.rerun()
 
     # ==========================================
     # AGGREGAZIONE DATI DELL'ARMATA
@@ -465,13 +503,16 @@ if reggimenti_da_rimuovere:
         if reg["leader"] in st.session_state["db_unita"]:
             n_eroi += 1
             d_u = st.session_state["db_unita"][reg["leader"]]
-            pt_u = int(d_u.get("punti", 0))
-            n_mod_u = max(1, int(d_u.get("n_modelli", 1)))
-            sal_mod_u = max(1, int(d_u.get("difesa", {}).get("salute_per_modello", 5)))
+            pt_u = estrai_intero_sicuro(d_u.get("punti", 0))
+            n_mod_u = max(1, estrai_intero_sicuro(d_u.get("n_modelli", 1), default=1))
+            dif_u = d_u.get("difesa", {})
+            sal_mod_u = max(1, estrai_intero_sicuro(d_u.get("statistiche_cerchio", {}).get("salute", dif_u.get("salute_per_modello", 5)), default=5))
             hp_u = n_mod_u * sal_mod_u
-            
-            # Estrazione OC dal cerchio o default
-            oc_u = int(d_u.get("statistiche_cerchio", {}).get("controllo", 2))
+            oc_u = estrai_intero_sicuro(d_u.get("statistiche_cerchio", {}).get("controllo", 2), default=2)
+
+            kw_u = d_u.get("keywords", [])
+            livello_magico_tot += estrai_livello_potere(kw_u, "Wizard")
+            livello_preti_tot += estrai_livello_potere(kw_u, "Priest")
 
             perf = calcola_output_unita_su_bersaglio(d_u, False, bersaglio_medio_riferimento)
             punti_totali += pt_u
@@ -498,11 +539,16 @@ if reggimenti_da_rimuovere:
                 d_f = st.session_state["db_unita"][fol["nome"]]
                 rinf = bool(fol.get("rinforzata", False))
                 molt = 2 if rinf else 1
-                pt_f = int(d_f.get("punti", 0)) * molt
-                n_mod_f = max(1, int(d_f.get("n_modelli", 1))) * molt
-                sal_mod_f = max(1, int(d_f.get("difesa", {}).get("salute_per_modello", 1)))
+                pt_f = estrai_intero_sicuro(d_f.get("punti", 0)) * molt
+                n_mod_f = max(1, estrai_intero_sicuro(d_f.get("n_modelli", 1), default=1)) * molt
+                dif_f = d_f.get("difesa", {})
+                sal_mod_f = max(1, estrai_intero_sicuro(d_f.get("statistiche_cerchio", {}).get("salute", dif_f.get("salute_per_modello", 1)), default=1))
                 hp_f = n_mod_f * sal_mod_f
-                oc_f = int(d_f.get("statistiche_cerchio", {}).get("controllo", 1)) * molt
+                oc_f = estrai_intero_sicuro(d_f.get("statistiche_cerchio", {}).get("controllo", 1), default=1) * n_mod_f
+
+                kw_f = d_f.get("keywords", [])
+                livello_magico_tot += estrai_livello_potere(kw_f, "Wizard")
+                livello_preti_tot += estrai_livello_potere(kw_f, "Priest")
 
                 if pt_f <= 130 and n_mod_f >= 5:
                     n_unita_screen_economiche += 1
@@ -539,7 +585,7 @@ if reggimenti_da_rimuovere:
         st.progress(perc_punti, text=f"Punti Spesi: {punti_totali} / {limite_punti} pt ({(punti_totali/float(limite_punti))*100:.1f}%)")
 
         v1, v2, v3 = st.columns(3)
-        if punti_totali <= limite_punti and punti_totali > 0:
+        if 0 < punti_totali <= limite_punti:
             v1.success(f"Punti in Regola ({punti_totali}/{limite_punti})")
         elif punti_totali > limite_punti:
             v1.error(f"Sforamento di +{punti_totali - limite_punti} pt!")
@@ -592,11 +638,11 @@ if reggimenti_da_rimuovere:
                     st.markdown(f"- {cs}")
 
     # ==========================================
-    # TAB 2: MATRICE MATCH-UP CON ARMATENOTE
+    # TAB 2: MATRICE MATCH-UP CON ARMATE NOTE
     # ==========================================
     with tab_matchup:
         st.markdown('<div class="subsection-title">Simulatore di Match-Up (Importa Armate Note o Personalizzate)</div>', unsafe_allow_html=True)
-        st.caption("Seleziona un'armata avversaria nota (es. Khorne, Kruleboyz, Sylvaneth) oppure aggiungi unità nemiche singole per calcolare la percentuale di ferite inflitte in 1 turno.")
+        st.caption("Seleziona un'armata avversaria nota oppure aggiungi unità nemiche singole per calcolare la percentuale di ferite inflitte in 1 turno.")
 
         with st.container(border=True):
             im1, im2 = st.columns([2, 1])
@@ -635,14 +681,15 @@ if reggimenti_da_rimuovere:
             for nem_idx, nem_item in enumerate(st.session_state["sdg_nemici_matchup"]):
                 d_nem = st.session_state["db_unita"].get(nem_item["nome"], {})
                 dif_nem = d_nem.get("difesa", {})
+                stat_nem = d_nem.get("statistiche_cerchio", {})
                 molt_n = 2 if nem_item.get("rinforzata", False) else 1
                 
-                sv_n_raw = dif_nem.get("save", 4)
-                sv_n = int(sv_n_raw) if str(sv_n_raw).isdigit() else 7
-                wd_n_raw = dif_nem.get("ward", 7)
-                wd_n = int(wd_n_raw) if str(wd_n_raw).isdigit() else 7
-                hp_n = max(1, int(d_nem.get("n_modelli", 1)) * molt_n * max(1, int(dif_nem.get("salute_per_modello", 1))))
-                pt_n = int(d_nem.get("punti", 0)) * molt_n
+                sv_n = estrai_intero_sicuro(stat_nem.get("save", dif_nem.get("save", 4)), default=4)
+                wd_n = estrai_intero_sicuro(stat_nem.get("ward", dif_nem.get("ward", 7)), default=7)
+                n_mod_n = estrai_intero_sicuro(d_nem.get("n_modelli", 1), default=1) * molt_n
+                sal_mod_n = estrai_intero_sicuro(stat_nem.get("salute", dif_nem.get("salute_per_modello", 1)), default=1)
+                hp_n = max(1, n_mod_n * sal_mod_n)
+                pt_n = estrai_intero_sicuro(d_nem.get("punti", 0)) * molt_n
 
                 col_label = f"{nem_item['nome']}" + (" (x2)" if nem_item["rinforzata"] else "")
                 col_percentuali = []
@@ -709,7 +756,7 @@ if reggimenti_da_rimuovere:
                 gen_tag = " [GENERALE]" if reg.get("is_generale", False) else ""
                 d_l = st.session_state["db_unita"].get(reg["leader"], {})
                 linee_export.append(f"\nREGGIMENTO {r_i+1}:")
-                linee_export.append(f"  • Leader: {reg['leader']}{gen_tag} ({int(d_l.get('punti', 0))} pt)")
+                linee_export.append(f"  • Leader: {reg['leader']}{gen_tag} ({estrai_intero_sicuro(d_l.get('punti', 0))} pt)")
                 if reg.get("tratto_eroico", "Nessuno") != "Nessuno":
                     linee_export.append(f"    - Tratto: {reg['tratto_eroico']}")
                 if reg.get("artefatto", "Nessuno") != "Nessuno":
@@ -718,7 +765,7 @@ if reggimenti_da_rimuovere:
                     d_f = st.session_state["db_unita"].get(fol["nome"], {})
                     molt = 2 if fol.get("rinforzata", False) else 1
                     rinf_str = " [Rinforzata]" if fol.get("rinforzata", False) else ""
-                    linee_export.append(f"  • Seguito: {fol['nome']}{rinf_str} ({int(d_f.get('punti', 0))*molt} pt)")
+                    linee_export.append(f"  • Seguito: {fol['nome']}{rinf_str} ({estrai_intero_sicuro(d_f.get('punti', 0))*molt} pt)")
 
             testo_completo_export = "\n".join(linee_export)
             st.text_area("Pergamena dell'Esercito:", value=testo_completo_export, height=300)
