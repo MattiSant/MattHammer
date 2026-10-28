@@ -2,6 +2,7 @@ import streamlit as st
 from core_engine import applica_stile_globale, carica_database, salva_nel_database
 from view_testa_a_testa import render_testa_a_testa
 from view_sala_di_guerra import render_sala_di_guerra
+from view_forgia_db import render_forgia_db
 
 # Configurazione della Pagina
 st.set_page_config(
@@ -178,7 +179,8 @@ st.sidebar.markdown("---")
 opzioni_menu = [
     "Portale Principale (Home)",
     "Laboratorio Tattico (Testa a Testa)",
-    "Sala di Guerra (Costruttore Armate)"
+    "Sala di Guerra (Costruttore Armate)",
+    "Forgia del Grimorio (Database)"
 ]
 
 # Sincronizziamo la chiave del widget PRIMA che venga renderizzato
@@ -197,8 +199,8 @@ st.sidebar.radio(
 
 st.sidebar.markdown("---")
 
-# Mostra Directory e Gestione Database solo se non siamo sulla Home
-if st.session_state["pagina_selezionata"] != "Portale Principale (Home)":
+# Mostra Directory e Gestione Database solo se siamo in Laboratorio Tattico o Forgia (non sulla Home o Sala di Guerra che ha la sua gestione)
+if st.session_state["pagina_selezionata"] in ["Laboratorio Tattico (Testa a Testa)", "Forgia del Grimorio (Database)"]:
     st.sidebar.subheader("Directory Database")
     st.sidebar.caption("Seleziona e carica un'unità salvata.")
 
@@ -216,27 +218,29 @@ if st.session_state["pagina_selezionata"] != "Portale Principale (Home)":
         fazione_selezionata = st.sidebar.selectbox("Fazione", list(albero_fazioni_attive.keys()))
         preset_scelto = st.sidebar.selectbox(f"Unità ({fazione_selezionata})", albero_fazioni_attive[fazione_selezionata])
 
-        if st.sidebar.button("Carica nel Profilo", type="primary"):
-            dati_sel = st.session_state["db_unita"][preset_scelto]
-            st.session_state["corrente_armi"] = [dict(a) for a in dati_sel["armi"]]
-            st.session_state["corrente_modelli"] = dati_sel["n_modelli"]
-            st.session_state["corrente_campione"] = dati_sel["campione"]
-            st.session_state["corrente_punti"] = dati_sel["punti"]
-            st.session_state["corrente_difesa"] = dati_sel.get("difesa", {"salute_per_modello": 0, "save": "---", "ward": "---"})
-            st.session_state["form_version"] += 1
-            st.rerun()
+        # Nascondiamo il bottone "Carica nel Profilo" dalla sidebar se siamo nella Forgia (dove c'è già il suo selettore dedicato)
+        if st.session_state["pagina_selezionata"] == "Laboratorio Tattico (Testa a Testa)":
+            if st.sidebar.button("Carica nel Profilo", type="primary"):
+                dati_sel = st.session_state["db_unita"][preset_scelto]
+                st.session_state["corrente_armi"] = [dict(a) for a in dati_sel["armi"]]
+                st.session_state["corrente_modelli"] = dati_sel["n_modelli"]
+                st.session_state["corrente_campione"] = dati_sel["campione"]
+                st.session_state["corrente_punti"] = dati_sel["punti"]
+                st.session_state["corrente_difesa"] = dati_sel.get("difesa", {"salute_per_modello": 0, "save": "---", "ward": "---"})
+                st.session_state["form_version"] += 1
+                st.rerun()
 
-    st.sidebar.markdown("---")
-    if st.sidebar.button("Reset Parametri"):
-        st.session_state["corrente_armi"] = [
-            {"nome": "---", "attiva": False, "ranged": False, "atk": "---", "hit": "---", "wnd": "---", "rend": "---", "dmg": "---", "crit_type": "Nessuno", "anti_target": "Nessuno", "charge_dmg": False, "anti_charge": False, "companion": False}
-        ]
-        st.session_state["corrente_modelli"] = 0
-        st.session_state["corrente_campione"] = False
-        st.session_state["corrente_punti"] = 0
-        st.session_state["corrente_difesa"] = {"salute_per_modello": 0, "save": "---", "ward": "---"}
-        st.session_state["form_version"] += 1
-        st.rerun()
+            st.sidebar.markdown("---")
+            if st.sidebar.button("Reset Parametri"):
+                st.session_state["corrente_armi"] = [
+                    {"nome": "---", "attiva": False, "ranged": False, "atk": "---", "hit": "---", "wnd": "---", "rend": "---", "dmg": "---", "crit_type": "Nessuno", "anti_target": "Nessuno", "charge_dmg": False, "anti_charge": False, "companion": False}
+                ]
+                st.session_state["corrente_modelli"] = 0
+                st.session_state["corrente_campione"] = False
+                st.session_state["corrente_punti"] = 0
+                st.session_state["corrente_difesa"] = {"salute_per_modello": 0, "save": "---", "ward": "---"}
+                st.session_state["form_version"] += 1
+                st.rerun()
 
     tutte_le_unita = [u for u in st.session_state["db_unita"].keys() if u != "--- Seleziona o Resetta ---"]
     if tutte_le_unita:
@@ -282,7 +286,7 @@ def render_homepage():
     """, unsafe_allow_html=True)
 
     # Griglia di Accesso Rapido ai Moduli
-    col_lab, col_sala = st.columns(2)
+    col_lab, col_sala, col_forgia = st.columns(3)
 
     with col_lab:
         st.markdown("""
@@ -310,6 +314,20 @@ def render_homepage():
         """, unsafe_allow_html=True)
         if st.button("Entra nella Sala di Guerra", type="primary", use_container_width=True):
             st.session_state["pagina_selezionata"] = "Sala di Guerra (Costruttore Armate)"
+            st.rerun()
+
+    with col_forgia:
+        st.markdown("""
+        <div class="hub-card">
+            <h3>Forgia del Grimorio (Database)</h3>
+            <p style="color: #c4b59d; font-size: 1.02rem; min-height: 85px;">
+                Aggiungi, modifica o aggiorna le warscrolls ufficiali. Inserisci le statistiche complete di movimento, 
+                controllo, armi, abilità, reazioni e keywords per popolare il database del tuo esercito.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Apri la Forgia", type="primary", use_container_width=True):
+            st.session_state["pagina_selezionata"] = "Forgia del Grimorio (Database)"
             st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -349,3 +367,6 @@ match st.session_state["pagina_selezionata"]:
         
     case "Sala di Guerra (Costruttore Armate)":
         render_sala_di_guerra()
+        
+    case "Forgia del Grimorio (Database)":
+        render_forgia_db()
