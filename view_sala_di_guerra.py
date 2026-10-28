@@ -156,7 +156,7 @@ def render_sala_di_guerra():
     if "sdg_formazione_scelta" not in st.session_state:
         st.session_state["sdg_formazione_scelta"] = "Death Stalkers"
 
-    # ==========================================
+# ==========================================
     # SEZIONE 1: GENERALITÀ DELL'ARMATA E FORMAZIONE
     # ==========================================
     st.markdown('<div class="section-header">Configurazione Schieramento e Formazione</div>', unsafe_allow_html=True)
@@ -165,7 +165,7 @@ def render_sala_di_guerra():
     with st.container(border=True):
         st.markdown('<div class="subsection-title">Generalità dell\'Esercito</div>', unsafe_allow_html=True)
         
-        # Schema richiesto sulla stessa riga: Nome della Lista - Fazione - Formato Battaglia
+        # Schema sulla stessa riga: Nome della Lista - Fazione - Formato Battaglia
         col_f1, col_f2, col_f3, col_f4 = st.columns([1.5, 1.2, 1.3, 1])
         st.session_state["sdg_nome_armata"] = col_f1.text_input("Nome della Lista", value=st.session_state["sdg_nome_armata"])
         
@@ -175,12 +175,14 @@ def render_sala_di_guerra():
 
         formato_scelto = col_f3.selectbox(
             "Formato Battaglia",
-            ["Path to Glory (720 pt)", "Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
+            ["Path to Glory (720 pt Personalizzati)", "Path to Glory Standard (600 pt)", "Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
             index=0
         )
 
         if "720" in formato_scelto:
             limite_punti = 720
+        elif "600" in formato_scelto:
+            limite_punti = 600
         elif "1000" in formato_scelto:
             limite_punti = 1000
         elif "1500" in formato_scelto:
@@ -188,13 +190,13 @@ def render_sala_di_guerra():
         elif "2000" in formato_scelto:
             limite_punti = 2000
         else:
-            limite_punti = col_f4.number_input("Punti", min_value=100, max_value=5000, value=720, step=10)
+            limite_punti = col_f4.number_input("Punti Custom", min_value=100, max_value=5000, value=720, step=10)
 
         st.markdown("---")
         st.markdown('<div class="subsection-title">Formazione di Battaglia (Battle Formation)</div>', unsafe_allow_html=True)
-        st.caption("Seleziona la formazione specifica della tua fazione per applicare gli effetti tattici e scegliere la fase di gioco.")
+        st.caption("Seleziona la formazione specifica della fazione, verifica l'effetto passivo e seleziona la fase di attivazione.")
 
-        # Carica le formazioni dal DB in base alla fazione scelta
+        # Caricamento formazioni dal DB filtrate per fazione
         fazioni_disponibili_db = st.session_state["archivio_formazioni"]
         formazioni_fazione = fazioni_disponibili_db.get(st.session_state["sdg_fazione_armata"], {
             "Formazione Standard": {
@@ -202,19 +204,17 @@ def render_sala_di_guerra():
             }
         })
 
-        # CORRETTO: lista pulita dei nomi delle formazioni
         lista_nomi_formazioni = list(formazioni_fazione.keys()) if isinstance(formazioni_fazione, dict) else ["Formazione Standard"]
         idx_form = lista_nomi_formazioni.index(st.session_state["sdg_formazione_scelta"]) if st.session_state["sdg_formazione_scelta"] in lista_nomi_formazioni else 0
         
         formazione_selezionata = st.selectbox("Nome Formazione", lista_nomi_formazioni, index=idx_form)
         st.session_state["sdg_formazione_scelta"] = formazione_selezionata
 
-        # Dati della formazione selezionata
         dati_form = formazioni_fazione.get(formazione_selezionata, {
-            "effetto_tipo": "Nessuno", "valore_bonus": 0, "fase_attivazione": "Hero Phase", "descrizione": "Descrizione non disponibile."
+            "effetto_tipo": "Nessuno", "valore_bonus": 0, "fase_attivazione": "Hero Phase (Fase Eroi Amica)", "descrizione": "Descrizione non disponibile."
         })
 
-        # Layout Effetti, Menu a tendina Fasi di Gioco e Descrizione
+        # Layout a due colonne per Effetto/Fase e Descrizione Completa
         fc1, fc2 = st.columns([1.5, 2])
         
         with fc1:
@@ -242,7 +242,6 @@ def render_sala_di_guerra():
         with fc2:
             st.markdown("**Descrizione Completa & Regola:**")
             st.info(dati_form.get('descrizione', 'Nessun dettaglio inserito.'))
-
         
     # ==========================================
     # SEZIONE 2: COMPOSIZIONE REGGIMENTI
