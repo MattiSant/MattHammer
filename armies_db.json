@@ -1,0 +1,58 @@
+{
+    "Nighthaunt: Path to Glory 720pt (Scudo e Martello)": {
+        "nome": "Path to Glory 720pt - Scudo e Martello",
+        "fazione": "Nighthaunt",
+        "formazione": "Death Stalkers",
+        "limite_punti": 720,
+        "punti_totali": 700,
+        "reggimenti": [
+            {
+                "leader": "Nighthaunt: Knight of Shrouds",
+                "is_generale": true,
+                "rinforzato": false,
+                "tratto_eroico": "Furia Implacabile (+1 Attacchi alle armi da mischia)",
+                "artefatto": "Talismano di Guardia (Ward 5+ al portatore)",
+                "livello_mago": 0,
+                "livello_prete": 0,
+                "seguito": [
+                    {
+                        "nome": "Nighthaunt: Bladegheist Revenants",
+                        "rinforzata": false,
+                        "ruolo": "Cavalleria / Élite (2 OC/mod)",
+                        "mago_extra": 0,
+                        "prete_extra": 0
+                    }
+                ]
+            },
+            {
+                "leader": "Nighthaunt: Guardian of Souls",
+                "is_generale": false,
+                "rinforzato": false,
+                "tratto_eroico": "Nessuno",
+                "artefatto": "Nessuno",
+                "livello_mago": 1,
+                "livello_prete": 0,
+                "seguito": []
+            },
+            {
+                "leader": "Nighthaunt: Scriptor Mortis",
+                "is_generale": false,
+                "rinforzato": false,
+                "tratto_eroico": "Nessuno",
+                "artefatto": "Nessuno",
+                "livello_mago": 0,
+                "livello_prete": 0,
+                "seguito": [
+                    {
+                        "nome": "Nighthaunt: Spirit Hosts",
+                        "rinforzata": false,
+                        "ruolo": "Fanteria Standard (1 OC/mod)",
+                        "mago_extra": 0,
+                        "prete_extra": 0
+                    }
+                ]
+            }
+        ],
+        "ausiliari": []
+    }
+}
