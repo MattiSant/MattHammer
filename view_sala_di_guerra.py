@@ -126,25 +126,6 @@ def calcola_output_unita_su_bersaglio(dati_unita_db, rinforzata, bersaglio_test)
 #
 #
 def render_sala_di_guerra():
-    # Inizializzazione sicura di tutte le chiavi in session_state
-    if "sdg_reggimenti" not in st.session_state or not isinstance(st.session_state["sdg_reggimenti"], list):
-        st.session_state["sdg_reggimenti"] = [
-            {
-                "leader": "--- Scegli Eroe Leader ---",
-                "is_generale": True,
-                "rinforzato": False,
-                "tratto_eroico": "Nessuno",
-                "artefatto": "Nessuno",
-                "livello_mago": 0,
-                "livello_prete": 0,
-                "seguito": []
-            }
-        ]
-    if "sdg_ausiliari" not in st.session_state:
-        st.session_state["sdg_ausiliari"] = []
-    if "sdg_nemici_matchup" not in st.session_state:
-        st.session_state["sdg_nemici_matchup"] = []
-        
     st.markdown("""
     <style>
         .section-header {
@@ -179,9 +160,27 @@ def render_sala_di_guerra():
     st.title("MattHammer — Sala di Guerra")
     st.caption("Costruttore d'armata avanzato per Reggimenti, gestione formazioni tattiche e simulatore di Match-Up.")
 
-    # Inizializzazione Stati Formazione e Armata
+    # --- INIZIALIZZAZIONE SICURA STATI & DATABASE ---
     if "archivio_formazioni" not in st.session_state:
         st.session_state["archivio_formazioni"] = carica_formazioni_db()
+
+    if "sdg_reggimenti" not in st.session_state or not isinstance(st.session_state["sdg_reggimenti"], list):
+        st.session_state["sdg_reggimenti"] = [
+            {
+                "leader": "--- Scegli Eroe Leader ---",
+                "is_generale": True,
+                "rinforzato": False,
+                "tratto_eroico": "Nessuno",
+                "artefatto": "Nessuno",
+                "livello_mago": 0,
+                "livello_prete": 0,
+                "seguito": []
+            }
+        ]
+    if "sdg_ausiliari" not in st.session_state:
+        st.session_state["sdg_ausiliari"] = []
+    if "sdg_nemici_matchup" not in st.session_state:
+        st.session_state["sdg_nemici_matchup"] = []
 
     if "sdg_nome_armata" not in st.session_state:
         st.session_state["sdg_nome_armata"] = "Armata Path to Glory"
@@ -189,6 +188,9 @@ def render_sala_di_guerra():
         st.session_state["sdg_fazione_armata"] = "Nighthaunt"
     if "sdg_formazione_scelta" not in st.session_state:
         st.session_state["sdg_formazione_scelta"] = "Death Stalkers"
+
+    # Definizione delle unità salvate nel DB locale (indispensabile per i menu a tendina)
+    opzioni_db = [k for k in st.session_state["db_unita"].keys() if k != "--- Seleziona o Resetta ---"]
 #
 #
 #
