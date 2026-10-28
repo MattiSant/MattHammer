@@ -20,8 +20,9 @@ applica_stile_globale()
 if "db_unita" not in st.session_state:
     st.session_state["db_unita"] = carica_database()
 
-if "pagina_attiva" not in st.session_state:
-    st.session_state["pagina_attiva"] = "Portale Principale (Home)"
+# Unica variabile di stato per la navigazione
+if "nav_radio" not in st.session_state:
+    st.session_state["nav_radio"] = "Portale Principale (Home)"
 
 if "corrente_armi" not in st.session_state:
     st.session_state["corrente_armi"] = [
@@ -166,20 +167,17 @@ opzioni_menu = [
     "Sala di Guerra (Costruttore Armate)"
 ]
 
-indice_corrente = opzioni_menu.index(st.session_state["pagina_attiva"]) if st.session_state["pagina_attiva"] in opzioni_menu else 0
-
-modalita_scelta = st.sidebar.radio(
+# Radio button sincronizzato direttamente con st.session_state["nav_radio"]
+st.sidebar.radio(
     "Navigazione del Tomo",
     opzioni_menu,
-    index=indice_corrente,
     key="nav_radio"
 )
-st.session_state["pagina_attiva"] = modalita_scelta
 
 st.sidebar.markdown("---")
 
-# Mostra Directory e Gestione Database solo se non siamo sulla Home per non appesantire
-if st.session_state["pagina_attiva"] != "Portale Principale (Home)":
+# Mostra Directory e Gestione Database solo se non siamo sulla Home
+if st.session_state["nav_radio"] != "Portale Principale (Home)":
     st.sidebar.subheader("Directory Database")
     st.sidebar.caption("Seleziona e carica un'unità salvata.")
 
@@ -219,7 +217,6 @@ if st.session_state["pagina_attiva"] != "Portale Principale (Home)":
         st.session_state["form_version"] += 1
         st.rerun()
 
-    # Eliminazione unità
     tutte_le_unita = [u for u in st.session_state["db_unita"].keys() if u != "--- Seleziona o Resetta ---"]
     if tutte_le_unita:
         st.sidebar.markdown("---")
@@ -272,17 +269,8 @@ def render_homepage():
             </p>
         </div>
         """, unsafe_allow_html=True)
-
-        # Pulsante Laboratorio Tattico
-        if st.button(
-            "Apri Laboratorio Tattico", type="primary", use_container_width=True
-        ):
-            st.session_state["pagina_attiva"] = (
-                "Laboratorio Tattico (Testa a Testa)"
-            )
-            st.session_state["nav_radio"] = (
-                "Laboratorio Tattico (Testa a Testa)"
-            )
+        if st.button("Apri Laboratorio Tattico", type="primary", use_container_width=True):
+            st.session_state["nav_radio"] = "Laboratorio Tattico (Testa a Testa)"
             st.rerun()
 
     with col_sala:
@@ -295,19 +283,8 @@ def render_homepage():
             </p>
         </div>
         """, unsafe_allow_html=True)
-
-        # Pulsante Sala di Guerra
-        if st.button(
-            "Entra nella Sala di Guerra",
-            type="primary",
-            use_container_width=True,
-        ):
-            st.session_state["pagina_attiva"] = (
-                "Sala di Guerra (Costruttore Armate)"
-            )
-            st.session_state["nav_radio"] = (
-                "Sala di Guerra (Costruttore Armate)" 
-            )
+        if st.button("Entra nella Sala di Guerra", type="primary", use_container_width=True):
+            st.session_state["nav_radio"] = "Sala di Guerra (Costruttore Armate)"
             st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -334,7 +311,7 @@ def render_homepage():
 # ==========================================
 # ROUTING DELLE PAGINE (MATCH / CASE)
 # ==========================================
-match st.session_state["pagina_attiva"]:
+match st.session_state["nav_radio"]:
     case "Portale Principale (Home)":
         render_homepage()
 
