@@ -2,8 +2,17 @@
     "Nighthaunt: Knight of Shrouds": {
         "fazione": "Nighthaunt",
         "n_modelli": 1,
+        "dimensione_basetta": "32mm",
+        "può_essere_rinforzata": false,
         "campione": false,
         "punti": 100,
+        "statistiche_cerchio": {
+            "movimento": "8\"",
+            "controllo": 2,
+            "save": "5+",
+            "salute": 5,
+            "ward": "5+"
+        },
         "difesa": {
             "salute_per_modello": 5,
             "save": 5,
@@ -25,13 +34,39 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "STOLEN HOURS",
+                "tipo": "Passive",
+                "reazione": false,
+                "fasi": ["Fine della Fase di Combattimento"],
+                "descrizione": "The bearer of a Sword of Stolen Hours can steal vital energy from a foe and use it to increase their own power. Effect: Each time this unit uses a FIGHT ability, after that FIGHT ability has been resolved, Heal (X) this unit, where X is the number of damage points allocated to enemy units by combat attacks made as part of that FIGHT ability."
+            },
+            {
+                "nome": "INFANTRY OVERSEER",
+                "tipo": "Ability",
+                "reazione": true,
+                "fasi": ["Fase di Combattimento"],
+                "descrizione": "Reaction: You declared a FIGHT ability for this unit. Effect: Pick a friendly non-HERO Nighthaunt INFANTRY unit that has not used a FIGHT ability this turn and is within this unit's combat range to be the target. The target can be picked to use a FIGHT ability immediately after the FIGHT ability used by this unit has been resolved."
+            }
+        ],
+        "keywords": ["Hero", "Infantry", "Fly", "Ward (5+)", "Death", "Nighthaunt"]
     },
     "Nighthaunt: Guardian of Souls": {
         "fazione": "Nighthaunt",
         "n_modelli": 1,
+        "dimensione_basetta": "32mm",
+        "può_essere_rinforzata": false,
         "campione": false,
         "punti": 100,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 2,
+            "save": "5+",
+            "salute": 5,
+            "ward": "5+"
+        },
         "difesa": {
             "salute_per_modello": 5,
             "save": 5,
@@ -53,13 +88,32 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "NIGHTMARE LANTERN",
+                "tipo": "Ability",
+                "reazione": false,
+                "fasi": ["Hero Phase (Fase Eroi Amica)"],
+                "descrizione": "Effect: Add 1 to wound rolls for attacks made by friendly Nighthaunt units while they are wholly within 12\" of this unit."
+            }
+        ],
+        "keywords": ["Hero", "Infantry", "Wizard (1)", "Ward (5+)", "Death", "Nighthaunt"]
     },
     "Nighthaunt: Scriptor Mortis": {
         "fazione": "Nighthaunt",
         "n_modelli": 1,
+        "dimensione_basetta": "32mm",
+        "può_essere_rinforzata": false,
         "campione": false,
         "punti": 90,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 2,
+            "save": "5+",
+            "salute": 5,
+            "ward": "5+"
+        },
         "difesa": {
             "salute_per_modello": 5,
             "save": 5,
@@ -81,13 +135,32 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "JUDGE, JURY AND EXECUTIONER",
+                "tipo": "Ability",
+                "reazione": false,
+                "fasi": ["Hero Phase (Fase Eroi Amica)"],
+                "descrizione": "Effect: Pick an enemy unit to be 'Sentenced'. Friendly Nighthaunt units gain Crit (Mortal) against that unit."
+            }
+        ],
+        "keywords": ["Hero", "Infantry", "Ward (5+)", "Death", "Nighthaunt"]
     },
     "Nighthaunt: Bladegheist Revenants": {
         "fazione": "Nighthaunt",
         "n_modelli": 10,
+        "dimensione_basetta": "32mm",
+        "può_essere_rinforzata": true,
         "campione": true,
         "punti": 200,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 1,
+            "save": "6+",
+            "salute": 2,
+            "ward": "5+"
+        },
         "difesa": {
             "salute_per_modello": 2,
             "save": 6,
@@ -109,13 +182,32 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "WHIRLWIND OF DESTRUCTION",
+                "tipo": "Passive",
+                "reazione": false,
+                "fasi": ["Combat Phase (Fase di Combattimento)"],
+                "descrizione": "Effect: Add 1 to the Attacks characteristic of this unit's weapons if it charged this turn."
+            }
+        ],
+        "keywords": ["Infantry", "Fly", "Ward (5+)", "Death", "Nighthaunt"]
     },
     "Nighthaunt: Grimghast Reapers": {
         "fazione": "Nighthaunt",
         "n_modelli": 10,
+        "dimensione_basetta": "32mm",
+        "può_essere_rinforzata": true,
         "campione": true,
         "punti": 190,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 1,
+            "save": "6+",
+            "salute": 2,
+            "ward": "5+"
+        },
         "difesa": {
             "salute_per_modello": 2,
             "save": 6,
@@ -137,14 +229,79 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "REAPED LIKE CORN",
+                "tipo": "Passive",
+                "reazione": false,
+                "fasi": ["Combat Phase (Fase di Combattimento)"],
+                "descrizione": "Effect: Add 1 to the Attacks characteristic of this unit's weapons if the target unit has 5 or more models."
+            }
+        ],
+        "keywords": ["Infantry", "Fly", "Ward (5+)", "Death", "Nighthaunt"]
     },
-
+    "Nighthaunt: Spirit Hosts": {
+        "fazione": "Nighthaunt",
+        "n_modelli": 3,
+        "dimensione_basetta": "50mm",
+        "può_essere_rinforzata": true,
+        "campione": false,
+        "punti": 110,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 1,
+            "save": "6+",
+            "salute": 3,
+            "ward": "5+"
+        },
+        "difesa": {
+            "salute_per_modello": 3,
+            "save": 6,
+            "ward": 5
+        },
+        "armi": [
+            {
+                "nome": "Spectral Claws and Daggers",
+                "attiva": true,
+                "ranged": false,
+                "atk": "6",
+                "hit": 4,
+                "wnd": 5,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "DRAWN TO WAR",
+                "tipo": "Passive",
+                "reazione": false,
+                "fasi": ["Any Phase"],
+                "descrizione": "Effect: Friendly Nighthaunt INFANTRY HEROES within 3\" of this unit have a Ward (4+) instead of Ward (5+)."
+            }
+        ],
+        "keywords": ["Beast", "Fly", "Ward (5+)", "Death", "Nighthaunt"]
+    },
     "Sylvaneth: Grove Guardian": {
         "fazione": "Sylvaneth",
         "n_modelli": 1,
+        "dimensione_basetta": "105x70mm",
+        "può_essere_rinforzata": false,
         "campione": false,
         "punti": 200,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 5,
+            "save": "5+",
+            "salute": 7,
+            "ward": "7+"
+        },
         "difesa": {
             "salute_per_modello": 7,
             "save": 5,
@@ -181,13 +338,32 @@
                 "anti_charge": false,
                 "companion": true
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "SPIRITUAL RAMPART",
+                "tipo": "Passive",
+                "reazione": false,
+                "fasi": ["Hero Phase (Fase Eroi Amica)", "Hero Phase (Fase Eroi Nemica)"],
+                "descrizione": "Effect: Friendly Sylvaneth units wholly within 6\" of this unit benefit from cover."
+            }
+        ],
+        "keywords": ["Hero", "Monster", "Sylvaneth"]
     },
     "Sylvaneth: Branchwych": {
         "fazione": "Sylvaneth",
         "n_modelli": 1,
+        "dimensione_basetta": "32mm",
+        "può_essere_rinforzata": false,
         "campione": false,
         "punti": 100,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 2,
+            "save": "5+",
+            "salute": 5,
+            "ward": "7+"
+        },
         "difesa": {
             "salute_per_modello": 5,
             "save": 5,
@@ -209,13 +385,32 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "BLESSINGS OF THE FOREST",
+                "tipo": "Ability",
+                "reazione": false,
+                "fasi": ["Hero Phase (Fase Eroi Amica)"],
+                "descrizione": "Effect: Heal up to D3 wounds allocated to this unit."
+            }
+        ],
+        "keywords": ["Hero", "Infantry", "Wizard (1)", "Sylvaneth"]
     },
     "Sylvaneth: Dryads": {
         "fazione": "Sylvaneth",
         "n_modelli": 10,
+        "dimensione_basetta": "32mm",
+        "può_essere_rinforzata": true,
         "campione": true,
         "punti": 100,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 1,
+            "save": "5+",
+            "salute": 1,
+            "ward": "7+"
+        },
         "difesa": {
             "salute_per_modello": 1,
             "save": 5,
@@ -237,13 +432,32 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "WOODLAND BLENDING",
+                "tipo": "Passive",
+                "reazione": false,
+                "fasi": ["Any Phase"],
+                "descrizione": "Effect: This unit has a 5+ Ward while wholly within 6\" of friendly Awildwood terrain features."
+            }
+        ],
+        "keywords": ["Infantry", "Sylvaneth"]
     },
     "Sylvaneth: Kurnoth Hunters With Greatswords": {
         "fazione": "Sylvaneth",
         "n_modelli": 3,
+        "dimensione_basetta": "50mm",
+        "può_essere_rinforzata": true,
         "campione": true,
         "punti": 220,
+        "statistiche_cerchio": {
+            "movimento": "5\"",
+            "controllo": 2,
+            "save": "4+",
+            "salute": 5,
+            "ward": "7+"
+        },
         "difesa": {
             "salute_per_modello": 5,
             "save": 4,
@@ -265,13 +479,32 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "AURA OF GRACE",
+                "tipo": "Passive",
+                "reazione": false,
+                "fasi": ["Combat Phase (Fase di Combattimento)"],
+                "descrizione": "Effect: Each time a model in this unit is slain in combat, roll a dice; on a 4+, it can fight before being removed from play."
+            }
+        ],
+        "keywords": ["Infantry", "Sylvaneth"]
     },
     "Orruk Kruleboyz: Hobgrot Slittaboss": {
         "fazione": "Orruk Kruleboyz",
         "n_modelli": 1,
+        "dimensione_basetta": "32mm",
+        "può_essere_rinforzata": false,
         "campione": false,
         "punti": 60,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 2,
+            "save": "6+",
+            "salute": 5,
+            "ward": "7+"
+        },
         "difesa": {
             "salute_per_modello": 5,
             "save": 6,
@@ -293,13 +526,32 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "SNEAKY STABBER",
+                "tipo": "Ability",
+                "reazione": false,
+                "fasi": ["Hero Phase (Fase Eroi Amica)"],
+                "descrizione": "Effect: Pick an enemy unit within combat range and inflict 1 mortal wound on a roll of 3+."
+            }
+        ],
+        "keywords": ["Hero", "Infantry", "Kruleboyz", "Orruk"]
     },
     "Orruk Kruleboyz: Hobgrot Slittaz": {
         "fazione": "Orruk Kruleboyz",
         "n_modelli": 10,
+        "dimensione_basetta": "25mm",
+        "può_essere_rinforzata": true,
         "campione": true,
         "punti": 70,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 1,
+            "save": "6+",
+            "salute": 1,
+            "ward": "7+"
+        },
         "difesa": {
             "salute_per_modello": 1,
             "save": 6,
@@ -336,13 +588,32 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "EXPERIMENTAHL WEAPONRY",
+                "tipo": "Passive",
+                "reazione": false,
+                "fasi": ["Shooting Phase (Fase di Tiro)"],
+                "descrizione": "Effect: Scrap-grenades have an increased range when targeting larger units."
+            }
+        ],
+        "keywords": ["Infantry", "Kruleboyz", "Orruk"]
     },
     "Orruk Kruleboyz: Gutrippaz": {
         "fazione": "Orruk Kruleboyz",
         "n_modelli": 10,
+        "dimensione_basetta": "25mm",
+        "può_essere_rinforzata": true,
         "campione": true,
         "punti": 150,
+        "statistiche_cerchio": {
+            "movimento": "5\"",
+            "controllo": 1,
+            "save": "5+",
+            "salute": 2,
+            "ward": "7+"
+        },
         "difesa": {
             "salute_per_modello": 2,
             "save": 5,
@@ -364,13 +635,32 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "DIRTY FIGHTERS",
+                "tipo": "Ability",
+                "reazione": false,
+                "fasi": ["Combat Phase (Fase di Combattimento)"],
+                "descrizione": "Effect: Roll a D6 when targeted in combat; on a 6, reduce incoming damage."
+            }
+        ],
+        "keywords": ["Infantry", "Kruleboyz", "Orruk"]
     },
     "Orruk Kruleboyz: Killaboss on Great Gnashtoof": {
         "fazione": "Orruk Kruleboyz",
         "n_modelli": 1,
+        "dimensione_basetta": "90x52mm",
+        "può_essere_rinforzata": false,
         "campione": false,
         "punti": 130,
+        "statistiche_cerchio": {
+            "movimento": "8\"",
+            "controllo": 2,
+            "save": "3+",
+            "salute": 10,
+            "ward": "7+"
+        },
         "difesa": {
             "salute_per_modello": 10,
             "save": 3,
@@ -407,13 +697,32 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "YOU GO THAT WAY, I'LL GO THIS WAY",
+                "tipo": "Ability",
+                "reazione": false,
+                "fasi": ["Movement Phase (Movimento Amico)"],
+                "descrizione": "Effect: Give a movement command to a friendly Kruleboyz unit."
+            }
+        ],
+        "keywords": ["Hero", "Cavalry", "Kruleboyz", "Orruk"]
     },
     "Khorne: Warlord Tank (2+ Save)": {
         "fazione": "Blades of Khorne",
         "n_modelli": 1,
+        "dimensione_basetta": "40mm",
+        "può_essere_rinforzata": false,
         "campione": false,
         "punti": 250,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 2,
+            "save": "2+",
+            "salute": 8,
+            "ward": "7+"
+        },
         "difesa": {
             "salute_per_modello": 8,
             "save": 2,
@@ -435,7 +744,16 @@
                 "anti_charge": false,
                 "companion": false
             }
-        ]
+        ],
+        "abilita": [
+            {
+                "nome": "BLOOD FOR THE BLOOD GOD",
+                "tipo": "Passive",
+                "reazione": false,
+                "fasi": ["Combat Phase (Fase di Combattimento)"],
+                "descrizione": "Effect: Gain blood tithe points whenever models are slain."
+            }
+        ],
+        "keywords": ["Hero", "Infantry", "Blades of Khorne", "Khorne"]
     }
-    
 }
