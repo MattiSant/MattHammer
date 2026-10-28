@@ -13,10 +13,15 @@ st.set_page_config(
 
 # Applica lo stile grafico globale dai fogli di pergamena
 applica_stile_globale()
-
+#
+#
+#
 # ==========================================
 # INIZIALIZZAZIONE SESSION STATE
 # ==========================================
+#
+#
+#
 if "db_unita" not in st.session_state:
     st.session_state["db_unita"] = carica_database()
 
@@ -52,10 +57,15 @@ if "bersaglio_punti" not in st.session_state:
 if "target_version" not in st.session_state:
     st.session_state["target_version"] = 0
 
-
+#
+#
+#
 # ==========================================
 # CSS PER L'ANIMAZIONE DI BRACI, SCINTILLE & HERO SECTION
 # ==========================================
+#
+#
+#
 st.markdown("""
 <style>
     /* Effetto particelle fluttuanti (braci ardenti e scintille d'oro) */
@@ -152,11 +162,15 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-
+#
+#
+#
 # ==========================================
 # SIDEBAR CONDIVISA
 # ==========================================
+#
+#
+#
 st.sidebar.title("MATTHAMMER")
 st.sidebar.caption("AoS 4e Tactical Suite v4.19")
 st.sidebar.markdown("---")
@@ -245,11 +259,15 @@ try:
         st.sidebar.info("Modalità Locale (Offline)")
 except Exception:
     st.sidebar.info("Modalità Locale (Offline)")
-
-
+#
+#
+#
 # ==========================================
 # FUNZIONE RENDERING: PORTALE PRINCIPALE (HOME)
 # ==========================================
+#
+#
+#
 def render_homepage():
     # Hero Banner con animazione delle braci e scintille
     st.markdown("""
@@ -313,11 +331,15 @@ def render_homepage():
             is_cloud = False
             
         c_stat3.metric("Sincronizzazione", "GitHub Cloud" if is_cloud else "Database Locale", "Attiva" if is_cloud else "Offline")
-
-
+#
+#
+#
 # ==========================================
 # ROUTING DELLE PAGINE (MATCH / CASE)
 # ==========================================
+#
+#
+#
 match st.session_state["pagina_selezionata"]:
     case "Portale Principale (Home)":
         render_homepage()

@@ -42,10 +42,15 @@ def render_testa_a_testa():
     # Inizializzazione della lista supporti attivi in session state
     if "lista_supporti_attivi" not in st.session_state:
         st.session_state["lista_supporti_attivi"] = []
-
+#
+#
+#
     # ==========================================
     # SEZIONE: SCHIERAMENTO D'ASSALTO (PRINCIPALE)
     # ==========================================
+#
+#
+#
     st.markdown('<div class="section-header">Schieramento d\'Assalto</div>', unsafe_allow_html=True)
     st.caption("Inserisci le statistiche dell'unità principale d'attacco che guiderà l'ingaggio.")
 
@@ -210,10 +215,15 @@ def render_testa_a_testa():
         "mortal_extra_soglia": mortal_extra_soglia,
         "mortal_extra_fisso": mortal_extra_fisso
     }
-
+#
+#
+#
     # ==========================================
     # FORZE DI SUPPORTO: ATTACCO COMBINATO
     # ==========================================
+#
+#
+#
     st.markdown('<div class="subsection-title">Forze di Supporto: Attacco Combinato (Opzionale)</div>', unsafe_allow_html=True)
     st.caption("Aggiungi più formazioni alleate dal Database per calcolare l'efficacia di un assalto corale. Ciascun supporto ha comandi, modificatori e buff indipendenti.")
     
@@ -359,10 +369,15 @@ def render_testa_a_testa():
                     st.rerun()
                 else:
                     st.error(f"Errore durante il salvataggio: {messaggio}")
-
+#
+#
+#
     # ==========================================
     # SEZIONE: BERSAGLIO DESIGNATO
     # ==========================================
+#
+#
+#
     st.markdown('<div class="section-header">Bersaglio Designato</div>', unsafe_allow_html=True)
     st.caption("Configura difese, terreno, valore in punti ed eventuali penalità dell'unità avversaria.")
     
@@ -443,10 +458,15 @@ def render_testa_a_testa():
     mod_globali["bersaglio_ha_caricato"] = bersaglio_carica
     for sup in config_supporti:
         sup["mod_globali"]["bersaglio_ha_caricato"] = bersaglio_carica
-
+#
+#
+#
     # ==========================================
     # MOTORE DI CALCOLO UNIFICATO
     # ==========================================
+#
+#
+#
     armi_attive_calcolo = st.session_state["corrente_armi"]
     risultati_armi_principale = [calcola_arma_analitico(a, mod_globali, bersaglio_dict) for a in armi_attive_calcolo]
 
@@ -496,10 +516,15 @@ def render_testa_a_testa():
     punti_supporto_totali = sum(sup["punti"] for sup in config_supporti)
     punti_attaccante_totali = punti_unita + punti_supporto_totali
     roi_punti = (danno_totale_atteso / punti_attaccante_totali) * 100.0 if punti_attaccante_totali > 0 else 0.0
-
+#
+#
+#
     # ==========================================
     # SEZIONE: VERDETTO TATTICO E RISULTATI
     # ==========================================
+#
+#
+#
     st.markdown('<div class="section-header">Verdetto Tattico e Risultati</div>', unsafe_allow_html=True)
     st.caption("Scomposizione dettagliata delle fasi di combattimento, curva cumulativa e sostenibilità in punti.")
 

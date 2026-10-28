@@ -7,10 +7,15 @@ from core_engine import calcola_arma_analitico
 
 ARMIES_DB_FILE = "armies_db.json"
 FORMATIONS_DB_FILE = "formations.json"
-
+#
+#
+#
 # ==========================================
 # GESTIONE ARCHIVIO LISTE ARMATE (JSON)
 # ==========================================
+#
+#
+#
 def carica_archivio_armate():
     if os.path.exists(ARMIES_DB_FILE):
         try:
@@ -52,10 +57,15 @@ ARMATE_NEMICHE_NOTE = {
         {"nome": "Sylvaneth: Kurnoth Hunters with Greatscythes", "rinforzata": False}
     ]
 }
-
+#
+#
+#
 # ==========================================
 # FUNZIONI DI SUPPORTO PER ANALISI ROSTER
 # ==========================================
+#
+#
+#
 def stima_controllo_unita(ruolo, n_modelli):
     if ruolo == "Mostro (5 OC)":
         return 5 * max(1, n_modelli)
@@ -106,11 +116,35 @@ def calcola_output_unita_su_bersaglio(dati_unita_db, rinforzata, bersaglio_test)
         "attacchi_tot": attacchi_tot
     }
 
-
+#
+#
+#
 # ==========================================
 # VISTA PRINCIPALE: SALA DI GUERRA
 # ==========================================
+#
+#
+#
 def render_sala_di_guerra():
+    # Inizializzazione sicura di tutte le chiavi in session_state
+    if "sdg_reggimenti" not in st.session_state or not isinstance(st.session_state["sdg_reggimenti"], list):
+        st.session_state["sdg_reggimenti"] = [
+            {
+                "leader": "--- Scegli Eroe Leader ---",
+                "is_generale": True,
+                "rinforzato": False,
+                "tratto_eroico": "Nessuno",
+                "artefatto": "Nessuno",
+                "livello_mago": 0,
+                "livello_prete": 0,
+                "seguito": []
+            }
+        ]
+    if "sdg_ausiliari" not in st.session_state:
+        st.session_state["sdg_ausiliari"] = []
+    if "sdg_nemici_matchup" not in st.session_state:
+        st.session_state["sdg_nemici_matchup"] = []
+        
     st.markdown("""
     <style>
         .section-header {
@@ -155,10 +189,15 @@ def render_sala_di_guerra():
         st.session_state["sdg_fazione_armata"] = "Nighthaunt"
     if "sdg_formazione_scelta" not in st.session_state:
         st.session_state["sdg_formazione_scelta"] = "Death Stalkers"
-
+#
+#
+#
 # ==========================================
-    # SEZIONE 1: GENERALITÀ DELL'ARMATA E FORMAZIONE
-    # ==========================================
+# SEZIONE 1: GENERALITÀ DELL'ARMATA E FORMAZIONE
+# ==========================================
+#
+#
+#
     st.markdown('<div class="section-header">Configurazione Schieramento e Formazione</div>', unsafe_allow_html=True)
     st.caption("Definisci le generalità dell'esercito, il formato della battaglia e la Formazione tattica associata con i relativi bonus.")
 
@@ -188,7 +227,7 @@ def render_sala_di_guerra():
         elif "2000" in formato_scelto:
             limite_punti = 2000
         else:
-            limite_punti = col_f4.number_input("Punti Custom", min_value=100, max_value=5000, value=720, step=10)
+            limite_punti = col_f4.number_input("Punti Custom", min_value=100, max_value=5000, value=500, step=10)
 
         st.markdown("---")
         st.markdown('<div class="subsection-title">Formazione di Battaglia (Battle Formation)</div>', unsafe_allow_html=True)
@@ -227,9 +266,15 @@ def render_sala_di_guerra():
         with fc3:
             st.markdown("**Regola & Descrizione Ufficiale:**")
             st.info(dati_form.get('descrizione', 'Nessun dettaglio inserito.'))
+    # 
+    # 
+    # 
     # ==========================================
     # SEZIONE 2: COMPOSIZIONE REGGIMENTI
     # ==========================================
+    #
+    #
+    #
     st.markdown('<div class="section-header">Composizione Reggimenti</div>', unsafe_allow_html=True)
     st.caption("Assegna leader, tratti eroici, artefatti magici e unità di seguito per ciascun reggimento dell'armata.")
 
