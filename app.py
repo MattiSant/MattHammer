@@ -272,8 +272,17 @@ def render_homepage():
             </p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Apri Laboratorio Tattico", type="primary", use_container_width=True):
-            st.session_state["pagina_attiva"] = "Laboratorio Tattico (Testa a Testa)"
+
+        # Pulsante Laboratorio Tattico
+        if st.button(
+            "Apri Laboratorio Tattico", type="primary", use_container_width=True
+        ):
+            st.session_state["pagina_attiva"] = (
+                "Laboratorio Tattico (Testa a Testa)"
+            )
+            st.session_state["nav_radio"] = (
+                "Laboratorio Tattico (Testa a Testa)"  # <--- Aggiungi questa riga
+            )
             st.rerun()
 
     with col_sala:
@@ -286,8 +295,19 @@ def render_homepage():
             </p>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Entra nella Sala di Guerra", type="primary", use_container_width=True):
-            st.session_state["pagina_attiva"] = "Sala di Guerra (Costruttore Armate)"
+
+        # Pulsante Sala di Guerra
+        if st.button(
+            "Entra nella Sala di Guerra",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state["pagina_attiva"] = (
+                "Sala di Guerra (Costruttore Armate)"
+            )
+            st.session_state["nav_radio"] = (
+                "Sala di Guerra (Costruttore Armate)"  # <--- Aggiungi questa riga
+            )
             st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
