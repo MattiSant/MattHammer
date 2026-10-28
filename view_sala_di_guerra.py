@@ -6,6 +6,7 @@ import os
 from core_engine import calcola_arma_analitico
 
 ARMIES_DB_FILE = "armies_db.json"
+FORMATIONS_DB_FILE = "formations.json"
 
 # ==========================================
 # GESTIONE ARCHIVIO LISTE ARMATE (JSON)
@@ -23,6 +24,15 @@ def salva_archivio_armate(armate_dict):
     with open(ARMIES_DB_FILE, "w", encoding="utf-8") as f:
         json.dump(armate_dict, f, indent=4, ensure_ascii=False)
     return True
+
+def carica_formazioni_db():
+    if os.path.exists(FORMATIONS_DB_FILE):
+        try:
+            with open(FORMATIONS_DB_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
 
 # Preset di Armate Avversarie Note (basate sulle campagne del notebook)
 ARMATE_NEMICHE_NOTE = {
@@ -133,51 +143,29 @@ def render_sala_di_guerra():
     """, unsafe_allow_html=True)
 
     st.title("MattHammer — Sala di Guerra")
-    st.caption("Costruttore d'armata avanzato per Reggimenti (AoS 4e), punteggi personalizzati, diagnosi strategica e simulatore di Match-Up contro armate note.")
+    st.caption("Costruttore d'armata avanzato per Reggimenti, gestione formazioni tattiche e simulatore di Match-Up.")
 
-    # Inizializzazione Stati della Sala di Guerra
-    if "archivio_armate" not in st.session_state:
-        st.session_state["archivio_armate"] = carica_archivio_armate()
+    # Inizializzazione Stati Formazione e Armata
+    if "archivio_formazioni" not in st.session_state:
+        st.session_state["archivio_formazioni"] = carica_formazioni_db()
 
     if "sdg_nome_armata" not in st.session_state:
-        st.session_state["sdg_nome_armata"] = "Schieramento Path to Glory"
+        st.session_state["sdg_nome_armata"] = "Armata Path to Glory"
     if "sdg_fazione_armata" not in st.session_state:
         st.session_state["sdg_fazione_armata"] = "Nighthaunt"
-    if "sdg_formazione_battaglia" not in st.session_state:
-        st.session_state["sdg_formazione_battaglia"] = "Death Stalkers"
-
-    if "sdg_reggimenti" not in st.session_state:
-        st.session_state["sdg_reggimenti"] = [
-            {
-                "leader": "Nighthaunt: Knight of Shrouds",
-                "is_generale": True,
-                "rinforzato": False,
-                "tratto_eroico": "Furia Implacabile (+1 Attacchi)",
-                "artefatto": "Talismano di Guardia (Ward 5+)",
-                "livello_mago": 0,
-                "livello_prete": 0,
-                "seguito": []
-            }
-        ]
-
-    if "sdg_ausiliari" not in st.session_state:
-        st.session_state["sdg_ausiliari"] = []
-
-    if "sdg_nemici_matchup" not in st.session_state:
-        st.session_state["sdg_nemici_matchup"] = []
-
-    opzioni_db = [k for k in st.session_state["db_unita"].keys() if k != "--- Seleziona o Resetta ---"]
+    if "sdg_formazione_scelta" not in st.session_state:
+        st.session_state["sdg_formazione_scelta"] = "Death Stalkers"
 
     # ==========================================
-    # SEZIONE 1: FORMATO BATTAGLIA E PUNTEGGI PERSONALIZZATI
+    # SEZIONE 1: GENERALITÀ DELL'ARMATA E FORMAZIONE
     # ==========================================
-    st.markdown('<div class="section-header">Configurazione Schieramento e Punteggi</div>', unsafe_allow_html=True)
-    st.caption("Imposta il formato della partita, supporta punteggi personalizzati (es. 720pt Path to Glory) e gestisci l'archivio liste.")
+    st.markdown('<div class="section-header">Configurazione Schieramento e Formazione</div>', unsafe_allow_html=True)
+    st.caption("Definisci le generalità dell'esercito, il formato della battaglia e la Formazione tattica associata con i relativi bonus.")
 
     with st.container(border=True):
-        st.markdown('<div class="subsection-title">Parametri e Limiti di Punti</div>', unsafe_allow_html=True)
-        st.caption("Definisci il tetto massimo di punti e carica o salva il tuo roster nell'archivio.")
-
+        st.markdown('<div class="subsection-title">Generalità dell\'Esercito</div>', unsafe_allow_html=True)
+        
+        # Schema richiesto sulla stessa riga: Nome della Lista - Fazione - Formato Battaglia
         col_f1, col_f2, col_f3, col_f4 = st.columns([1.5, 1.2, 1.3, 1])
         st.session_state["sdg_nome_armata"] = col_f1.text_input("Nome della Lista", value=st.session_state["sdg_nome_armata"])
         
@@ -187,55 +175,75 @@ def render_sala_di_guerra():
 
         formato_scelto = col_f3.selectbox(
             "Formato Battaglia",
-            ["Path to Glory (720 pt Personalizzati)", "Path to Glory Standard (600 pt)", "Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
+            ["Path to Glory (720 pt)", "Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
             index=0
         )
 
         if "720" in formato_scelto:
             limite_punti = 720
-            max_reggimenti = 3
-        elif "600" in formato_scelto:
-            limite_punti = 600
-            max_reggimenti = 3
         elif "1000" in formato_scelto:
             limite_punti = 1000
-            max_reggimenti = 3
         elif "1500" in formato_scelto:
             limite_punti = 1500
-            max_reggimenti = 4
         elif "2000" in formato_scelto:
             limite_punti = 2000
-            max_reggimenti = 5
         else:
-            limite_punti = col_f4.number_input("Inserisci Limite Punti", min_value=100, max_value=5000, value=720, step=10)
-            max_reggimenti = 5
+            limite_punti = col_f4.number_input("Punti", min_value=100, max_value=5000, value=720, step=10)
 
-        if "Personalizzato" not in formato_scelto and "720" not in formato_scelto:
-            st.session_state["sdg_formazione_battaglia"] = col_f4.text_input("Formazione", value=st.session_state["sdg_formazione_battaglia"])
-        else:
-            st.session_state["sdg_formazione_battaglia"] = col_f4.text_input("Formazione", value="Death Stalkers")
+        st.markdown("---")
+        st.markdown('<div class="subsection-title">Formazione di Battaglia (Battle Formation)</div>', unsafe_allow_html=True)
+        st.caption("Seleziona la formazione specifica della tua fazione per applicare gli effetti tattici e scegliere la fase di gioco.")
 
-        with st.expander("Archivio Liste d'Armata Salvate"):
-            nomi_armate_salvate = list(st.session_state["archivio_armate"].keys())
-            if nomi_armate_salvate:
-                ca1, ca2, ca3 = st.columns([2, 1, 1])
-                armata_sel_archivio = ca1.selectbox("Lista salvata:", nomi_armate_salvate, key="sel_load_army")
-                if ca2.button("Carica", type="primary", use_container_width=True):
-                    dati_arm = st.session_state["archivio_armate"][armata_sel_archivio]
-                    st.session_state["sdg_nome_armata"] = dati_arm.get("nome", armata_sel_archivio)
-                    st.session_state["sdg_fazione_armata"] = dati_arm.get("fazione", "Nighthaunt")
-                    st.session_state["sdg_formazione_battaglia"] = dati_arm.get("formazione", "Death Stalkers")
-                    st.session_state["sdg_reggimenti"] = dati_arm.get("reggimenti", [])
-                    st.session_state["sdg_ausiliari"] = dati_arm.get("ausiliari", [])
-                    st.toast(f"Armata '{armata_sel_archivio}' caricata con successo!")
-                    st.rerun()
-                if ca3.button("Elimina", use_container_width=True):
-                    del st.session_state["archivio_armate"][armata_sel_archivio]
-                    salva_archivio_armate(st.session_state["archivio_armate"])
-                    st.rerun()
-            else:
-                st.caption("Nessuna lista salvata nell'archivio locale.")
+        # Carica le formazioni dal DB in base alla fazione scelta
+        fazioni_disponibili_db = st.session_state["archivio_formazioni"]
+        formazioni_fazione = fazioni_disponibili_db.get(st.session_state["sdg_fazione_armata"], {
+            "Formazione Standard": {
+                "effetto_tipo": "Nessuno", "valore_bonus": 0, "fase_attivazione": "Nessuna", "descrizione": "Nessuna abilità speciale attiva."
+            }
+        })
 
+        # CORRETTO: lista pulita dei nomi delle formazioni
+        lista_nomi_formazioni = list(formazioni_fazione.keys()) if isinstance(formazioni_fazione, dict) else ["Formazione Standard"]
+        idx_form = lista_nomi_formazioni.index(st.session_state["sdg_formazione_scelta"]) if st.session_state["sdg_formazione_scelta"] in lista_nomi_formazioni else 0
+        
+        formazione_selezionata = st.selectbox("Nome Formazione", lista_nomi_formazioni, index=idx_form)
+        st.session_state["sdg_formazione_scelta"] = formazione_selezionata
+
+        # Dati della formazione selezionata
+        dati_form = formazioni_fazione.get(formazione_selezionata, {
+            "effetto_tipo": "Nessuno", "valore_bonus": 0, "fase_attivazione": "Hero Phase", "descrizione": "Descrizione non disponibile."
+        })
+
+        # Layout Effetti, Menu a tendina Fasi di Gioco e Descrizione
+        fc1, fc2 = st.columns([1.5, 2])
+        
+        with fc1:
+            st.markdown(f"**Effetto Principale:** `{dati_form.get('effetto_tipo', 'Nessuno')}`")
+            
+            fasi_gioco_aos = [
+                "Deployment (Schieramento)",
+                "Inizio Round di Battaglia",
+                "Hero Phase (Fase Eroi Amica)",
+                "Hero Phase (Fase Eroi Nemica)",
+                "Movement Phase (Movimento Amico)",
+                "Movement Phase (Movimento Nemico)",
+                "Shooting Phase (Fase di Tiro)",
+                "Charge Phase (Fase di Carica)",
+                "Combat Phase (Fase di Combattimento)",
+                "Fine Turno",
+                "Fine Round di Battaglia"
+            ]
+            
+            fase_salvata_db = dati_form.get("fase_attivazione", "Hero Phase (Fase Eroi Amica)")
+            idx_fase = fasi_gioco_aos.index(fase_salvata_db) if fase_salvata_db in fasi_gioco_aos else 2
+            
+            st.selectbox("Fase di Utilizzo Consigliata", fasi_gioco_aos, index=idx_fase, key=f"fase_form_{formazione_selezionata}")
+
+        with fc2:
+            st.markdown("**Descrizione Completa & Regola:**")
+            st.info(dati_form.get('descrizione', 'Nessun dettaglio inserito.'))
+
+        
     # ==========================================
     # SEZIONE 2: COMPOSIZIONE REGGIMENTI
     # ==========================================
