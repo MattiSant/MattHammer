@@ -218,7 +218,7 @@ def render_forgia_db():
     # VALIDAZIONE E SALVATAGGIO
     # ==========================================
     if st.button("💾 Salva Unità nel Grimorio (Database)", type="primary", use_container_width=True):
-        if non nome.strip() or nome == "--- Nuova Unità ---":
+        if not nome.strip() or nome == "--- Nuova Unità ---":
             st.error("Inserisci un Nome Unità valido.")
         else:
             chiave_db = f"{fazione}: {nome.strip()}"
