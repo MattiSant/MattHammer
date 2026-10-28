@@ -93,7 +93,7 @@ def render_forgia_db():
     # ==========================================
     # DATI GENERALI E CIRCONFERENZA
     # ==========================================
-    st.markdown('<div class="section-header">1. Generalità e Statistiche Difensive</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">1. Generalità e Statistiche Cerchio</div>', unsafe_allow_html=True)
     
     with st.container(border=True):
         g1, g2, g3 = st.columns([1.5, 2, 1])
@@ -108,7 +108,7 @@ def render_forgia_db():
         campione = g7.checkbox("Presenza Campione (+1 Atk)", value=st.session_state.get("forgia_campione", False), key=f"f_camp_{v_key}")
 
         st.markdown("---")
-        st.markdown("**Statistiche difensive**")
+        st.markdown("**Statistiche della Circonferenza Tetrapartita (Warscroll)**")
         c1, c2, c3, c4, c5 = st.columns(5)
         move = c1.text_input("Movimento (es. 8\" Fly)", value=st.session_state.get("forgia_movimento", "6\""), key=f"f_mov_{v_key}")
         oc = c2.number_input("Controllo (OC)", min_value=0, max_value=20, value=st.session_state.get("forgia_controllo", 1), key=f"f_oc_{v_key}")
@@ -121,7 +121,7 @@ def render_forgia_db():
     # ==========================================
     st.markdown('<div class="section-header">2. Profili di Combattimento (Armi)</div>', unsafe_allow_html=True)
     with st.container(border=True):
-        st.caption("Copia le statistiche dal manuale (es. 'Tomb Greatblade 2 3+ 3+ 1 1') e usa l'inserimento rapido.")
+        st.caption("Copia le statistiche dal manuale (es. 'Tomb Greatblade Crit(2 Hits) 2 3+ 3+ 1 1') e usa l'inserimento rapido.")
         txt_armi = st.text_area("Inserimento Rapido Armi:", height=68, key=f"f_txt_armi_{v_key}")
         if st.button("Analizza e Aggiungi Armi"):
             armi_estratte = analizza_testo_copiato(txt_armi)
@@ -132,7 +132,7 @@ def render_forgia_db():
 
         if st.button("➕ Aggiungi Arma Vuota"):
             st.session_state["forgia_armi"].append({
-                "nome": "Nuova Arma", "attiva": True, "ranged": False, "atk": "1",
+                "nome": "Nuova Arma", "attiva": True, "ranged": False, "range": "Melee", "atk": "1",
                 "hit": 4, "wnd": 4, "rend": 0, "dmg": "1", "crit_type": "Nessuno",
                 "anti_target": "Nessuno", "charge_dmg": False, "anti_charge": False, "companion": False
             })
@@ -159,14 +159,18 @@ def render_forgia_db():
                 rend = s4.number_input("Rend", 0, 5, value=int(arma.get("rend", 0)) if str(arma.get("rend", 0)) != "---" else 0, key=f"a_rnd_{idx}_{v_key}")
                 dmg = s5.selectbox("Damage", opzioni_dadi, index=opzioni_dadi.index(str(arma.get("dmg", "1"))) if str(arma.get("dmg", "1")) in opzioni_dadi else 1, key=f"a_dmg_{idx}_{v_key}")
 
-                ab1, ab2, ab3, ab4 = st.columns(4)
+                ab1, ab2, ab3, ab4, ab5 = st.columns(5)
                 crit = ab1.selectbox("Critico", ["Nessuno", "Crit (Mortal)", "Crit (Auto-wound)"], index=["Nessuno", "Crit (Mortal)", "Crit (Auto-wound)"].index(arma.get("crit_type", "Nessuno")), key=f"a_crt_{idx}_{v_key}")
                 anti = ab2.selectbox("Anti-Keyword (+1 Rend)", ["Nessuno", "HERO", "INFANTRY", "CAVALRY", "MONSTER"], index=["Nessuno", "HERO", "INFANTRY", "CAVALRY", "MONSTER"].index(arma.get("anti_target", "Nessuno")), key=f"a_ant_{idx}_{v_key}")
                 ranged = ab3.checkbox("Arma da Tiro", value=arma.get("ranged", False), key=f"a_rng_{idx}_{v_key}")
-                comp = ab4.checkbox("Companion", value=arma.get("companion", False), key=f"a_cmp_{idx}_{v_key}")
+                
+                valore_gittata = arma.get("range", "12\"" if arma.get("ranged", False) else "Melee")
+                gittata = ab4.text_input("Gittata (Range)", value=valore_gittata, key=f"a_ran_{idx}_{v_key}")
+                
+                comp = ab5.checkbox("Companion", value=arma.get("companion", False), key=f"a_cmp_{idx}_{v_key}")
 
                 armi_aggiornate.append({
-                    "nome": nome_a, "attiva": True, "ranged": ranged, "atk": atk, "hit": hit, "wnd": wnd, "rend": rend, "dmg": dmg,
+                    "nome": nome_a, "attiva": True, "ranged": ranged, "range": gittata, "atk": atk, "hit": hit, "wnd": wnd, "rend": rend, "dmg": dmg,
                     "crit_type": crit, "anti_target": anti, "charge_dmg": arma.get("charge_dmg", False), "anti_charge": arma.get("anti_charge", False), "companion": comp
                 })
         st.session_state["forgia_armi"] = armi_aggiornate
@@ -223,7 +227,6 @@ def render_forgia_db():
         else:
             chiave_db = f"{fazione}: {nome.strip()}"
             
-            # Generazione sicura campo "difesa" interno per compatibilità calcoli
             s_int = estrai_intero_da_stringa(save, default=7)
             w_int = estrai_intero_da_stringa(ward, default=7)
             

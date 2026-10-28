@@ -98,7 +98,7 @@ def render_testa_a_testa():
             st.markdown('<div class="subsection-title">Profili Armi (Modificabili)</div>', unsafe_allow_html=True)
             if st.button("➕ Aggiungi Arma"):
                 st.session_state["corrente_armi"].append({
-                    "nome": "Nuova Arma", "attiva": True, "ranged": False, "atk": "1",
+                    "nome": "Nuova Arma", "attiva": True, "ranged": False, "range": "Melee", "atk": "1",
                     "hit": 4, "wnd": 4, "rend": 0, "dmg": "1", "crit_type": "Nessuno",
                     "anti_target": "Nessuno", "charge_dmg": False, "anti_charge": False, "companion": False
                 })
@@ -111,7 +111,7 @@ def render_testa_a_testa():
                     c1, c2, c3 = st.columns([2, 1, 1])
                     nome_a = c1.text_input("Nome", value=p_arma["nome"], key=f"nm_{idx}_{v_key}")
                     attiva_a = c2.checkbox("Attiva", value=p_arma["attiva"], key=f"att_{idx}_{v_key}")
-                    comp_a = c3.checkbox("Companion", value=p_arma["companion"], key=f"cmp_{idx}_{v_key}")
+                    comp_a = c3.checkbox("Companion", value=p_arma.get("companion", False), key=f"cmp_{idx}_{v_key}")
 
                     s1, s2, s3, s4, s5 = st.columns(5)
                     atk = s1.selectbox("Atk", opzioni_dadi, index=opzioni_dadi.index(str(p_arma.get("atk", "1"))) if str(p_arma.get("atk", "1")) in opzioni_dadi else 1, key=f"atk_{idx}_{v_key}")
@@ -120,17 +120,19 @@ def render_testa_a_testa():
                     rend = s4.number_input("Rend", 0, 5, value=int(p_arma.get("rend", 0)) if str(p_arma.get("rend", 0)) != "---" else 0, key=f"rnd_{idx}_{v_key}")
                     dmg = s5.selectbox("Dmg", opzioni_dadi, index=opzioni_dadi.index(str(p_arma.get("dmg", "1"))) if str(p_arma.get("dmg", "1")) in opzioni_dadi else 1, key=f"dmg_{idx}_{v_key}")
 
-                    ab1, ab2, ab3 = st.columns(3)
+                    ab1, ab2, ab3, ab4 = st.columns(4)
                     crit = ab1.selectbox("Critico", ["Nessuno", "Crit (Mortal)", "Crit (Auto-wound)"], index=["Nessuno", "Crit (Mortal)", "Crit (Auto-wound)"].index(p_arma.get("crit_type", "Nessuno")), key=f"crt_{idx}_{v_key}")
                     anti = ab2.selectbox("Anti-X", ["Nessuno", "HERO", "INFANTRY", "CAVALRY", "MONSTER"], index=["Nessuno", "HERO", "INFANTRY", "CAVALRY", "MONSTER"].index(p_arma.get("anti_target", "Nessuno")), key=f"ant_{idx}_{v_key}")
                     ranged = ab3.checkbox("Da Tiro", value=p_arma.get("ranged", False), key=f"rng_{idx}_{v_key}")
+                    gittata = ab4.text_input("Gittata", value=p_arma.get("range", "12\"" if p_arma.get("ranged") else "Melee"), key=f"ran_{idx}_{v_key}")
+                    
                     if st.button("🗑️ Rimuovi", key=f"del_{idx}_{v_key}"):
                         st.session_state["corrente_armi"].pop(idx)
                         st.session_state["form_version"] += 1
                         st.rerun()
 
                     armi_aggiornate.append({
-                        "nome": nome_a, "attiva": attiva_a, "ranged": ranged, "atk": atk, "hit": hit, "wnd": wnd, "rend": rend, "dmg": dmg,
+                        "nome": nome_a, "attiva": attiva_a, "ranged": ranged, "range": gittata, "atk": atk, "hit": hit, "wnd": wnd, "rend": rend, "dmg": dmg,
                         "crit_type": crit, "anti_target": anti, "charge_dmg": p_arma.get("charge_dmg", False), "anti_charge": p_arma.get("anti_charge", False), "companion": comp_a
                     })
             st.session_state["corrente_armi"] = armi_aggiornate
@@ -158,7 +160,7 @@ def render_testa_a_testa():
                 
                 st.session_state["corrente_difesa"] = {"salute_per_modello": salute_modello, "save": save_nativo, "ward": ward_nativo}
 
-            # REINDIRIZZAMENTO ALLA FORGIA
+            # FIX WIDGET ERROR: Solo navigazione dello stato pagina, niente modifica al widget radio.
             st.markdown("---")
             if st.button("🛠️ Invia Profilo alla Forgia per il Salvataggio", type="primary", use_container_width=True):
                 st.session_state["forgia_armi"] = [dict(a) for a in st.session_state["corrente_armi"]]
@@ -175,7 +177,6 @@ def render_testa_a_testa():
                 st.session_state["forgia_campione"] = st.session_state["corrente_campione"]
                 
                 st.session_state["pagina_selezionata"] = "Forgia del Grimorio (Database)"
-                st.session_state["menu_sidebar_radio"] = "Forgia del Grimorio (Database)"
                 st.rerun()
 
         armi_attaccante = st.session_state["corrente_armi"]
@@ -223,7 +224,7 @@ def render_testa_a_testa():
                     st.markdown(f"""
                     <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #8c6d46; padding: 6px 10px; margin-bottom: 5px;">
                         <b>⚔️ {arma['nome']}</b> {cp_str}<br>
-                        <small>Atk: <b>{arma['atk']}</b> | Hit: <b>{arma['hit']}+</b> | Wnd: <b>{arma['wnd']}+</b> | Rend: <b>{re_str}</b> | Dmg: <b>{arma['dmg']}</b> | Critico: <b>{cr_str}</b></small>
+                        <small>Atk: <b>{arma['atk']}</b> | Hit: <b>{arma['hit']}+</b> | Wnd: <b>{arma['wnd']}+</b> | Rend: <b>{re_str}</b> | Dmg: <b>{arma['dmg']}</b> | Critico: <b>{cr_str}</b> | Range: <b>{arma.get('range', 'Melee')}</b></small>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -457,11 +458,49 @@ def render_testa_a_testa():
     st.markdown('<div class="section-header">Verdetto Tattico e Risultati</div>', unsafe_allow_html=True)
     st.caption("Scomposizione dettagliata delle fasi di combattimento, curva cumulativa e sostenibilità in punti.")
 
+    attacchi_totali = sum(r['attacchi'] for r in risultati_armi)
+    tutte_armi_attive = [item["arma"] for item in dettaglio_armi_combinate if item["arma"]["attiva"] and str(item["arma"]["hit"]) != "---"]
+    max_rend = max([int(a['rend']) for a in tutte_armi_attive if str(a['rend']) != "---"] + [0])
+    ha_crit_mortal = any(a['crit_type'] == 'Crit (Mortal)' for a in tutte_armi_attive)
+    anti_targets = list(set([a['anti_target'] for a in tutte_armi_attive if a.get('anti_target', 'Nessuno') != 'Nessuno']))
+
+    # Recupera i dati difensivi dell'attaccante per i ruoli
+    difesa_corrente = st.session_state.get("corrente_difesa", {})
+    ward_unita = int(difesa_corrente.get("ward", 7)) if str(difesa_corrente.get("ward")) != "---" else 7
+    save_unita = int(difesa_corrente.get("save", 4)) if str(difesa_corrente.get("save")) != "---" else 4
+    salute_totale_unita = int(difesa_corrente.get("salute_per_modello", 2)) * mod_globali_att["n_modelli"]
+
+    ruoli_trovati = []
+    if ward_unita <= 5 or (save_unita <= 3 and salute_totale_unita >= 15):
+        ruoli_trovati.append("**Ancoraggio Difensivo (Tank)**: Elevata resistenza. Ideale per presidiare gli obiettivi contesi o assorbire cariche nemiche.")
+    if len(anti_targets) > 0:
+        targets_str = ", ".join(anti_targets)
+        ruoli_trovati.append(f"**Specialista Anti-{targets_str}**: Letale contro questi bersagli designati grazie al bonus penetrazione armatura.")
+    if attacchi_totali >= 20:
+        ruoli_trovati.append("**Saturatore d'Orde**: Eccezionale volume di dadi per superare le unità leggere per pura saturazione statistica.")
+    if ha_crit_mortal or max_rend >= 2:
+        ruoli_trovati.append("**Perfora-Armature**: Altamente performante contro bersagli corazzati ed eroi pesanti.")
+    if danno_totale_atteso >= 12:
+        ruoli_trovati.append("**Incudine d'Urto (Damage Dealer)**: Output offensivo massiccio, da scatenare contro i centri nevralgici del nemico.")
+    if not ruoli_trovati:
+        ruoli_trovati.append("**Contestatore Flessibile**: Forza bilanciata per contestare obiettivi secondari o schermare i ranghi.")
+
+    with st.container(border=True):
+        if config_supporti:
+            nomi_sup_str = ", ".join([s["nome_unita"] for s in config_supporti])
+            st.markdown(f"**Assalto Coordinato in Corso:** Unità Principale + *{nomi_sup_str}* (Punti complessivi schierati: **{punti_attaccante_totali} pt**)")
+            st.markdown("---")
+        st.markdown("**Diagnosi Strategica del Gruppo d'Attacco:**")
+        for ruolo in ruoli_trovati:
+            st.markdown(f"- {ruolo}")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Danno Medio Atteso", f"{danno_totale_atteso:.2f} ferite", f"± {dev_std:.1f} (Std)")
     m2.metric("Prob. Kill (1 Turno)", f"{prob_uccisione:.1f}%", f"vs {salute_b} Salute")
     m3.metric("ROI Danni (per 100 pt)", f"{roi_punti:.2f} Danni", f"Costo Attacco: {punti_attaccante_totali} pt")
-    m4.metric("Attacchi Totali", f"{sum(r['attacchi'] for r in risultati_armi):.0f} dadi", f"{1 + len(config_supporti)} unità in azione")
+    m4.metric("Attacchi Totali", f"{attacchi_totali:.0f} dadi", f"{1 + len(config_supporti)} unità in azione")
 
     tab1, tab2, tab3 = st.tabs(["Ripartizione Dadi", "Probabilità Cumulativa", "Consigliere Tattico & Time-to-Kill"])
 
@@ -473,6 +512,8 @@ def render_testa_a_testa():
 
         col_t1, col_t2 = st.columns(2)
         with col_t1:
+            st.markdown('<div class="subsection-title">Ripartizione Danni per Singola Arma</div>', unsafe_allow_html=True)
+            st.caption("Dettaglio del rendimento di ciascun profilo d'attacco schierato.")
             righe_armi = []
             for item in dettaglio_armi_combinate:
                 righe_armi.append({
@@ -487,14 +528,48 @@ def render_testa_a_testa():
                     drop_hit = (1.0 - (tot_hits / tot_atk)) * 100.0 if tot_atk > 0 else 0.0
                     drop_wnd = (1.0 - (tot_wounds / tot_hits)) * 100.0 if tot_hits > 0 else 0.0
                     drop_save = (1.0 - (tot_unsaved / tot_wounds)) * 100.0 if tot_wounds > 0 else 0.0
-                    max_drop = max(drop_hit, drop_wnd, drop_save)
-                    fase_critica = "Fase di Hit" if max_drop == drop_hit else ("Fase di Wound" if max_drop == drop_wnd else "Armatura (Save)")
                     
-                    st.info(f"**Collo di Bottiglia Individuato:** `{fase_critica}`. La dispersione peggiore è del **{max_drop:.1f}%**.")
+                    max_drop = max(drop_hit, drop_wnd, drop_save)
+                    if max_drop == drop_hit:
+                        fase_critica = "Fase 1 -> 2 (Tiro per Colpire / Hit)"
+                        consiglio_cp = (
+                            "**Investi in Fase di Hit (Comando: All-out Attack - 1 CP):** "
+                            f"La dispersione maggiore avviene nel colpire (**-{drop_hit:.1f}%** di dadi scartati). "
+                            + ("*All-out Attack* è già attivo sull'Unità Principale!" if all_out_attack else "Attivare **All-out Attack (+1 Hit)** è la scelta migliore per massimizzare il volume di dadi che raggiunge le fasi successive.")
+                        )
+                    elif max_drop == drop_wnd:
+                        fase_critica = "Fase 2 -> 3 (Tiro per Ferire / Wound)"
+                        consiglio_cp = (
+                            "**Investi in Fase di Wound (Preghiere o Buff di Fazione):** "
+                            f"La precisione è solida, ma si perde il **{drop_wnd:.1f}%** dei colpi cercando di ferire. Usa abilità o preghiere che migliorano il Wound."
+                        )
+                    else:
+                        fase_critica = "Fase 3 -> 4 (Tiro Salvezza Nemico / Save)"
+                        consiglio_cp = (
+                            "**Investi in Penetrazione (Rend) o Effetti Critici:** "
+                            f"L'armatura avversaria sta assorbendo il **{drop_save:.1f}%** delle tue ferite! Investi in bonus al Rend o effetti mortali."
+                        )
+
+                    with st.container(border=True):
+                        st.markdown("#### Guida all'Interpretazione & Analisi del Flusso")
+                        st.markdown(
+                            f"**Lettura del Flusso Progressivo:**\n"
+                            f"1. **Attacchi ({tot_atk:.1f}):** Volume iniziale di dadi tirati.\n"
+                            f"2. **Colpi ({tot_hits:.2f}):** A segno (dispersi: {drop_hit:.1f}%).\n"
+                            f"3. **Ferite ({tot_wounds:.2f}):** Ferite inflitte con successo (disperse: {drop_wnd:.1f}%).\n"
+                            f"4. **Non Salvati ({tot_unsaved:.2f}):** Oltrepassano l'armatura nemica (assorbiti dal Save: {drop_save:.1f}%).\n"
+                            f"5. **Danno Finale ({danno_totale_atteso:.2f}):** Moltiplicato per il danno delle armi ed extra"
+                            + (f", ridotto dal Ward nemico." if moltiplicatore_ward < 1.0 else ".")
+                        )
+                        st.markdown("---")
+                        st.markdown(f"**Collo di Bottiglia Individuato:** `{fase_critica}`")
+                        st.markdown(consiglio_cp)
             else:
                 st.info("Nessuna arma attiva.")
 
         with col_t2:
+            st.markdown('<div class="subsection-title">Scomposizione del Flusso d\'Attacco</div>', unsafe_allow_html=True)
+            st.caption("Visualizzazione progressiva dei dadi superstiti fino al Danno Netto finale.")
             if tot_atk > 0:
                 df_perdite = pd.DataFrame({
                     "Fase": ["1. Attacchi", "2. Colpi (Hit)", "3. Ferite (Wound)", "4. Non Salvati", "5. Danno Netto"],
@@ -503,17 +578,72 @@ def render_testa_a_testa():
                 st.bar_chart(df_perdite.set_index("Fase"), color="#b38b4d")
 
     with tab2:
+        st.markdown('<div class="subsection-title">Curva di Probabilità Cumulativa</div>', unsafe_allow_html=True)
+        st.caption("Probabilità percentuale di infliggere almeno X danni totali in questa fase d'attacco.")
         max_danno_grafico = int(np.percentile(campioni_mc, 99.5)) + 2 if len(campioni_mc) > 0 else 10
         asse_x = np.arange(1, max(10, max_danno_grafico))
         prob_almeno_x = [np.mean(campioni_mc >= x) * 100.0 for x in asse_x]
         st.line_chart(pd.DataFrame({"Danni Minimi (X)": asse_x, "Probabilità (%)": prob_almeno_x}).set_index("Danni Minimi (X)"), color="#b38b4d")
 
     with tab3:
+        st.markdown('<div class="subsection-title">Stima Sopravvivenza Bersaglio (Time-to-Kill)</div>', unsafe_allow_html=True)
+        st.caption("Turni stimati necessari per azzerare la salute del bersaglio con le forze schierate.")
+        
         ttk = salute_b / danno_totale_atteso if danno_totale_atteso > 0 else 99
-        if ttk <= 1.0: st.success(f"**Esito Letale:** Eliminazione attesa in **1 singolo turno**.")
-        elif ttk <= 2.0: st.warning(f"**Logoramento:** Saranno necessari circa **2 turni**.")
-        else: st.error(f"**Attacco Inefficiente:** Richiesti circa **{int(ttk)+1} turni**.")
+        
+        if ttk <= 1.0:
+            st.success(f"**Esito Letale:** Eliminazione attesa in **1 singolo turno** (Danno atteso {danno_totale_atteso:.1f} vs Salute {salute_b}).")
+        elif ttk <= 2.0:
+            st.warning(f"**Logoramento:** Saranno necessari circa **2 turni** per abbattere il bersaglio (Danno atteso {danno_totale_atteso:.1f} vs Salute {salute_b}). Valuta un supporto addizionale.")
+        else:
+            st.error(f"**Attacco Inefficiente:** Richiesti circa **{int(ttk)+1} turni**. Sconsigliato ingaggiare senza supporto concentrato.")
 
-        if punti_attaccante_totali > 0 and punti_b > 0:
-            perc_vita = min(1.0, danno_totale_atteso / float(salute_b)) if salute_b > 0 else 0.0
-            st.markdown(f"**Valore Neutralizzato (1 Turno):** `{punti_b * perc_vita:.0f} pt` ({perc_vita*100:.0f}% della vita del bersaglio, a fronte di un investimento di {punti_attaccante_totali} pt).")
+        st.markdown("---")
+        st.markdown('<div class="subsection-title">Bilancio Economico e Valutazione d\'Ingaggio</div>', unsafe_allow_html=True)
+        st.caption("Rapporto tra punti investiti nell'attacco e valore effettivo neutralizzato sul bersaglio.")
+        
+        with st.container(border=True):
+            if punti_attaccante_totali > 0 and punti_b > 0:
+                rapporto_punti = punti_attaccante_totali / float(punti_b)
+                percentuale_vita_tolta = min(1.0, danno_totale_atteso / float(salute_b)) if salute_b > 0 else 0.0
+                punti_neutralizzati_stimati = punti_b * percentuale_vita_tolta
+                efficienza_scambio = (punti_neutralizzati_stimati / float(punti_attaccante_totali)) * 100.0
+
+                ec1, ec2, ec3 = st.columns(3)
+                ec1.markdown(f"**Punti Attacco Complessivi:** `{punti_attaccante_totali} pt`")
+                ec2.markdown(f"**Valore Bersaglio Nemico:** `{punti_b} pt`")
+                ec3.markdown(f"**Valore Neutralizzato (1 Turno):** `{punti_neutralizzati_stimati:.0f} pt` ({percentuale_vita_tolta*100:.0f}% vita)")
+                st.markdown("---")
+
+                if ttk <= 1.0 and rapporto_punti <= 1.0:
+                    st.success(f"**VERDETTO: SCAMBIO ALTAMENTE VANTAGGIOSO (Trade-Up)**\n\nImpegni {punti_attaccante_totali} pt per spazzare via un bersaglio da {punti_b} pt in 1 turno. Vantaggio netto di {punti_b - punti_attaccante_totali} pt. Ingaggio prioritario raccomandato[cite: 1].")
+                elif ttk <= 1.0 and rapporto_punti <= 1.5:
+                    st.success(f"**VERDETTO: ELIMINAZIONE AFFIDABILE E CONVENIENTE**\n\nEliminazione immediata al Turno 1 (Kill: {prob_uccisione:.1f}%). Rimuove la risposta nemica al costo di un piccolo sovrapprezzo.")
+                elif ttk <= 1.0 and rapporto_punti > 1.5:
+                    st.warning(f"**VERDETTO: SOVRACCOSTO TATTICO (Overkill)**\n\nStai concentrando ben {punti_attaccante_totali} pt contro un pezzo da appena {punti_b} pt. Attento a non sguarnire gli obiettivi della mappa.")
+                elif ttk <= 1.8 and rapporto_punti <= 1.1:
+                    st.info(f"**VERDETTO: INGAGGIO EQUILIBRATO DI LOGORAMENTO**\n\nPunti bilanciati ({punti_attaccante_totali} pt vs {punti_b} pt). Neutralizzi ~{punti_neutralizzati_stimati:.0f} pt al Turno 1.")
+                else:
+                    st.error(f"**VERDETTO: TRAPPOLA TATTICA (Alto Rischio)**\n\nNeutralizzi appena {punti_neutralizzati_stimati:.0f} pt al Turno 1 (indice di rendimento: {efficienza_scambio:.0f}%). Le truppe rimarranno bloccate fino a {int(ttk)+1} turni.")
+            else:
+                st.info("Specifica sia il **Costo in Punti dell'Unità Principale** sia il **Costo in Punti del Bersaglio** per visualizzare l'analisi economica.")
+
+        st.markdown("---")
+        st.markdown('<div class="subsection-title">Matrice Target Priority</div>', unsafe_allow_html=True)
+        st.caption("Danno netto atteso del gruppo d'attacco contro tutte le combinazioni di Save e Ward avversari.")
+        saves_lista = [2, 3, 4, 5, 6, 7]
+        wards_lista = [7, 6, 5, 4]
+        matrice_dati = {}
+        for w_val in wards_lista:
+            col_nome = f"Ward {w_val}+" if w_val < 7 else "Nessun Ward"
+            col_valori = []
+            for s_val in saves_lista:
+                b_temp = {**bersaglio_dict, "save": s_val, "ward": w_val, "blocca_ward": False}
+                danno_armi_mat = sum(calcola_arma_analitico(a, mod_globali_att, b_temp)["danno_netto"] for a in armi_attaccante if a.get("attiva", False))
+                for sup in config_supporti:
+                    danno_armi_mat += sum(calcola_arma_analitico(a_sup, sup["mod_globali"], b_temp)["danno_netto"] for a_sup in sup["armi"] if a_sup.get("attiva", False))
+                col_valori.append(round(danno_armi_mat, 2))
+            matrice_dati[col_nome] = col_valori
+        df_matrice = pd.DataFrame(matrice_dati, index=[f"Save {s}+" if s < 7 else "No Save (-)" for s in saves_lista])
+        
+        st.dataframe(df_matrice.style.background_gradient(cmap="YlOrBr", low=0.1, high=0.8), use_container_width=True)
