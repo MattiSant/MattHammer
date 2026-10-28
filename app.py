@@ -167,15 +167,16 @@ opzioni_menu = [
     "Sala di Guerra (Costruttore Armate)"
 ]
 
+# Sincronizziamo la chiave del widget PRIMA che venga renderizzato
+if "menu_sidebar_radio" not in st.session_state or st.session_state["menu_sidebar_radio"] != st.session_state["pagina_selezionata"]:
+    st.session_state["menu_sidebar_radio"] = st.session_state["pagina_selezionata"]
+
 def cambio_pagina_da_sidebar():
     st.session_state["pagina_selezionata"] = st.session_state["menu_sidebar_radio"]
-
-indice_corrente = opzioni_menu.index(st.session_state["pagina_selezionata"]) if st.session_state["pagina_selezionata"] in opzioni_menu else 0
 
 st.sidebar.radio(
     "Navigazione del Tomo",
     opzioni_menu,
-    index=indice_corrente,
     key="menu_sidebar_radio",
     on_change=cambio_pagina_da_sidebar
 )
