@@ -184,9 +184,9 @@ def render_forgia_db():
             st.rerun()
 
     # ==========================================
-    # DATI GENERALI E CIRCONFERENZA
+    # DATI GENERALI E STATISTICHE DIFENSIVE
     # ==========================================
-    st.markdown('<div class="section-header">1. Generalità e Statistiche Cerchio</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">1. Generalità e Statistiche Difensive</div>', unsafe_allow_html=True)    
     
     with st.container(border=True):
         g1, g2, g3 = st.columns([1.5, 2, 1])
@@ -201,7 +201,8 @@ def render_forgia_db():
         campione = g7.checkbox("Presenza Campione (+1 Atk)", value=st.session_state.get("forgia_campione", False), key=f"f_camp_{v_key}")
 
         st.markdown("---")
-        st.markdown("**Statistiche della Circonferenza Tetrapartita (Warscroll)**")
+        st.markdown("**Statistiche Difensive (Warscroll)**")
+
         c1, c2, c3, c4, c5 = st.columns(5)
         move = c1.text_input("Movimento (es. 8\" Fly)", value=st.session_state.get("forgia_movimento", "6\""), key=f"f_mov_{v_key}")
         oc = c2.number_input("Controllo (OC)", min_value=0, max_value=20, value=st.session_state.get("forgia_controllo", 1), key=f"f_oc_{v_key}")
@@ -277,7 +278,7 @@ def render_forgia_db():
     with st.container(border=True):
         if st.button("➕ Aggiungi Abilità Warscroll"):
             st.session_state["forgia_abilita"].append({
-                "nome": "Nuova Abilità", "tipo": "Ability", "reazione": False, "fasi": ["Qualsiasi Fase"], "descrizione": ""
+                "nome": "Nuova Abilità", "tipo": "Ability", "reazione": False, "once_per_battle": False, "valore_lancio": 0, "fasi": ["Qualsiasi Fase"], "descrizione": ""
             })
             st.session_state["forgia_version"] += 1
             st.rerun()
@@ -298,21 +299,30 @@ def render_forgia_db():
                     st.session_state["forgia_version"] += 1
                     st.rerun()
 
-                r1, r2, r3 = st.columns([1, 1, 2])
+                r1, r2, r3 = st.columns([1.2, 1.2, 2])
                 tipo = r1.selectbox("Tipo", ["Ability", "Passive", "Spell", "Prayer"], index=["Ability", "Passive", "Spell", "Prayer"].index(ab.get("tipo", "Ability")), key=f"ab_tipo_{a_idx}_{v_key}")
-                reazione = r2.checkbox("È una Reazione (Reaction)?", value=ab.get("reazione", False), key=f"ab_reaz_{a_idx}_{v_key}")
+                
+                # Mostra il Valore di Lancio solo se il tipo è Spell o Prayer
+                val_lancio = 0
+                if tipo in ["Spell", "Prayer"]:
+                    val_lancio = r1.number_input("Valore di Lancio", min_value=1, max_value=12, value=int(ab.get("valore_lancio", 5)), key=f"ab_lan_{a_idx}_{v_key}")
+                    
+                with r2:
+                    reazione = st.checkbox("È una Reazione (Reaction)?", value=ab.get("reazione", False), key=f"ab_reaz_{a_idx}_{v_key}")
+                    once_per_battle = st.checkbox("Once per Battle", value=ab.get("once_per_battle", False), key=f"ab_once_{a_idx}_{v_key}")
+                    
                 fasi_sel = r3.multiselect("Fasi di Attivazione", fasi_gioco, default=ab.get("fasi", ["Qualsiasi Fase"]), key=f"ab_fasi_{a_idx}_{v_key}")
                 
                 descrizione = st.text_area("Descrizione dell'Effetto", value=ab.get("descrizione", ""), key=f"ab_desc_{a_idx}_{v_key}")
 
                 abilita_aggiornate.append({
-                    "nome": nome_ab, "tipo": tipo, "reazione": reazione, "fasi": fasi_sel, "descrizione": descrizione
+                    "nome": nome_ab, "tipo": tipo, "reazione": reazione, "once_per_battle": once_per_battle, "valore_lancio": val_lancio, "fasi": fasi_sel, "descrizione": descrizione
                 })
         st.session_state["forgia_abilita"] = abilita_aggiornate
 
         st.markdown("---")
         kw_testo = st.text_input("Keywords (separate da virgola)", placeholder="es. Hero, Infantry, Wizard (1), Nighthaunt", value=st.session_state.get("forgia_keywords", ""), key=f"f_kw_{v_key}")
-
+        
     # ==========================================
     # VALIDAZIONE E SALVATAGGIO
     # ==========================================
