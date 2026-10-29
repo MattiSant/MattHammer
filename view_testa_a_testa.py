@@ -393,19 +393,37 @@ def render_testa_a_testa():
                 nome_db = sup_elem["chiave_db"]
                 dati_u_db = st.session_state["db_unita"].get(nome_db, {})
                 
+                # Calcola i punti prima per mostrarli nell'intestazione
+                punti_base_sup = estrai_intero_sicuro(dati_u_db.get("punti", 0))
+                
                 with st.container(border=True):
                     cs_h1, cs_h2, cs_h3 = st.columns([2.5, 1, 1])
-                    cs_h1.markdown(f"**Supporto #{s_idx+1}:** {nome_db}")
-                    sup_elem["rinforzata"] = cs_h2.checkbox("Rinforzata (x2)", value=sup_elem["rinforzata"], key=f"rinf_s_{s_idx}")
+                    
+                    # La checkbox è renderizzata prima del titolo per il calcolo, 
+                    # ma Streamlit la posizionerà regolarmente nella sua colonna.
+                    sup_elem["rinforzata"] = cs_h2.checkbox("Rinforzata (x2)", value=sup_elem.get("rinforzata", False), key=f"rinf_s_{s_idx}")
+                    punti_sup = punti_base_sup * (2 if sup_elem["rinforzata"] else 1)
+                    
+                    cs_h1.markdown(f"**Supporto #{s_idx+1}:** {nome_db} (`{punti_sup} pt`)")
+                    
                     if cs_h3.button("Rimuovi", key=f"del_s_{s_idx}"): supporti_da_rimuovere.append(s_idx)
 
                     sb1, sb2, sb3 = st.columns(3)
-                    sup_elem["carica"] = sb1.checkbox("Carica", value=sup_elem["carica"], key=f"chg_s_{s_idx}")
-                    sup_elem["all_out_attack"] = sb2.checkbox("All-out Attack", value=sup_elem["all_out_attack"], key=f"aoa_s_{s_idx}")
-                    sup_elem["crit_5"] = sb3.checkbox("Critico al 5+", value=sup_elem["crit_5"], key=f"c5_s_{s_idx}")
+                    sup_elem["carica"] = sb1.checkbox("Carica", value=sup_elem.get("carica", False), key=f"chg_s_{s_idx}")
+                    sup_elem["all_out_attack"] = sb2.checkbox("All-out Attack", value=sup_elem.get("all_out_attack", False), key=f"aoa_s_{s_idx}")
+                    sup_elem["crit_5"] = sb3.checkbox("Critico al 5+", value=sup_elem.get("crit_5", False), key=f"c5_s_{s_idx}")
+
+                    with st.expander("Modificatori Extra (Supporto)"):
+                        mh1, mh2 = st.columns(2)
+                        sup_elem["mod_hit"] = mh1.slider("Modificatori Hit Extra", -2, 2, int(sup_elem.get("mod_hit", 0)), key=f"mh_s_{s_idx}")
+                        sup_elem["mod_wnd"] = mh2.slider("Modificatori Wound Extra", -2, 2, int(sup_elem.get("mod_wnd", 0)), key=f"mw_s_{s_idx}")
+                        
+                        mb1, mb2, mb3 = st.columns(3)
+                        sup_elem["bonus_atk"] = mb1.number_input("Attacchi Extra", 0, 5, int(sup_elem.get("bonus_atk", 0)), key=f"ba_s_{s_idx}")
+                        sup_elem["bonus_rend"] = mb2.number_input("Rend Extra", 0, 3, int(sup_elem.get("bonus_rend", 0)), key=f"br_s_{s_idx}")
+                        sup_elem["bonus_dmg"] = mb3.number_input("Danno Extra", 0, 3, int(sup_elem.get("bonus_dmg", 0)), key=f"bd_s_{s_idx}")
 
                     n_mod_sup = estrai_intero_sicuro(dati_u_db.get("n_modelli", 1)) * (2 if sup_elem["rinforzata"] else 1)
-                    punti_sup = estrai_intero_sicuro(dati_u_db.get("punti", 0)) * (2 if sup_elem["rinforzata"] else 1)
                     
                     config_supporti.append({
                         "nome_unita": nome_db,
@@ -418,7 +436,9 @@ def render_testa_a_testa():
                             "all_out_attack": sup_elem["all_out_attack"],
                             "mod_hit": sup_elem["mod_hit"] + (1 if sup_elem["all_out_attack"] else 0),
                             "mod_wnd": sup_elem["mod_wnd"],
-                            "bonus_atk": sup_elem["bonus_atk"], "bonus_rend": sup_elem["bonus_rend"], "bonus_dmg": sup_elem["bonus_dmg"],
+                            "bonus_atk": sup_elem["bonus_atk"], 
+                            "bonus_rend": sup_elem["bonus_rend"], 
+                            "bonus_dmg": sup_elem["bonus_dmg"],
                             "crit_on": 5 if sup_elem["crit_5"] else 6,
                             "mortal_extra_dadi": 0, "mortal_extra_tipo": 6, "mortal_extra_soglia": "Nessuna (Somma i valori)", "mortal_extra_fisso": 0
                         }
@@ -426,7 +446,7 @@ def render_testa_a_testa():
             if supporti_da_rimuovere:
                 for idx_canc in sorted(supporti_da_rimuovere, reverse=True): st.session_state["lista_supporti_attivi"].pop(idx_canc)
                 st.rerun()
-
+                
     # ==========================================
     # SEZIONE 2: BERSAGLIO DESIGNATO
     # ==========================================
