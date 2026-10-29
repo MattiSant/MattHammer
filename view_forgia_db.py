@@ -195,24 +195,45 @@ def render_forgia_db():
     with st.container(border=True):
         g1, g2, g3 = st.columns([1.5, 2, 1])
         fazione = g1.selectbox("Fazione", ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Altro"], index=["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Altro"].index(st.session_state.get("forgia_fazione", "Nighthaunt")), key=f"f_faz_{v_key}")
+        st.session_state["forgia_fazione"] = fazione
+        
         nome = g2.text_input("Nome Unità", value=st.session_state.get("forgia_nome", ""), key=f"f_nome_{v_key}")
+        st.session_state["forgia_nome"] = nome
+        
         punti = g3.number_input("Costo in Punti", min_value=10, max_value=2000, value=st.session_state.get("forgia_punti", 100), step=10, key=f"f_pt_{v_key}")
+        st.session_state["forgia_punti"] = punti
 
         g4, g5, g6, g7 = st.columns(4)
         n_modelli = g4.number_input("Modelli Base", min_value=1, max_value=60, value=st.session_state.get("forgia_modelli", 1), key=f"f_mod_{v_key}")
+        st.session_state["forgia_modelli"] = n_modelli
+        
         basetta = g5.text_input("Dimensione Basetta", value=st.session_state.get("forgia_basetta", "32mm"), key=f"f_base_{v_key}")
+        st.session_state["forgia_basetta"] = basetta
+        
         puo_rinf = g6.checkbox("Può essere Rinforzata (x2)", value=st.session_state.get("forgia_rinf", False), key=f"f_rinf_{v_key}")
+        st.session_state["forgia_rinf"] = puo_rinf
+        
         campione = g7.checkbox("Presenza Campione (+1 Atk)", value=st.session_state.get("forgia_campione", False), key=f"f_camp_{v_key}")
+        st.session_state["forgia_campione"] = campione
 
         st.markdown("---")
         st.markdown("**Statistiche Difensive (Warscroll)**")
         c1, c2, c3, c4, c5 = st.columns(5)
         move = c1.text_input("Movimento (es. 8\" Fly)", value=st.session_state.get("forgia_movimento", "6\""), key=f"f_mov_{v_key}")
+        st.session_state["forgia_movimento"] = move
+        
         oc = c2.number_input("Controllo (OC)", min_value=0, max_value=20, value=st.session_state.get("forgia_controllo", 1), key=f"f_oc_{v_key}")
+        st.session_state["forgia_controllo"] = oc
+        
         save = c3.selectbox("Save (Armatura)", ["2+", "3+", "4+", "5+", "6+", "-"], index=["2+", "3+", "4+", "5+", "6+", "-"].index(st.session_state.get("forgia_save", "4+")), key=f"f_sv_{v_key}")
+        st.session_state["forgia_save"] = save
+        
         salute = c4.number_input("Salute (Ferite)", min_value=1, max_value=50, value=st.session_state.get("forgia_salute", 2), key=f"f_hp_{v_key}")
+        st.session_state["forgia_salute"] = salute
+        
         ward = c5.selectbox("Ward (Tiro Salvezza Magico)", ["4+", "5+", "6+", "7+", "-"], index=["4+", "5+", "6+", "7+", "-"].index(st.session_state.get("forgia_ward", "7+")), key=f"f_wd_{v_key}")
-
+        st.session_state["forgia_ward"] = ward
+        
     # ==========================================
     # ARMI
     # ==========================================
