@@ -253,61 +253,37 @@ st.sidebar.radio(
 
 st.sidebar.markdown("---")
 
-# Mostra Directory e Gestione Database solo se siamo in Laboratorio Tattico o Forgia (non sulla Home o Sala di Guerra che ha la sua gestione)
-if st.session_state["pagina_selezionata"] in ["Laboratorio Tattico (Testa a Testa)", "Forgia del Grimorio (Database)"]:
-    st.sidebar.subheader("Directory Database")
-    st.sidebar.caption("Seleziona e carica un'unità salvata.")
+# Directory Rapida per Laboratorio Tattico (Solo Lettura/Caricamento)
+if st.session_state["pagina_selezionata"] == "Laboratorio Tattico (Testa a Testa)":
+    st.sidebar.subheader("Directory Rapida")
+    st.sidebar.caption("Carica un profilo salvato nel Laboratorio.")
+    
+    unita_totali = [k for k in st.session_state["db_unita"].keys() if k != "--- Seleziona o Resetta ---"]
+    if unita_totali:
+        scelta_rapida = st.sidebar.selectbox("Unità dal Grimorio", unita_totali, key="sb_quick_load")
+        if st.sidebar.button("Carica nel Profilo", type="primary", use_container_width=True):
+            dati_sel = st.session_state["db_unita"][scelta_rapida]
+            st.session_state["corrente_armi"] = [dict(a) for a in dati_sel["armi"]]
+            st.session_state["corrente_modelli"] = dati_sel["n_modelli"]
+            st.session_state["corrente_campione"] = dati_sel["campione"]
+            st.session_state["corrente_punti"] = dati_sel["punti"]
+            st.session_state["corrente_difesa"] = dati_sel.get("difesa", {"salute_per_modello": 0, "save": "---", "ward": "---"})
+            st.session_state["form_version"] += 1
+            st.rerun()
 
-    albero_fazioni = {"Nighthaunt": [], "Blades of Khorne": [], "Orruk Kruleboyz": [], "Sylvaneth": [], "Personale / Altro": []}
-    for nome_unita, dati_u in st.session_state["db_unita"].items():
-        fazione_u = dati_u.get("fazione", "").lower()
-        if "nighthaunt" in fazione_u: albero_fazioni["Nighthaunt"].append(nome_unita)
-        elif "khorne" in fazione_u: albero_fazioni["Blades of Khorne"].append(nome_unita)
-        elif "kruleboyz" in fazione_u: albero_fazioni["Orruk Kruleboyz"].append(nome_unita)
-        elif "sylvaneth" in fazione_u: albero_fazioni["Sylvaneth"].append(nome_unita)
-        else: albero_fazioni["Personale / Altro"].append(nome_unita)
-
-    albero_fazioni_attive = {k: v for k, v in albero_fazioni.items() if len(v) > 0}
-    if albero_fazioni_attive:
-        fazione_selezionata = st.sidebar.selectbox("Fazione", list(albero_fazioni_attive.keys()))
-        preset_scelto = st.sidebar.selectbox(f"Unità ({fazione_selezionata})", albero_fazioni_attive[fazione_selezionata])
-
-        # Nascondiamo il bottone "Carica nel Profilo" dalla sidebar se siamo nella Forgia (dove c'è già il suo selettore dedicato)
-        if st.session_state["pagina_selezionata"] == "Laboratorio Tattico (Testa a Testa)":
-            if st.sidebar.button("Carica nel Profilo", type="primary"):
-                dati_sel = st.session_state["db_unita"][preset_scelto]
-                st.session_state["corrente_armi"] = [dict(a) for a in dati_sel["armi"]]
-                st.session_state["corrente_modelli"] = dati_sel["n_modelli"]
-                st.session_state["corrente_campione"] = dati_sel["campione"]
-                st.session_state["corrente_punti"] = dati_sel["punti"]
-                st.session_state["corrente_difesa"] = dati_sel.get("difesa", {"salute_per_modello": 0, "save": "---", "ward": "---"})
-                st.session_state["form_version"] += 1
-                st.rerun()
-
-            st.sidebar.markdown("---")
-            if st.sidebar.button("Reset Parametri"):
-                st.session_state["corrente_armi"] = [
-                    {"nome": "---", "attiva": False, "ranged": False, "atk": "---", "hit": "---", "wnd": "---", "rend": "---", "dmg": "---", "crit_type": "Nessuno", "anti_target": "Nessuno", "charge_dmg": False, "anti_charge": False, "companion": False}
-                ]
-                st.session_state["corrente_modelli"] = 0
-                st.session_state["corrente_campione"] = False
-                st.session_state["corrente_punti"] = 0
-                st.session_state["corrente_difesa"] = {"salute_per_modello": 0, "save": "---", "ward": "---"}
-                st.session_state["form_version"] += 1
-                st.rerun()
-
-    tutte_le_unita = [u for u in st.session_state["db_unita"].keys() if u != "--- Seleziona o Resetta ---"]
-    if tutte_le_unita:
-        st.sidebar.markdown("---")
-        st.sidebar.subheader("Gestione / Elimina")
-        unita_da_eliminare = st.sidebar.selectbox("Rimuovi unità dal DB", tutte_le_unita, key="del_select")
-        if st.sidebar.button("Elimina Unità", type="secondary"):
-            if unita_da_eliminare in st.session_state["db_unita"]:
-                del st.session_state["db_unita"][unita_da_eliminare]
-                salva_nel_database(st.session_state["db_unita"])
-                st.sidebar.success(f"Eliminata: {unita_da_eliminare}")
-                st.rerun()
-
+        if st.sidebar.button("Reset Parametri", use_container_width=True):
+            st.session_state["corrente_armi"] = [{
+                "nome": "---", "attiva": False, "ranged": False, "atk": "---", "hit": "---",
+                "wnd": "---", "rend": "---", "dmg": "---", "crit_type": "Nessuno",
+                "anti_target": "Nessuno", "charge_dmg": False, "anti_charge": False, "companion": False
+            }]
+            st.session_state["corrente_modelli"] = 0
+            st.session_state["corrente_campione"] = False
+            st.session_state["corrente_punti"] = 0
+            st.session_state["corrente_difesa"] = {"salute_per_modello": 0, "save": "---", "ward": "---"}
+            st.session_state["form_version"] += 1
+            st.rerun()
+            
 # Stato Cloud Sync
 st.sidebar.markdown("---")
 try:
