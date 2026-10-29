@@ -1,10 +1,80 @@
 import streamlit as st
 import re
-from core_engine import salva_nel_database, analizza_testo_copiato
+from core_engine import salva_nel_database
 
 def estrai_intero_da_stringa(testo, default=0):
     match = re.search(r"\d+", str(testo))
     return int(match.group(0)) if match else default
+
+def analizza_testo_copiato_robusto(testo):
+    armi_estratte = []
+    pattern_stat = r'(?:(\d+\")\s+)?((?:\d+|[1-9]?D\d+(?:\+\d+)?|D\d+))\s+(\d)\+\s+(\d)\+\s+(\d|---|0|-)\s+((?:\d+|[1-9]?D\d+(?:\+\d+)?|D\d+))$'
+    
+    # Set di parole chiave che compongono le intestazioni delle tabelle
+    header_words = {"ranged", "melee", "missile", "weapons", "weapon", "rng", "atk", "hit", "wnd", "rnd", "dmg", "damage", "attacks"}
+
+    linee = testo.split('\n')
+    nome_temporaneo = ""
+
+    for linea in linee:
+        linea_pulita = linea.strip().replace('\t', ' ')
+        linea_pulita = re.sub(r'\s+', ' ', linea_pulita)
+
+        if not linea_pulita:
+            continue
+
+        words_in_line = set(re.findall(r'[a-zA-Z]+', linea_pulita.lower()))
+        if words_in_line and words_in_line.issubset(header_words):
+            continue
+
+        match = re.search(pattern_stat, linea_pulita)
+        if match:
+            testo_prima = linea_pulita[:match.start()].strip()
+            
+            gittata = match.group(1)
+            atk = match.group(2)
+            hit = int(match.group(3))
+            wnd = int(match.group(4))
+            rend = 0 if match.group(5) in ["---", "-"] else int(match.group(5))
+            dmg = match.group(6)
+
+            testo_combinato = f"{nome_temporaneo} {testo_prima}".strip()
+
+            crit = "Nessuno"
+            if "Crit (Mortal)" in testo_combinato: crit = "Crit (Mortal)"
+            elif "Crit (Auto-wound)" in testo_combinato: crit = "Crit (Auto-wound)"
+            elif "Crit (2 Hits)" in testo_combinato: crit = "Crit (2 Hits)"
+
+            anti = "Nessuno"
+            if "Anti-HERO" in testo_combinato: anti = "HERO"
+            elif "Anti-INFANTRY" in testo_combinato: anti = "INFANTRY"
+            elif "Anti-MONSTER" in testo_combinato: anti = "MONSTER"
+            elif "Anti-CAVALRY" in testo_combinato: anti = "CAVALRY"
+
+            nome_pulito = nome_temporaneo if nome_temporaneo else testo_prima
+            
+            tags_da_rimuovere = ["Crit (Auto-wound)", "Crit (Mortal)", "Crit (2 Hits)", "Shoot in Combat", "Anti-HERO", "Anti-INFANTRY", "Anti-MONSTER", "Anti-CAVALRY"]
+            for tag in tags_da_rimuovere:
+                nome_pulito = re.sub(r',?\s*' + re.escape(tag), '', nome_pulito, flags=re.IGNORECASE)
+            
+            nome_pulito = nome_pulito.strip(" ,-")
+            if not nome_pulito:
+                nome_pulito = "Arma"
+
+            ranged = True if gittata else False
+            gittata_str = gittata if gittata else "Melee"
+
+            armi_estratte.append({
+                "nome": nome_pulito, "attiva": True, "ranged": ranged, "range": gittata_str,
+                "atk": str(atk), "hit": hit, "wnd": wnd, "rend": rend, "dmg": str(dmg),
+                "crit_type": crit, "anti_target": anti, "charge_dmg": False, "anti_charge": False, "companion": False
+            })
+
+            nome_temporaneo = ""
+        else:
+            nome_temporaneo = (nome_temporaneo + " " + linea_pulita).strip()
+
+    return armi_estratte
 
 def render_forgia_db():
     st.markdown("""
@@ -112,7 +182,7 @@ def render_forgia_db():
                 
             st.session_state["forgia_version"] += 1
             st.rerun()
-            
+
     # ==========================================
     # DATI GENERALI E CIRCONFERENZA
     # ==========================================
@@ -144,14 +214,16 @@ def render_forgia_db():
     # ==========================================
     st.markdown('<div class="section-header">2. Profili di Combattimento (Armi)</div>', unsafe_allow_html=True)
     with st.container(border=True):
-        st.caption("Copia le statistiche dal manuale (es. 'Tomb Greatblade Crit(2 Hits) 2 3+ 3+ 1 1') e usa l'inserimento rapido.")
+        st.caption("Copia le statistiche dal manuale (es. 'Tomb Greatblade 2 3+ 3+ 1 1') e usa l'inserimento rapido.")
         txt_armi = st.text_area("Inserimento Rapido Armi:", height=68, key=f"f_txt_armi_{v_key}")
         if st.button("Analizza e Aggiungi Armi"):
-            armi_estratte = analizza_testo_copiato(txt_armi)
+            armi_estratte = analizza_testo_copiato_robusto(txt_armi)
             if armi_estratte:
                 st.session_state["forgia_armi"].extend(armi_estratte)
                 st.session_state["forgia_version"] += 1
                 st.rerun()
+            else:
+                st.error("Nessun profilo riconosciuto! Assicurati che finisca con: Attacchi, Hit, Wound, Rend, Danno.")
 
         if st.button("➕ Aggiungi Arma Vuota"):
             st.session_state["forgia_armi"].append({
