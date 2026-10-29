@@ -337,9 +337,16 @@ def render_testa_a_testa():
             c1, c2, c3 = st.columns([1, 1.2, 1.5])
             mortal_extra_dadi = c1.number_input("N. Dadi", min_value=0, max_value=100, value=0, key="glob_mdadi")
             mortal_extra_tipo = c2.selectbox("Tipo", [3, 6], index=1, format_func=lambda x: f"D{x}", key="glob_mtipo")
-            mortal_extra_soglia = c3.selectbox("Soglia", ["Nessuna (Somma)", "2+", "3+", "4+", "5+", "6+"], key="glob_msoglia")
-            mortal_extra_fisso = st.number_input("Danni Fissi Extra", 0, 100, 0, key="glob_mfisso")
             
+            # Soglie dinamiche basate sul tipo di dado
+            opzioni_soglia = ["Nessuna (Somma)", "2+", "3+", "4+", "5+", "6+"] if mortal_extra_tipo == 6 else ["Nessuna (Somma)", "2+", "3+"]
+            mortal_extra_soglia = c3.selectbox("Soglia", opzioni_soglia, key="glob_msoglia")
+            
+            if mortal_extra_dadi > 0 and mortal_extra_soglia == "Nessuna (Somma)":
+                st.info("💡 **Attenzione:** 'Nessuna (Somma)' addizionerà i risultati di tutti i dadi. Se l'abilità richiede un tiro salvezza o un successo (es. ferite al 4+), seleziona la Soglia corretta!")
+                
+            mortal_extra_fisso = st.number_input("Danni Fissi Extra", 0, 100, 0, key="glob_mfisso")
+
     # Costruzione Moduli di Attacco finali
     n_mod_att = n_mod_att_base * (2 if rinforzata_att else 1)
     punti_att_totale = punti_att_base * (2 if rinforzata_att else 1)
@@ -665,7 +672,9 @@ def render_testa_a_testa():
         max_danno_grafico = int(np.percentile(campioni_mc, 99.5)) + 2 if len(campioni_mc) > 0 else 10
         asse_x = np.arange(1, max(10, max_danno_grafico))
         prob_almeno_x = [np.mean(campioni_mc >= x) * 100.0 for x in asse_x]
-        st.line_chart(pd.DataFrame({"Danni Minimi (X)": asse_x, "Probabilità (%)": prob_almeno_x}).set_index("Danni Minimi (X)"), color="#b38b4d")
+        
+        df_chart = pd.DataFrame({"Danni Minimi": asse_x, "Probabilità": prob_almeno_x}).set_index("Danni Minimi")
+        st.line_chart(df_chart, x_label="Danni Minimi", y_label="Probabilità (%)", color="#b38b4d")
 
     with tab3:
         st.markdown('<div class="subsection-title">Stima Sopravvivenza Bersaglio (Time-to-Kill)</div>', unsafe_allow_html=True)
@@ -721,11 +730,20 @@ def render_testa_a_testa():
             col_valori = []
             for s_val in saves_lista:
                 b_temp = {**bersaglio_dict, "save": s_val, "ward": w_val, "blocca_ward": False}
+                
+                # Danni dalle armi
                 danno_armi_mat = sum(calcola_arma_analitico(a, mod_globali_att, b_temp)["danno_netto"] for a in armi_attaccante if a.get("attiva", False))
                 for sup in config_supporti:
                     danno_armi_mat += sum(calcola_arma_analitico(a_sup, sup["mod_globali"], b_temp)["danno_netto"] for a_sup in sup["armi"] if a_sup.get("attiva", False))
-                col_valori.append(round(danno_armi_mat, 2))
+                
+                # Danni extra (Mortali) - Il bug era qui!
+                molt_ward_mat = 1.0 if w_val >= 7 else 1.0 - ((7 - max(2, w_val)) / 6.0)
+                danno_extra_mat = danno_extra_base * molt_ward_mat
+                
+                col_valori.append(round(danno_armi_mat + danno_extra_mat, 2))
             matrice_dati[col_nome] = col_valori
+            
         df_matrice = pd.DataFrame(matrice_dati, index=[f"Save {s}+" if s < 7 else "No Save (-)" for s in saves_lista])
         
-        st.dataframe(df_matrice.style.background_gradient(cmap="YlOrBr", low=0.1, high=0.8), use_container_width=True)
+        # Modifica colori: uso della mappa 'Oranges' con taglio base per eliminare il bianco accecante
+        st.dataframe(df_matrice.style.background_gradient(cmap="Oranges", axis=None, low=0.15, high=0.9), use_container_width=True)
