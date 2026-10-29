@@ -176,24 +176,78 @@ st.sidebar.title("MATTHAMMER")
 st.sidebar.caption("AoS 4e Tactical Suite v4.19")
 st.sidebar.markdown("---")
 
-opzioni_menu = [
-    "Portale Principale (Home)",
-    "Laboratorio Tattico (Testa a Testa)",
-    "Sala di Guerra (Costruttore Armate)",
-    "Forgia del Grimorio (Database)"
-]
+# Iniezione CSS per trasformare il radio button in un menu premium in stile tomo magico
+st.markdown("""
+<style>
+    /* Nasconde i pallini nativi del radio button */
+    [data-testid="stSidebar"] div[role="radiogroup"] label div:first-child {
+        display: none !important;
+    }
+    
+    /* Stile base per tutti i bottoni del menu */
+    [data-testid="stSidebar"] div[role="radiogroup"] label {
+        width: 100%;
+        padding: 10px 15px;
+        margin-bottom: 6px;
+        border-radius: 6px;
+        border-left: 4px solid transparent;
+        background: transparent;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    /* Effetto al passaggio del mouse (Hover) sulle voci inattive */
+    [data-testid="stSidebar"] div[role="radiogroup"] label:hover {
+        background: linear-gradient(90deg, rgba(140, 109, 70, 0.15) 0%, rgba(0,0,0,0) 100%);
+        border-left: 4px solid rgba(140, 109, 70, 0.5);
+    }
+    
+    /* Stile per la voce SELEZIONATA (Gradiente dorato luminoso a sinistra che sfuma a destra) */
+    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
+        background: linear-gradient(90deg, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.0) 100%) !important;
+        border-left: 4px solid #d4af37 !important;
+    }
+    
+    /* Forza il colore del testo oro per la voce selezionata */
+    [data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
+        color: #e6c665 !important;
+        font-weight: 700 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-# Sincronizziamo la chiave del widget PRIMA che venga renderizzato
-if "menu_sidebar_radio" not in st.session_state or st.session_state["menu_sidebar_radio"] != st.session_state["pagina_selezionata"]:
-    st.session_state["menu_sidebar_radio"] = st.session_state["pagina_selezionata"]
+# Titolo della sezione (richiama i font e i colori dorati dell'app)
+st.sidebar.markdown('<div style="color:#e6c665; font-family:\'Cinzel\', serif; font-size:1.1rem; font-weight: bold; margin-bottom:12px; border-bottom: 1px dashed rgba(140, 109, 70, 0.45); padding-bottom: 5px;">Navigazione del Tomo</div>', unsafe_allow_html=True)
+
+# Dizionario per mostrare nomi belli senza rompere la logica di navigazione pre-esistente dell'app
+MAPPA_NAV = {
+    "Portale Principale": "Portale Principale (Home)",
+    "Laboratorio Tattico": "Laboratorio Tattico (Testa a Testa)",
+    "Sala di Guerra (BETA)": "Sala di Guerra (Costruttore Armate)",
+    "Forgia del Grimorio": "Forgia del Grimorio (Database)"
+}
+NOMI_UI = list(MAPPA_NAV.keys())
+
+# Trova il nome UI corrispondente allo stato attuale per mantenere la selezione corretta
+stato_attuale_sistema = st.session_state.get("pagina_selezionata", "Portale Principale (Home)")
+indice_corrente = 0
+for i, (nome_ui, nome_sys) in enumerate(MAPPA_NAV.items()):
+    if nome_sys == stato_attuale_sistema:
+        indice_corrente = i
+        break
 
 def cambio_pagina_da_sidebar():
-    st.session_state["pagina_selezionata"] = st.session_state["menu_sidebar_radio"]
+    # Traduce la scelta UI nel nome tecnico richiesto dal resto dell'app
+    scelta_ui = st.session_state["menu_sidebar_ui"]
+    st.session_state["pagina_selezionata"] = MAPPA_NAV[scelta_ui]
 
+# Menu di navigazione stilizzato
 st.sidebar.radio(
-    "Navigazione del Tomo",
-    opzioni_menu,
-    key="menu_sidebar_radio",
+    "Menu Navigazione", # Etichetta nascosta
+    NOMI_UI,
+    index=indice_corrente,
+    label_visibility="collapsed",
+    key="menu_sidebar_ui",
     on_change=cambio_pagina_da_sidebar
 )
 
