@@ -123,6 +123,10 @@ def render_forgia_db():
         st.session_state["forgia_armi"] = []
     if "forgia_abilita" not in st.session_state:
         st.session_state["forgia_abilita"] = []
+    if "forgia_nome" not in st.session_state:
+        st.session_state["forgia_nome"] = ""
+    if "forgia_keywords" not in st.session_state:
+        st.session_state["forgia_keywords"] = ""
 
     v_key = st.session_state["forgia_version"]
 
@@ -202,13 +206,12 @@ def render_forgia_db():
 
         st.markdown("---")
         st.markdown("**Statistiche Difensive (Warscroll)**")
-
         c1, c2, c3, c4, c5 = st.columns(5)
-        move = c1.text_input("Movimento (es. 8\")", value=st.session_state.get("forgia_movimento", "6\""), key=f"f_mov_{v_key}")
+        move = c1.text_input("Movimento (es. 8\" Fly)", value=st.session_state.get("forgia_movimento", "6\""), key=f"f_mov_{v_key}")
         oc = c2.number_input("Controllo (OC)", min_value=0, max_value=20, value=st.session_state.get("forgia_controllo", 1), key=f"f_oc_{v_key}")
         save = c3.selectbox("Save (Armatura)", ["2+", "3+", "4+", "5+", "6+", "-"], index=["2+", "3+", "4+", "5+", "6+", "-"].index(st.session_state.get("forgia_save", "4+")), key=f"f_sv_{v_key}")
-        salute = c4.number_input("Salute (PF)", min_value=1, max_value=50, value=st.session_state.get("forgia_salute", 2), key=f"f_hp_{v_key}")
-        ward = c5.selectbox("Ward (Protezione)", ["4+", "5+", "6+", "7+", "-"], index=["4+", "5+", "6+", "7+", "-"].index(st.session_state.get("forgia_ward", "7+")), key=f"f_wd_{v_key}")
+        salute = c4.number_input("Salute (Ferite)", min_value=1, max_value=50, value=st.session_state.get("forgia_salute", 2), key=f"f_hp_{v_key}")
+        ward = c5.selectbox("Ward (Tiro Salvezza Magico)", ["4+", "5+", "6+", "7+", "-"], index=["4+", "5+", "6+", "7+", "-"].index(st.session_state.get("forgia_ward", "7+")), key=f"f_wd_{v_key}")
 
     # ==========================================
     # ARMI
@@ -305,8 +308,9 @@ def render_forgia_db():
                 # Mostra il Valore di Lancio solo se il tipo è Spell o Prayer
                 val_lancio = 0
                 if tipo in ["Spell", "Prayer"]:
-                    val_lancio = r1.number_input("Valore di Lancio", min_value=1, max_value=12, value=int(ab.get("valore_lancio", 5)), key=f"ab_lan_{a_idx}_{v_key}")
-                    
+                    valore_salvato = int(ab.get("valore_lancio", 5) or 5)
+                    val_lancio = r1.number_input("Valore di Lancio", min_value=1, max_value=12, value=max(1, valore_salvato), key=f"ab_lan_{a_idx}_{v_key}")
+
                 with r2:
                     reazione = st.checkbox("È una Reazione (Reaction)?", value=ab.get("reazione", False), key=f"ab_reaz_{a_idx}_{v_key}")
                     once_per_battle = st.checkbox("Once per Battle", value=ab.get("once_per_battle", False), key=f"ab_once_{a_idx}_{v_key}")
@@ -321,8 +325,14 @@ def render_forgia_db():
         st.session_state["forgia_abilita"] = abilita_aggiornate
 
         st.markdown("---")
-        kw_testo = st.text_input("Keywords (separate da virgola)", placeholder="es. Hero, Infantry, Wizard (1), Nighthaunt", value=st.session_state.get("forgia_keywords", ""), key=f"f_kw_{v_key}")
-
+        kw_testo = st.text_input(
+            "Keywords (separate da virgola)", 
+            placeholder="es. Hero, Infantry, Wizard (1), Nighthaunt", 
+            value=st.session_state.get("forgia_keywords", ""), 
+            key=f"f_kw_{v_key}"
+        )
+        st.session_state["forgia_keywords"] = kw_testo
+        
     # ==========================================
     # VALIDAZIONE E SALVATAGGIO
     # ==========================================
