@@ -757,17 +757,26 @@ def render_testa_a_testa():
         # 3. CSS Su misura per fondere la tabella nel tema pergamena/oro
         st.markdown("""
         <style>
-            .matrix-table {
+            .matrix-container {
+                display: flex;
+                justify-content: center; /* Centra la tabella orizzontalmente */
                 width: 100%;
-                border-collapse: collapse;
-                font-family: 'Cinzel', serif;
                 margin-top: 15px;
+            }
+            .matrix-table {
+                width: 100%; /* Occupa tutto lo spazio disponibile */
+                max-width: 1000px; /* Imposta una larghezza massima per evitare che diventi troppo grande */
+                border-collapse: separate; /* Permette border-radius sui bordi esterni */
+                border-spacing: 0;
+                font-family: 'Cinzel', serif;
                 border: 2px solid #8c6d46;
-                border-radius: 4px;
+                border-radius: 8px; /* Arrotondamento dei bordi */
+                overflow: hidden; /* Assicura che i bordi arrotondati vengano rispettati */
             }
             .matrix-table th {
                 background-color: #120e0a !important;
-                border: 1px solid #8c6d46 !important;
+                border-bottom: 1px solid #8c6d46 !important;
+                border-right: 1px solid #8c6d46 !important;
                 color: #e6c665 !important;
                 padding: 10px;
                 text-align: center !important;
@@ -775,22 +784,38 @@ def render_testa_a_testa():
                 font-size: 1.05rem;
                 letter-spacing: 1px;
             }
+            /* Rimuovi il bordo destro sull'ultima colonna delle intestazioni */
+            .matrix-table th:last-child {
+                 border-right: none !important;
+            }
             .matrix-table tbody tr th {
                 text-align: left !important;
                 border-right: 2px solid #8c6d46 !important;
+                border-bottom: 1px solid rgba(140, 109, 70, 0.4) !important;
+            }
+            /* Rimuovi il bordo inferiore sull'ultima riga delle intestazioni di riga */
+            .matrix-table tbody tr:last-child th {
+                border-bottom: none !important;
             }
             .matrix-table td {
-                border: 1px solid rgba(140, 109, 70, 0.4) !important;
+                border-right: 1px solid rgba(140, 109, 70, 0.4) !important;
+                border-bottom: 1px solid rgba(140, 109, 70, 0.4) !important;
                 padding: 12px 10px;
                 text-align: center !important;
                 color: #ffffff !important;
                 font-weight: 700;
                 font-size: 1.15rem;
-                /* Ombra nera pesante per far staccare il testo bianco anche sul giallo acceso */
                 text-shadow: 1px 1px 5px rgba(0,0,0,1), -1px -1px 3px rgba(0,0,0,0.8);
+            }
+            /* Rimuovi bordi extra sulle ultime righe/colonne */
+            .matrix-table tbody tr td:last-child {
+                border-right: none !important;
+            }
+            .matrix-table tbody tr:last-child td {
+                border-bottom: none !important;
             }
         </style>
         """, unsafe_allow_html=True)
         
-        # 4. Render come vero HTML
-        st.markdown(styled_df.to_html(classes="matrix-table"), unsafe_allow_html=True)
+        # 4. Render come vero HTML, avvolto in un div contenitore per il centraggio
+        st.markdown(f'<div class="matrix-container">{styled_df.to_html(classes="matrix-table")}</div>', unsafe_allow_html=True)
