@@ -320,26 +320,26 @@ def render_testa_a_testa():
         st.markdown('<div class="subsection-title">Buff, Comandi e Carica</div>', unsafe_allow_html=True)
         st.caption("Modificatori situazionali da applicare al profilo d'attacco.")
         with st.container(border=True):
-            ha_caricato = st.checkbox("L'unità ha Caricato", value=False)
-            all_out_attack = st.checkbox("Comando: All-out Attack (+1 Hit)", value=False)
+            ha_caricato = st.checkbox("L'unità ha Caricato", value=False, key="glob_carica")
+            all_out_attack = st.checkbox("Comando: All-out Attack (+1 Hit)", value=False, key="glob_aoa")
             with st.expander("Modificatori Hit/Wound e Bonus Extra"):
-                mod_hit_extra = st.slider("Modificatori Hit Extra", -2, 2, 0)
-                mod_wnd_extra = st.slider("Modificatori Wound Extra", -2, 2, 0)
-                bonus_atk = st.number_input("Attacchi Extra", 0, 5, 0)
-                bonus_rend = st.number_input("Rend Extra", 0, 3, 0)
-                bonus_dmg = st.number_input("Danno Extra", 0, 3, 0)
-                crit_on_5 = st.checkbox("Critico al 5+", value=False)
+                mod_hit_extra = st.slider("Modificatori Hit Extra", -2, 2, 0, key="glob_mhit")
+                mod_wnd_extra = st.slider("Modificatori Wound Extra", -2, 2, 0, key="glob_mwnd")
+                bonus_atk = st.number_input("Attacchi Extra", 0, 5, 0, key="glob_batk")
+                bonus_rend = st.number_input("Rend Extra", 0, 3, 0, key="glob_brend")
+                bonus_dmg = st.number_input("Danno Extra", 0, 3, 0, key="glob_bdmg")
+                crit_on_5 = st.checkbox("Critico al 5+", value=False, key="glob_crit5")
 
     with col_danni_extra:
         st.markdown('<div class="subsection-title">Danni Mortali Extra (Preghiere/Magie)</div>', unsafe_allow_html=True)
         st.caption("Impatto di eventuali mortali inflitti nella stessa sequenza.")
         with st.container(border=True):
             c1, c2, c3 = st.columns([1, 1.2, 1.5])
-            mortal_extra_dadi = c1.number_input("N. Dadi", min_value=0, max_value=100, value=0)
-            mortal_extra_tipo = c2.selectbox("Tipo", [3, 6], index=1, format_func=lambda x: f"D{x}")
-            mortal_extra_soglia = c3.selectbox("Soglia", ["Nessuna (Somma)", "2+", "3+", "4+", "5+", "6+"])
-            mortal_extra_fisso = st.number_input("Danni Fissi Extra", 0, 100, 0)
-
+            mortal_extra_dadi = c1.number_input("N. Dadi", min_value=0, max_value=100, value=0, key="glob_mdadi")
+            mortal_extra_tipo = c2.selectbox("Tipo", [3, 6], index=1, format_func=lambda x: f"D{x}", key="glob_mtipo")
+            mortal_extra_soglia = c3.selectbox("Soglia", ["Nessuna (Somma)", "2+", "3+", "4+", "5+", "6+"], key="glob_msoglia")
+            mortal_extra_fisso = st.number_input("Danni Fissi Extra", 0, 100, 0, key="glob_mfisso")
+            
     # Costruzione Moduli di Attacco finali
     n_mod_att = n_mod_att_base * (2 if rinforzata_att else 1)
     punti_att_totale = punti_att_base * (2 if rinforzata_att else 1)
@@ -478,12 +478,12 @@ def render_testa_a_testa():
     with st.container(border=True):
         st.markdown("**Buff Difensivi e Terreno del Bersaglio (Modificabili)**")
         dt1, dt2, dt3 = st.columns(3)
-        cover_b = dt1.checkbox("Cover (+1 Save)", value=False)
-        aod_b = dt2.checkbox("All-out Defence (+1 Save)", value=False)
-        extra_save_b = dt3.checkbox("Abilità extra (+1 Save)", value=False)
-        obscuring_b = dt1.checkbox("Terreno Obscuring (-1 Hit)", value=False)
-        bersaglio_carica = dt2.checkbox("Il Bersaglio ha Caricato", value=False)
-        blocca_ward_b = dt3.checkbox("Ward Annullati", value=False)
+        cover_b = dt1.checkbox("Cover (+1 Save)", value=False, key="def_cover")
+        aod_b = dt2.checkbox("All-out Defence (+1 Save)", value=False, key="def_aod")
+        extra_save_b = dt3.checkbox("Abilità extra (+1 Save)", value=False, key="def_exsv")
+        obscuring_b = dt1.checkbox("Terreno Obscuring (-1 Hit)", value=False, key="def_obsc")
+        bersaglio_carica = dt2.checkbox("Il Bersaglio ha Caricato", value=False, key="def_bchg")
+        blocca_ward_b = dt3.checkbox("Ward Annullati", value=False, key="def_nowd")
 
     mod_globali_att["bersaglio_ha_caricato"] = bersaglio_carica
     for sup in config_supporti:
