@@ -7,6 +7,7 @@ from core_engine import (
     simula_monte_carlo
 )
 
+# Funzione helper per estrarre in sicurezza numeri interi da stringhe/dizionari
 def estrai_intero_sicuro(valore, default=0):
     if isinstance(valore, (int, float)):
         return int(valore)
@@ -16,11 +17,12 @@ def estrai_intero_sicuro(valore, default=0):
             return int(match.group(0))
     return default
 
+# PARSER AVANZATO PER ARMI AoS 4e
 def analizza_testo_copiato_robusto(testo):
     armi_estratte = []
     pattern_stat = r'(?:(\d+\")\s+)?((?:\d+|[1-9]?D\d+(?:\+\d+)?|D\d+))\s+(\d)\+\s+(\d)\+\s+(\d|---|0|-)\s+((?:\d+|[1-9]?D\d+(?:\+\d+)?|D\d+))$'
     
-    # Set di parole chiave che compongono le intestazioni delle tabelle
+    # Set di parole chiave che compongono le intestazioni delle tabelle (vengono ignorate)
     header_words = {"ranged", "melee", "missile", "weapons", "weapon", "rng", "atk", "hit", "wnd", "rnd", "dmg", "damage", "attacks"}
 
     linee = testo.split('\n')
@@ -33,8 +35,7 @@ def analizza_testo_copiato_robusto(testo):
         if not linea_pulita:
             continue
 
-        # Filtro intelligente: se la riga contiene SOLO parole di intestazione, viene ignorata.
-        # Un'arma "Hitter Axe" non viene filtrata perché "Axe" non è nel dizionario.
+        # Filtro anti-intestazione
         words_in_line = set(re.findall(r'[a-zA-Z]+', linea_pulita.lower()))
         if words_in_line and words_in_line.issubset(header_words):
             continue
@@ -63,10 +64,8 @@ def analizza_testo_copiato_robusto(testo):
             elif "Anti-MONSTER" in testo_combinato: anti = "MONSTER"
             elif "Anti-CAVALRY" in testo_combinato: anti = "CAVALRY"
 
-            # Prende il nome dalla riga precedente se esisteva
             nome_pulito = nome_temporaneo if nome_temporaneo else testo_prima
             
-            # Pulisce il nome da tag che ora sono menù a tendina
             tags_da_rimuovere = ["Crit (Auto-wound)", "Crit (Mortal)", "Crit (2 Hits)", "Shoot in Combat", "Anti-HERO", "Anti-INFANTRY", "Anti-MONSTER", "Anti-CAVALRY"]
             for tag in tags_da_rimuovere:
                 nome_pulito = re.sub(r',?\s*' + re.escape(tag), '', nome_pulito, flags=re.IGNORECASE)
@@ -84,9 +83,8 @@ def analizza_testo_copiato_robusto(testo):
                 "crit_type": crit, "anti_target": anti, "charge_dmg": False, "anti_charge": False, "companion": False
             })
 
-            nome_temporaneo = "" # Resetta per la prossima arma
+            nome_temporaneo = ""
         else:
-            # Salva la riga non numerica come potenziale nome dell'arma
             nome_temporaneo = (nome_temporaneo + " " + linea_pulita).strip()
 
     return armi_estratte
@@ -160,6 +158,8 @@ def render_testa_a_testa():
                 armi_estratte = analizza_testo_copiato_robusto(testo_copiato)
                 if armi_estratte:
                     st.session_state["corrente_armi"] = armi_estratte
+                    # FIX CHE RISOLVE IL PROBLEMA DELLE ARMI VUOTE:
+                    st.session_state["form_version"] = st.session_state.get("form_version", 0) + 1 
                     st.rerun()
                 else:
                     st.error("Nessun profilo riconosciuto! Assicurati che finisca con: Attacchi, Hit, Wound, Rend, Danno.")
@@ -182,7 +182,6 @@ def render_testa_a_testa():
 
             armi_aggiornate = []
             for idx, p_arma in enumerate(st.session_state["corrente_armi"]):
-                # IL FIX DEL TITOLO E' QUI (Mostra il vero nome invece di "Arma")
                 with st.expander(f"⚔️ {p_arma['nome']}", expanded=True):
                     c1, c2, c3 = st.columns([2, 1, 1])
                     nome_a = c1.text_input("Nome", value=p_arma["nome"], key=f"nm_{idx}_{v_key}")
@@ -241,6 +240,7 @@ def render_testa_a_testa():
                 
                 st.session_state["corrente_difesa"] = {"salute_per_modello": salute_modello, "save": save_nativo, "ward": ward_nativo}
 
+            # ================= PONTE PER LA FORGIA =================
             st.markdown("---")
             if st.button("🛠️ Invia Profilo alla Forgia per il Salvataggio", type="primary", use_container_width=True):
                 st.session_state["forgia_armi"] = [dict(a) for a in st.session_state["corrente_armi"]]
