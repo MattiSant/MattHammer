@@ -736,14 +736,61 @@ def render_testa_a_testa():
                 for sup in config_supporti:
                     danno_armi_mat += sum(calcola_arma_analitico(a_sup, sup["mod_globali"], b_temp)["danno_netto"] for a_sup in sup["armi"] if a_sup.get("attiva", False))
                 
-                # Danni extra (Mortali) - Il bug era qui!
+                # Danni extra (Mortali)
                 molt_ward_mat = 1.0 if w_val >= 7 else 1.0 - ((7 - max(2, w_val)) / 6.0)
                 danno_extra_mat = danno_extra_base * molt_ward_mat
                 
-                col_valori.append(round(danno_armi_mat + danno_extra_mat, 2))
+                col_valori.append(danno_armi_mat + danno_extra_mat)
             matrice_dati[col_nome] = col_valori
             
         df_matrice = pd.DataFrame(matrice_dati, index=[f"Save {s}+" if s < 7 else "No Save (-)" for s in saves_lista])
         
-        # Modifica colori: uso della mappa 'Oranges' con taglio base per eliminare il bianco accecante
-        st.dataframe(df_matrice.style.background_gradient(cmap="Oranges", axis=None, low=0.15, high=0.9), use_container_width=True)
+        import matplotlib.colors as mcolors
+        
+        # 1. Creazione Palette Customizzata per l'app (Marrone Scuro -> Oro/Bronzo)
+        colori_matrice = ["#150f0a", "#3b2612", "#8c6d46", "#d4af37"]
+        cmap_matt = mcolors.LinearSegmentedColormap.from_list("matthammer_gold", colori_matrice)
+        
+        # 2. Formattazione a 2 decimali e applicazione della mappa colori
+        styled_df = df_matrice.style.format("{:.2f}").background_gradient(cmap=cmap_matt, axis=None)
+        
+        # 3. CSS Su misura per fondere la tabella nel tema pergamena/oro
+        st.markdown("""
+        <style>
+            .matrix-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-family: 'Cinzel', serif;
+                margin-top: 15px;
+                border: 2px solid #8c6d46;
+                border-radius: 4px;
+            }
+            .matrix-table th {
+                background-color: #120e0a !important;
+                border: 1px solid #8c6d46 !important;
+                color: #e6c665 !important;
+                padding: 10px;
+                text-align: center !important;
+                font-weight: bold;
+                font-size: 1.05rem;
+                letter-spacing: 1px;
+            }
+            .matrix-table tbody tr th {
+                text-align: left !important;
+                border-right: 2px solid #8c6d46 !important;
+            }
+            .matrix-table td {
+                border: 1px solid rgba(140, 109, 70, 0.4) !important;
+                padding: 12px 10px;
+                text-align: center !important;
+                color: #ffffff !important;
+                font-weight: 700;
+                font-size: 1.15rem;
+                /* Ombra nera pesante per far staccare il testo bianco anche sul giallo acceso */
+                text-shadow: 1px 1px 5px rgba(0,0,0,1), -1px -1px 3px rgba(0,0,0,0.8);
+            }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # 4. Render come vero HTML
+        st.markdown(styled_df.to_html(classes="matrix-table"), unsafe_allow_html=True)
