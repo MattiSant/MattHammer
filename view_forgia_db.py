@@ -427,113 +427,115 @@ def render_forgia_db():
                 else:
                     st.error(f"Errore di scrittura sul file: {messaggio}")
 
-                    # ==========================================
-    # TAB: FORMAZIONI DI BATTAGLIA
-    # ==========================================
-    with tab_formazioni:
-        st.markdown('<div class="subsection-title">Archivio Formazioni di Battaglia</div>', unsafe_allow_html=True)
-        formazioni_db = _carica_json_ausiliario(FORMATIONS_FILE, {})
-        
-        fazioni_disponibili = ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Grande Alleanza / Altro"]
-        fazione_f = st.selectbox("Fazione Formazione", fazioni_disponibili, key="fg_form_faz")
-        
-        form_attuali = formazioni_db.get(fazione_f, {})
-        opzioni_form = ["--- Nuova Formazione ---"] + list(form_attuali.keys())
-        scelta_form = st.selectbox("Seleziona Formazione Esistente", opzioni_form, key="fg_form_sel")
-        
-        dati_f_sel = form_attuali.get(scelta_form, {}) if scelta_form != "--- Nuova Formazione ---" else {}
-        
-        nome_form = st.text_input("Nome Formazione", value=scelta_form if scelta_form != "--- Nuova Formazione ---" else "", key="fg_fnome")
-        c_f1, c_f2 = st.columns(2)
-        fase_f = c_f1.selectbox("Fase di Attivazione", ["Hero Phase", "Movement Phase", "Shooting Phase", "Charge Phase", "Combat Phase", "Fine Turno", "Passiva / Permanente"], key="fg_ffase")
-        tipo_eff = c_f2.selectbox("Tipo Effetto", ["Rend", "Save", "Hit", "Wound", "Ward", "Controllo", "Altro"], key="fg_ftipo")
-        
-        c_f3, c_f4 = st.columns(2)
-        val_mod = c_f3.text_input("Valore Modificatore (es. +1, -1, 5+)", value=str(dati_f_sel.get("valore_modificatore", "+1")), key="fg_fval")
-        monouso = c_f4.checkbox("Monouso (Once per Battle)", value=bool(dati_f_sel.get("monouso", False)), key="fg_fmono")
-        
-        desc_form = st.text_area("Descrizione Regola Ufficiale", value=dati_f_sel.get("descrizione", ""), key="fg_fdesc")
-        
-        col_s_f1, col_s_f2 = st.columns([2, 1])
-        if col_s_f1.button("💾 Salva Formazione", type="primary", use_container_width=True):
-            if nome_form.strip():
-                if fazione_f not in formazioni_db:
-                    formazioni_db[fazione_f] = {}
-                formazioni_db[fazione_f][nome_form.strip()] = {
-                    "fase_attivazione": fase_f,
-                    "tipo_effetto": tipo_eff,
-                    "valore_modificatore": val_mod,
-                    "monouso": monouso,
-                    "descrizione": desc_form
-                }
+        # ==========================================
+        # TAB: FORMAZIONI DI BATTAGLIA
+        # ==========================================
+        with tab_formazioni:
+            st.markdown('<div class="subsection-title">Archivio Formazioni di Battaglia</div>', unsafe_allow_html=True)
+            formazioni_db = _carica_json_ausiliario(FORMATIONS_FILE, {})
+            
+            fazioni_disponibili = ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Grande Alleanza / Altro"]
+            fazione_f = st.selectbox("Fazione Formazione", fazioni_disponibili, key="fg_form_faz")
+            
+            form_attuali = formazioni_db.get(fazione_f, {})
+            opzioni_form = ["--- Nuova Formazione ---"] + list(form_attuali.keys())
+            scelta_form = st.selectbox("Seleziona Formazione Esistente", opzioni_form, key="fg_form_sel")
+            
+            dati_f_sel = form_attuali.get(scelta_form, {}) if scelta_form != "--- Nuova Formazione ---" else {}
+            
+            nome_form = st.text_input("Nome Formazione", value=scelta_form if scelta_form != "--- Nuova Formazione ---" else "", key="fg_fnome")
+            c_f1, c_f2 = st.columns(2)
+            fase_f = c_f1.selectbox("Fase di Attivazione", ["Hero Phase", "Movement Phase", "Shooting Phase", "Charge Phase", "Combat Phase", "Fine Turno", "Passiva / Permanente"], key="fg_ffase")
+            tipo_eff = c_f2.selectbox("Tipo Effetto", ["Rend", "Save", "Hit", "Wound", "Ward", "Controllo", "Altro"], key="fg_ftipo")
+            
+            c_f3, c_f4 = st.columns(2)
+            val_mod = c_f3.text_input("Valore Modificatore (es. +1, -1, 5+)", value=str(dati_f_sel.get("valore_modificatore", "+1")), key="fg_fval")
+            monouso = c_f4.checkbox("Monouso (Once per Battle)", value=bool(dati_f_sel.get("monouso", False)), key="fg_fmono")
+            
+            desc_form = st.text_area("Descrizione Regola Ufficiale", value=dati_f_sel.get("descrizione", ""), key="fg_fdesc")
+            
+            col_s_f1, col_s_f2 = st.columns([2, 1])
+            if col_s_f1.button("💾 Salva Formazione", type="primary", use_container_width=True):
+                if nome_form.strip():
+                    if fazione_f not in formazioni_db:
+                        formazioni_db[fazione_f] = {}
+                    formazioni_db[fazione_f][nome_form.strip()] = {
+                        "fase_attivazione": fase_f,
+                        "tipo_effetto": tipo_eff,
+                        "valore_modificatore": val_mod,
+                        "monouso": monouso,
+                        "descrizione": desc_form
+                    }
+                    _salva_json_ausiliario(FORMATIONS_FILE, formazioni_db)
+                    st.session_state["archivio_formazioni"] = formazioni_db
+                    st.toast(f"Formazione '{nome_form}' salvata!")
+                    st.rerun()
+
+            if scelta_form != "--- Nuova Formazione ---" and col_s_f2.button("🗑️ Elimina Formazione", use_container_width=True):
+                del formazioni_db[fazione_f][scelta_form]
                 _salva_json_ausiliario(FORMATIONS_FILE, formazioni_db)
                 st.session_state["archivio_formazioni"] = formazioni_db
-                st.toast(f"Formazione '{nome_form}' salvata!")
+                st.toast(f"Formazione '{scelta_form}' rimossa!")
                 st.rerun()
 
-        if scelta_form != "--- Nuova Formazione ---" and col_s_f2.button("🗑️ Elimina Formazione", use_container_width=True):
-            del formazioni_db[fazione_f][scelta_form]
-            _salva_json_ausiliario(FORMATIONS_FILE, formazioni_db)
-            st.session_state["archivio_formazioni"] = formazioni_db
-            st.toast(f"Formazione '{scelta_form}' rimossa!")
-            st.rerun()
-
-    # ==========================================
-    # TAB: TRATTI EROICI & ARTEFATTI
-    # ==========================================
-    with tab_tratti_artefatti:
-        st.markdown('<div class="subsection-title">Tratti Eroici ed Artefatti di Potere</div>', unsafe_allow_html=True)
-        col_t, col_a = st.columns(2)
-        
-        traits_db = _carica_json_ausiliario(TRAITS_FILE, {"Generali": ["Nessuno"]})
-        artefacts_db = _carica_json_ausiliario(ARTEFACTS_FILE, {"Generali": ["Nessuno"]})
-        
-        with col_t:
-            st.markdown("**Tratti Eroici Registrati:**")
-            lista_t = traits_db.get("Generali", ["Nessuno"])
-            for t in lista_t:
-                st.write(f"• {t}")
-            nuovo_tratto = st.text_input("Nuovo Tratto Eroico (con effetto tra parentesi):", key="fg_new_t")
-            if st.button("➕ Aggiungi Tratto"):
-                if nuovo_tratto.strip() and nuovo_tratto not in lista_t:
-                    lista_t.append(nuovo_tratto.strip())
-                    traits_db["Generali"] = lista_t
-                    _salva_json_ausiliario(TRAITS_FILE, traits_db)
-                    st.toast("Tratto aggiunto!")
-                    st.rerun()
-
-        with col_a:
-            st.markdown("**Artefatti di Potere Registrati:**")
-            lista_a = artefacts_db.get("Generali", ["Nessuno"])
-            for a in lista_a:
-                st.write(f"• {a}")
-            nuovo_artefatto = st.text_input("Nuovo Artefatto (con effetto tra parentesi):", key="fg_new_a")
-            if st.button("➕ Aggiungi Artefatto"):
-                if nuovo_artefatto.strip() and nuovo_artefatto not in lista_a:
-                    lista_a.append(nuovo_artefatto.strip())
-                    artefacts_db["Generali"] = lista_a
-                    _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
-                    st.toast("Artefatto aggiunto!")
-                    st.rerun()
-
-    # ==========================================
-    # TAB: GESTIONE ED ELIMINAZIONE UNITÀ DAL DB
-    # ==========================================
-    with tab_elimina:
-        st.markdown('<div class="subsection-title">Eliminazione Protetta dal Database</div>', unsafe_allow_html=True)
-        st.caption("Rimuovi in sicurezza profili obsoleti o non più necessari.")
-        
-        tutte_le_unita = [u for u in st.session_state["db_unita"].keys() if u != "--- Seleziona o Resetta ---"]
-        if tutte_le_unita:
-            unita_target = st.selectbox("Seleziona Unità da eliminare:", tutte_le_unita, key="del_u_tab")
-            st.warning(f"Attenzione: l'eliminazione di **{unita_target}** sarà permanente nel file JSON del database.")
+        # ==========================================
+        # TAB: TRATTI EROICI & ARTEFATTI
+        # ==========================================
+        with tab_tratti_artefatti:
+            st.markdown('<div class="subsection-title">Tratti Eroici ed Artefatti di Potere</div>', unsafe_allow_html=True)
+            col_t, col_a = st.columns(2)
             
-            conferma = st.checkbox("Confermo la rimozione definitiva dell'unità", key="chk_conf_del")
-            if st.button("🗑️ Elimina Definitivamente", type="secondary", disabled=not conferma):
-                del st.session_state["db_unita"][unita_target]
-                salva_nel_database(st.session_state["db_unita"])
-                st.success(f"Unità '{unita_target}' eliminata con successo dal Grimorio!")
-                st.session_state["forgia_version"] += 1
-                st.rerun()
-        else:
-            st.info("Nessuna unità presente nel database da eliminare.")
+            traits_db = _carica_json_ausiliario(TRAITS_FILE, {"Generali": ["Nessuno"]})
+            artefacts_db = _carica_json_ausiliario(ARTEFACTS_FILE, {"Generali": ["Nessuno"]})
+            
+            with col_t:
+                st.markdown("**Tratti Eroici Registrati:**")
+                lista_t = traits_db.get("Generali", ["Nessuno"])
+                for t in lista_t:
+                    st.write(f"• {t}")
+                nuovo_tratto = st.text_input("Nuovo Tratto Eroico (con effetto tra parentesi):", key="fg_new_t")
+                if st.button("➕ Aggiungi Tratto"):
+                    if nuovo_tratto.strip() and nuovo_tratto not in lista_t:
+                        lista_t.append(nuovo_tratto.strip())
+                        traits_db["Generali"] = lista_t
+                        _salva_json_ausiliario(TRAITS_FILE, traits_db)
+                        st.session_state["db_tratti_eroici"] = lista_t
+                        st.toast("Tratto aggiunto!")
+                        st.rerun()
+
+            with col_a:
+                st.markdown("**Artefatti di Potere Registrati:**")
+                lista_a = artefacts_db.get("Generali", ["Nessuno"])
+                for a in lista_a:
+                    st.write(f"• {a}")
+                nuovo_artefatto = st.text_input("Nuovo Artefatto (con effetto tra parentesi):", key="fg_new_a")
+                if st.button("➕ Aggiungi Artefatto"):
+                    if nuovo_artefatto.strip() and nuovo_artefatto not in lista_a:
+                        lista_a.append(nuovo_artefatto.strip())
+                        artefacts_db["Generali"] = lista_a
+                        _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
+                        st.session_state["db_artefatti"] = lista_a
+                        st.toast("Artefatto aggiunto!")
+                        st.rerun()
+
+        # ==========================================
+        # TAB: GESTIONE ED ELIMINAZIONE UNITÀ DAL DB
+        # ==========================================
+        with tab_elimina:
+            st.markdown('<div class="subsection-title">Eliminazione Protetta dal Database</div>', unsafe_allow_html=True)
+            st.caption("Rimuovi in sicurezza profili obsoleti o non più necessari.")
+            
+            tutte_le_unita = [u for u in st.session_state["db_unita"].keys() if u != "--- Seleziona o Resetta ---"]
+            if tutte_le_unita:
+                unita_target = st.selectbox("Seleziona Unità da eliminare:", tutte_le_unita, key="del_u_tab")
+                st.warning(f"Attenzione: l'eliminazione di **{unita_target}** sarà permanente nel file JSON del database.")
+                
+                conferma = st.checkbox("Confermo la rimozione definitiva dell'unità", key="chk_conf_del")
+                if st.button("🗑️ Elimina Definitivamente", type="secondary", disabled=not conferma):
+                    del st.session_state["db_unita"][unita_target]
+                    salva_nel_database(st.session_state["db_unita"])
+                    st.success(f"Unità '{unita_target}' eliminata con successo dal Grimorio!")
+                    st.session_state["forgia_version"] += 1
+                    st.rerun()
+            else:
+                st.info("Nessuna unità presente nel database da eliminare.")
