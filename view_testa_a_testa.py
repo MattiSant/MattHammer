@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import re
 from core_engine import (
-    analizza_testo_copiato,
     calcola_arma_analitico,
     simula_monte_carlo
 )
@@ -17,6 +16,51 @@ def estrai_intero_sicuro(valore, default=0):
         if match:
             return int(match.group(0))
     return default
+
+# PARSER AVANZATO PER ARMI AoS 4e (Supera il core_engine)
+def analizza_testo_copiato_robusto(testo):
+    armi_estratte = []
+    # Legge l'incolla di Wahapedia o dell'App: Nome (Opzionale Range) Atk Hit Wnd Rend Dmg
+    pattern_fine_riga = r'(?:(\d+\")\s+)?((?:\d+|[1-9]?D\d+(?:\+\d+)?))\s+(\d)\+\s+(\d)\+\s+(\d|---|0|-)\s+((?:\d+|[1-9]?D\d+(?:\+\d+)?))$'
+    
+    for linea in testo.split('\n'):
+        linea = linea.strip().replace('\t', ' ')
+        if not linea: continue
+        linea = re.sub(r'\s+', ' ', linea)
+        
+        match = re.search(pattern_fine_riga, linea)
+        if match:
+            nome_crudo = linea[:match.start()].strip()
+            gittata = match.group(1)
+            atk = match.group(2)
+            hit = int(match.group(3))
+            wnd = int(match.group(4))
+            rend = 0 if match.group(5) in ["---", "-"] else int(match.group(5))
+            dmg = match.group(6)
+            
+            crit = "Nessuno"
+            if "Crit (Mortal)" in nome_crudo: crit = "Crit (Mortal)"
+            elif "Crit (Auto-wound)" in nome_crudo: crit = "Crit (Auto-wound)"
+            
+            anti = "Nessuno"
+            if "Anti-HERO" in nome_crudo: anti = "HERO"
+            elif "Anti-INFANTRY" in nome_crudo: anti = "INFANTRY"
+            elif "Anti-MONSTER" in nome_crudo: anti = "MONSTER"
+            elif "Anti-CAVALRY" in nome_crudo: anti = "CAVALRY"
+            
+            nome_pulito = nome_crudo.replace("Crit (Auto-wound)", "").replace("Crit (Mortal)", "")
+            nome_pulito = re.sub(r',?\s*Shoot in Combat', '', nome_pulito).strip(" ,-")
+            if not nome_pulito: nome_pulito = "Arma"
+                
+            ranged = True if gittata else False
+            gittata_str = gittata if gittata else "Melee"
+            
+            armi_estratte.append({
+                "nome": nome_pulito, "attiva": True, "ranged": ranged, "range": gittata_str,
+                "atk": str(atk), "hit": hit, "wnd": wnd, "rend": rend, "dmg": str(dmg),
+                "crit_type": crit, "anti_target": anti, "charge_dmg": False, "anti_charge": False, "companion": False
+            })
+    return armi_estratte
 
 def render_testa_a_testa():
     st.markdown("""
@@ -81,13 +125,15 @@ def render_testa_a_testa():
         # ================= MANUALE =================
         with st.container(border=True):
             st.markdown('<div class="subsection-title">Inserimento Rapido Manuale</div>', unsafe_allow_html=True)
-            st.caption("Incolla un testo (es. 'Spada 5 3+ 3+ 1 2') o crea le armi a mano.")
+            st.caption("Incolla un testo (es. 'Spada 12\" 5 3+ 3+ 1 2') o crea le armi a mano.")
             testo_copiato = st.text_area("Incolla profili armi:", height=68, key="txt_copia_att")
             if st.button("Applica Testo alle Armi"):
-                armi_estratte = analizza_testo_copiato(testo_copiato)
+                armi_estratte = analizza_testo_copiato_robusto(testo_copiato)
                 if armi_estratte:
                     st.session_state["corrente_armi"] = armi_estratte
                     st.rerun()
+                else:
+                    st.error("Nessun profilo riconosciuto! Assicurati che finisca con: Attacchi, Hit, Wound, Rend, Danno.")
 
         col_armi, col_difesa_unita = st.columns(2)
         opzioni_dadi = ["---", "1", "2", "3", "4", "5", "6", "7", "8", "10", "12", "D3", "D3+1", "D6", "2D6"]
@@ -142,7 +188,6 @@ def render_testa_a_testa():
             with st.container(border=True):
                 cs1, cs2 = st.columns(2)
                 
-                # FIX: Clamp dei valori minimi per evitare StreamlitValueBelowMinError
                 val_modelli = max(1, estrai_intero_sicuro(st.session_state.get("corrente_modelli", 1), 1))
                 st.session_state["corrente_modelli"] = cs1.number_input("Modelli Base", min_value=1, max_value=60, value=val_modelli)
                 
@@ -166,7 +211,7 @@ def render_testa_a_testa():
                 
                 st.session_state["corrente_difesa"] = {"salute_per_modello": salute_modello, "save": save_nativo, "ward": ward_nativo}
 
-            # REINDIRIZZAMENTO ALLA FORGIA
+            # ================= PONTE PER LA FORGIA (FIXATO) =================
             st.markdown("---")
             if st.button("🛠️ Invia Profilo alla Forgia per il Salvataggio", type="primary", use_container_width=True):
                 st.session_state["forgia_armi"] = [dict(a) for a in st.session_state["corrente_armi"]]
@@ -181,6 +226,10 @@ def render_testa_a_testa():
                 st.session_state["forgia_modelli"] = st.session_state["corrente_modelli"]
                 st.session_state["forgia_punti"] = st.session_state["corrente_punti"]
                 st.session_state["forgia_campione"] = st.session_state["corrente_campione"]
+                
+                # FIX: Incrementiamo la versione della forgia per svuotare la cache dei vecchi widget
+                st.session_state["forgia_version"] = st.session_state.get("forgia_version", 0) + 1
+                st.session_state["forgia_nome"] = ""
                 
                 st.session_state["pagina_selezionata"] = "Forgia del Grimorio (Database)"
                 st.rerun()
@@ -470,7 +519,6 @@ def render_testa_a_testa():
     ha_crit_mortal = any(a.get('crit_type', 'Nessuno') == 'Crit (Mortal)' for a in tutte_armi_attive)
     anti_targets = list(set([a['anti_target'] for a in tutte_armi_attive if a.get('anti_target', 'Nessuno') != 'Nessuno']))
 
-    # Recupera i dati difensivi dell'attaccante per i ruoli
     difesa_corrente = st.session_state.get("corrente_difesa", {})
     ward_unita = int(difesa_corrente.get("ward", 7)) if str(difesa_corrente.get("ward")) != "---" else 7
     save_unita = int(difesa_corrente.get("save", 4)) if str(difesa_corrente.get("save")) != "---" else 4
@@ -541,7 +589,7 @@ def render_testa_a_testa():
                         consiglio_cp = (
                             "**Investi in Fase di Hit (Comando: All-out Attack - 1 CP):** "
                             f"La dispersione maggiore avviene nel colpire (**-{drop_hit:.1f}%** di dadi scartati). "
-                            + ("*All-out Attack* è già attivo sull'Unità Principale!" if all_out_attack else "Attivare **All-out Attack (+1 Hit)** è la scelta migliore per massimizzare il volume di dadi che raggiunge le fasi successive.")
+                            + ("*All-out Attack* è già attivo sull'Unità Principale!" if mod_globali_att["all_out_attack"] else "Attivare **All-out Attack (+1 Hit)** è la scelta migliore per massimizzare il volume di dadi che raggiunge le fasi successive.")
                         )
                     elif max_drop == drop_wnd:
                         fase_critica = "Fase 2 -> 3 (Tiro per Ferire / Wound)"

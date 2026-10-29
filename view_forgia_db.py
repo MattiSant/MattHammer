@@ -87,9 +87,32 @@ def render_forgia_db():
                 st.session_state["forgia_abilita"] = d_load.get("abilita", [])
                 st.session_state["forgia_keywords"] = ", ".join(d_load.get("keywords", []))
                 
-                st.session_state["forgia_version"] += 1
-                st.rerun()
-
+                st.toast(f"Unità caricata: {unita_da_caricare}")
+            else:
+                # === RESET DEI CAMPI ===
+                st.session_state["forgia_fazione"] = "Nighthaunt"
+                st.session_state["forgia_nome"] = ""
+                st.session_state["forgia_punti"] = 100
+                st.session_state["forgia_modelli"] = 1
+                st.session_state["forgia_basetta"] = "32mm"
+                st.session_state["forgia_rinf"] = False
+                st.session_state["forgia_campione"] = False
+                
+                st.session_state["forgia_movimento"] = "6\""
+                st.session_state["forgia_controllo"] = 1
+                st.session_state["forgia_save"] = "4+"
+                st.session_state["forgia_salute"] = 2
+                st.session_state["forgia_ward"] = "7+"
+                
+                st.session_state["forgia_armi"] = []
+                st.session_state["forgia_abilita"] = []
+                st.session_state["forgia_keywords"] = ""
+                
+                st.toast("Campi azzerati. Pronto per creare una nuova unità.")
+                
+            st.session_state["forgia_version"] += 1
+            st.rerun()
+            
     # ==========================================
     # DATI GENERALI E CIRCONFERENZA
     # ==========================================
