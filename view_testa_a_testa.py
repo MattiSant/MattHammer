@@ -7,7 +7,6 @@ from core_engine import (
     simula_monte_carlo
 )
 
-# Funzione helper per estrarre in sicurezza numeri interi da stringhe/dizionari
 def estrai_intero_sicuro(valore, default=0):
     if isinstance(valore, (int, float)):
         return int(valore)
@@ -17,49 +16,79 @@ def estrai_intero_sicuro(valore, default=0):
             return int(match.group(0))
     return default
 
-# PARSER AVANZATO PER ARMI AoS 4e (Supera il core_engine)
 def analizza_testo_copiato_robusto(testo):
     armi_estratte = []
-    # Legge l'incolla di Wahapedia o dell'App: Nome (Opzionale Range) Atk Hit Wnd Rend Dmg
-    pattern_fine_riga = r'(?:(\d+\")\s+)?((?:\d+|[1-9]?D\d+(?:\+\d+)?))\s+(\d)\+\s+(\d)\+\s+(\d|---|0|-)\s+((?:\d+|[1-9]?D\d+(?:\+\d+)?))$'
+    pattern_stat = r'(?:(\d+\")\s+)?((?:\d+|[1-9]?D\d+(?:\+\d+)?|D\d+))\s+(\d)\+\s+(\d)\+\s+(\d|---|0|-)\s+((?:\d+|[1-9]?D\d+(?:\+\d+)?|D\d+))$'
     
-    for linea in testo.split('\n'):
-        linea = linea.strip().replace('\t', ' ')
-        if not linea: continue
-        linea = re.sub(r'\s+', ' ', linea)
-        
-        match = re.search(pattern_fine_riga, linea)
+    # Set di parole chiave che compongono le intestazioni delle tabelle
+    header_words = {"ranged", "melee", "missile", "weapons", "weapon", "rng", "atk", "hit", "wnd", "rnd", "dmg", "damage", "attacks"}
+
+    linee = testo.split('\n')
+    nome_temporaneo = ""
+
+    for linea in linee:
+        linea_pulita = linea.strip().replace('\t', ' ')
+        linea_pulita = re.sub(r'\s+', ' ', linea_pulita)
+
+        if not linea_pulita:
+            continue
+
+        # Filtro intelligente: se la riga contiene SOLO parole di intestazione, viene ignorata.
+        # Un'arma "Hitter Axe" non viene filtrata perché "Axe" non è nel dizionario.
+        words_in_line = set(re.findall(r'[a-zA-Z]+', linea_pulita.lower()))
+        if words_in_line and words_in_line.issubset(header_words):
+            continue
+
+        match = re.search(pattern_stat, linea_pulita)
         if match:
-            nome_crudo = linea[:match.start()].strip()
+            testo_prima = linea_pulita[:match.start()].strip()
+            
             gittata = match.group(1)
             atk = match.group(2)
             hit = int(match.group(3))
             wnd = int(match.group(4))
             rend = 0 if match.group(5) in ["---", "-"] else int(match.group(5))
             dmg = match.group(6)
-            
+
+            testo_combinato = f"{nome_temporaneo} {testo_prima}".strip()
+
             crit = "Nessuno"
-            if "Crit (Mortal)" in nome_crudo: crit = "Crit (Mortal)"
-            elif "Crit (Auto-wound)" in nome_crudo: crit = "Crit (Auto-wound)"
-            
+            if "Crit (Mortal)" in testo_combinato: crit = "Crit (Mortal)"
+            elif "Crit (Auto-wound)" in testo_combinato: crit = "Crit (Auto-wound)"
+            elif "Crit (2 Hits)" in testo_combinato: crit = "Crit (2 Hits)"
+
             anti = "Nessuno"
-            if "Anti-HERO" in nome_crudo: anti = "HERO"
-            elif "Anti-INFANTRY" in nome_crudo: anti = "INFANTRY"
-            elif "Anti-MONSTER" in nome_crudo: anti = "MONSTER"
-            elif "Anti-CAVALRY" in nome_crudo: anti = "CAVALRY"
+            if "Anti-HERO" in testo_combinato: anti = "HERO"
+            elif "Anti-INFANTRY" in testo_combinato: anti = "INFANTRY"
+            elif "Anti-MONSTER" in testo_combinato: anti = "MONSTER"
+            elif "Anti-CAVALRY" in testo_combinato: anti = "CAVALRY"
+
+            # Prende il nome dalla riga precedente se esisteva
+            nome_pulito = nome_temporaneo if nome_temporaneo else testo_prima
             
-            nome_pulito = nome_crudo.replace("Crit (Auto-wound)", "").replace("Crit (Mortal)", "")
-            nome_pulito = re.sub(r',?\s*Shoot in Combat', '', nome_pulito).strip(" ,-")
-            if not nome_pulito: nome_pulito = "Arma"
-                
+            # Pulisce il nome da tag che ora sono menù a tendina
+            tags_da_rimuovere = ["Crit (Auto-wound)", "Crit (Mortal)", "Crit (2 Hits)", "Shoot in Combat", "Anti-HERO", "Anti-INFANTRY", "Anti-MONSTER", "Anti-CAVALRY"]
+            for tag in tags_da_rimuovere:
+                nome_pulito = re.sub(r',?\s*' + re.escape(tag), '', nome_pulito, flags=re.IGNORECASE)
+            
+            nome_pulito = nome_pulito.strip(" ,-")
+            if not nome_pulito:
+                nome_pulito = "Arma"
+
             ranged = True if gittata else False
             gittata_str = gittata if gittata else "Melee"
-            
+
             armi_estratte.append({
                 "nome": nome_pulito, "attiva": True, "ranged": ranged, "range": gittata_str,
                 "atk": str(atk), "hit": hit, "wnd": wnd, "rend": rend, "dmg": str(dmg),
                 "crit_type": crit, "anti_target": anti, "charge_dmg": False, "anti_charge": False, "companion": False
             })
+
+            nome_temporaneo = "" # Resetta per la prossima arma
+        else:
+            # Salva la riga non numerica come potenziale nome dell'arma
+            nome_temporaneo = (nome_temporaneo + " " + linea_pulita).strip()
+
     return armi_estratte
 
 def render_testa_a_testa():
@@ -153,7 +182,8 @@ def render_testa_a_testa():
 
             armi_aggiornate = []
             for idx, p_arma in enumerate(st.session_state["corrente_armi"]):
-                with st.expander(f"⚔️ Arma: {p_arma['nome']}", expanded=True):
+                # IL FIX DEL TITOLO E' QUI (Mostra il vero nome invece di "Arma")
+                with st.expander(f"⚔️ {p_arma['nome']}", expanded=True):
                     c1, c2, c3 = st.columns([2, 1, 1])
                     nome_a = c1.text_input("Nome", value=p_arma["nome"], key=f"nm_{idx}_{v_key}")
                     attiva_a = c2.checkbox("Attiva", value=p_arma["attiva"], key=f"att_{idx}_{v_key}")
@@ -211,7 +241,6 @@ def render_testa_a_testa():
                 
                 st.session_state["corrente_difesa"] = {"salute_per_modello": salute_modello, "save": save_nativo, "ward": ward_nativo}
 
-            # ================= PONTE PER LA FORGIA (FIXATO) =================
             st.markdown("---")
             if st.button("🛠️ Invia Profilo alla Forgia per il Salvataggio", type="primary", use_container_width=True):
                 st.session_state["forgia_armi"] = [dict(a) for a in st.session_state["corrente_armi"]]
@@ -227,7 +256,6 @@ def render_testa_a_testa():
                 st.session_state["forgia_punti"] = st.session_state["corrente_punti"]
                 st.session_state["forgia_campione"] = st.session_state["corrente_campione"]
                 
-                # FIX: Incrementiamo la versione della forgia per svuotare la cache dei vecchi widget
                 st.session_state["forgia_version"] = st.session_state.get("forgia_version", 0) + 1
                 st.session_state["forgia_nome"] = ""
                 
