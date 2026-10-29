@@ -204,7 +204,7 @@ def render_forgia_db():
         st.markdown("**Statistiche Difensive (Warscroll)**")
 
         c1, c2, c3, c4, c5 = st.columns(5)
-        move = c1.text_input("Movimento (es. 8\" Fly)", value=st.session_state.get("forgia_movimento", "6\""), key=f"f_mov_{v_key}")
+        move = c1.text_input("Movimento (es. 8\")", value=st.session_state.get("forgia_movimento", "6\""), key=f"f_mov_{v_key}")
         oc = c2.number_input("Controllo (OC)", min_value=0, max_value=20, value=st.session_state.get("forgia_controllo", 1), key=f"f_oc_{v_key}")
         save = c3.selectbox("Save (Armatura)", ["2+", "3+", "4+", "5+", "6+", "-"], index=["2+", "3+", "4+", "5+", "6+", "-"].index(st.session_state.get("forgia_save", "4+")), key=f"f_sv_{v_key}")
         salute = c4.number_input("Salute (Ferite)", min_value=1, max_value=50, value=st.session_state.get("forgia_salute", 2), key=f"f_hp_{v_key}")
@@ -322,7 +322,7 @@ def render_forgia_db():
 
         st.markdown("---")
         kw_testo = st.text_input("Keywords (separate da virgola)", placeholder="es. Hero, Infantry, Wizard (1), Nighthaunt", value=st.session_state.get("forgia_keywords", ""), key=f"f_kw_{v_key}")
-        
+
     # ==========================================
     # VALIDAZIONE E SALVATAGGIO
     # ==========================================
