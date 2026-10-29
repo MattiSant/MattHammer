@@ -422,7 +422,7 @@ def render_testa_a_testa():
                         sup_elem["bonus_atk"] = mb1.number_input("Attacchi Extra", 0, 5, int(sup_elem.get("bonus_atk", 0)), key=f"ba_s_{s_idx}")
                         sup_elem["bonus_rend"] = mb2.number_input("Rend Extra", 0, 3, int(sup_elem.get("bonus_rend", 0)), key=f"br_s_{s_idx}")
                         sup_elem["bonus_dmg"] = mb3.number_input("Danno Extra", 0, 3, int(sup_elem.get("bonus_dmg", 0)), key=f"bd_s_{s_idx}")
-
+                        
                     n_mod_sup = estrai_intero_sicuro(dati_u_db.get("n_modelli", 1)) * (2 if sup_elem["rinforzata"] else 1)
                     
                     config_supporti.append({
