@@ -207,8 +207,8 @@ def render_forgia_db():
         move = c1.text_input("Movimento (es. 8\")", value=st.session_state.get("forgia_movimento", "6\""), key=f"f_mov_{v_key}")
         oc = c2.number_input("Controllo (OC)", min_value=0, max_value=20, value=st.session_state.get("forgia_controllo", 1), key=f"f_oc_{v_key}")
         save = c3.selectbox("Save (Armatura)", ["2+", "3+", "4+", "5+", "6+", "-"], index=["2+", "3+", "4+", "5+", "6+", "-"].index(st.session_state.get("forgia_save", "4+")), key=f"f_sv_{v_key}")
-        salute = c4.number_input("Salute (Ferite)", min_value=1, max_value=50, value=st.session_state.get("forgia_salute", 2), key=f"f_hp_{v_key}")
-        ward = c5.selectbox("Ward (Tiro Salvezza Magico)", ["4+", "5+", "6+", "7+", "-"], index=["4+", "5+", "6+", "7+", "-"].index(st.session_state.get("forgia_ward", "7+")), key=f"f_wd_{v_key}")
+        salute = c4.number_input("Salute (PF)", min_value=1, max_value=50, value=st.session_state.get("forgia_salute", 2), key=f"f_hp_{v_key}")
+        ward = c5.selectbox("Ward (Protezione)", ["4+", "5+", "6+", "7+", "-"], index=["4+", "5+", "6+", "7+", "-"].index(st.session_state.get("forgia_ward", "7+")), key=f"f_wd_{v_key}")
 
     # ==========================================
     # ARMI
