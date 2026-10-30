@@ -1180,5 +1180,76 @@
             "BLADES OF KHORNE",
             "BLOODBOUND"
         ]
+    },
+    "Blades of Khorne: Deathbringer": {
+        "fazione": "Blades of Khorne",
+        "n_modelli": 1,
+        "dimensione_basetta": "40mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 110,
+        "statistiche_cerchio": {
+            "movimento": "5\"",
+            "controllo": 2,
+            "save": "3+",
+            "salute": 6,
+            "ward": "7+"
+        },
+        "difesa": {
+            "salute_per_modello": 6,
+            "save": 3,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Kingslayer Axe",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "4",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "3",
+                "crit_type": "Crit (2 Hits)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "TROPHIES OF GLORIOUS DEATHS",
+                "tipo": "Ability",
+                "reazione": true,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "Reaction: Opponent declared a command for a unit within 8\" of this unit\n\nEffect: Roll a dice. On an 5+, that command has no effect, it still counts as having been used and the command points spent to use it are still lost. This reaction cannot be used more than once per command.",
+                "modificatori": {}
+            },
+            {
+                "nome": "KILLER OF KINGS",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Fine Turno"
+                ],
+                "descrizione": "Declare: Pick each enemy unit and MANIFESTATION in combat with this unit to be a target.\n\nEffect: Roll 2D6 for each target. If the roll exceeds the target’s Health characteristic, 1 model from that unit is slain or, if the target is a MANIFESTATION, it is automatically destroyed.",
+                "modificatori": {}
+            }
+        ],
+        "keywords": [
+            "HERO",
+            "INFANTRY",
+            "CHAOS",
+            "BLADES OF KHORNE",
+            "BLOODBOUND"
+        ]
     }
 }
