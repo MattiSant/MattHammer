@@ -333,10 +333,9 @@ if is_cloud:
         from core_engine import _push_su_github_file, DB_FILE
         ok, msg = _push_su_github_file(DB_FILE, st.session_state["db_unita"], "Sincronizzazione Manuale da Sidebar")
         if ok:
-            st.sidebar.toast("Sincronizzazione completata con successo!")
+            st.toast("✅ Sincronizzazione completata con successo!")
         else:
             st.sidebar.error("Errore durante la sincronizzazione.")
-else:
     st.sidebar.info("Modalità Locale (Offline)")
 
 # #============= ================== =================== ======================
