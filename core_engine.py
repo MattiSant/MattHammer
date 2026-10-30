@@ -210,6 +210,8 @@ def carica_database():
         return DEFAULT_PRESETS.copy()
 
 def _push_su_github_file(filepath, json_dati, messaggio_commit="Aggiornamento Database"):
+    import streamlit as st # Assicura che streamlit sia caricato nel contesto della funzione
+    
     # 1. Salva sempre il file localmente per aggiornare l'app in tempo reale
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(json_dati, f, indent=4, ensure_ascii=False)
@@ -221,6 +223,8 @@ def _push_su_github_file(filepath, json_dati, messaggio_commit="Aggiornamento Da
         token = st.secrets["GITHUB_TOKEN"]
         repo = st.secrets["GITHUB_REPO"]
         nome_file = os.path.basename(filepath)
+        
+        # URL API GITHUB: Assicurati che 'repo' sia "username/nome-repo" senza spazi
         url = f"https://api.github.com/repos/{repo}/contents/{nome_file}"
         
         headers = {
@@ -229,12 +233,17 @@ def _push_su_github_file(filepath, json_dati, messaggio_commit="Aggiornamento Da
         }
         
         sha = None
+        # Prova a ottenere lo SHA se il file esiste già su GitHub
         try:
             get_resp = requests.get(url, headers=headers)
             if get_resp.status_code == 200:
                 sha = get_resp.json().get("sha")
+            elif get_resp.status_code != 404: # Se non è 404 (not found), c'è un problema di permessi/URL
+                st.error(f"Errore in Lettura GitHub (Code {get_resp.status_code}): {get_resp.text}")
+                return False, f"Errore GitHub (lettura): {get_resp.text}"
         except Exception as e:
-            return False, f"Errore GitHub (lettura): {e}"
+            st.error(f"Errore di connessione GitHub: {e}")
+            return False, f"Errore di connessione GitHub (lettura): {e}"
             
         contenuto_str = json.dumps(json_dati, indent=4, ensure_ascii=False)
         contenuto_b64 = base64.b64encode(contenuto_str.encode("utf-8")).decode("utf-8")
@@ -246,17 +255,20 @@ def _push_su_github_file(filepath, json_dati, messaggio_commit="Aggiornamento Da
         if sha:
             payload["sha"] = sha
             
+        # Tenta di sovrascrivere o creare il file
         try:
             put_resp = requests.put(url, headers=headers, json=payload)
             if put_resp.status_code in [200, 201]:
+                st.toast(f"✅ Sincronizzazione GitHub completata per {nome_file}!")
                 return True, f"File {nome_file} sincronizzato sul Cloud GitHub!"
             else:
+                st.error(f"❌ Errore Scrittura GitHub (Code {put_resp.status_code}): {put_resp.text}")
                 return False, f"Salvato in locale, ma errore GitHub: {put_resp.text}"
         except Exception as e:
+            st.error(f"❌ Errore di connessione GitHub durante il push: {e}")
             return False, f"Errore GitHub (scrittura): {e}"
             
     return True, messaggio_locale
-
 
 def salva_nel_database(db_dict):
     return _push_su_github_file(DB_FILE, db_dict, "Aggiornamento Warscroll nel Grimorio")
