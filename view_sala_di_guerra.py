@@ -44,13 +44,20 @@ def carica_db_supporto(file_path):
     if os.path.exists(file_path):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                dati = json.load(f)
+                if isinstance(dati, dict):
+                    # Se è già il nuovo formato (chiavi = nomi), restituisce le chiavi
+                    if "Generali" not in dati:
+                        return list(dati.keys())
+                    # Se è il vecchio formato a liste
+                    return dati.get("Generali", ["Nessuno"])
+                return ["Nessuno"]
         except Exception:
-            return {}
-    return {"Generali": ["Nessuno"]}
+            return ["Nessuno"]
+    return ["Nessuno"]
 
-db_tratti_eroici = carica_db_supporto(TRAITS_DB_FILE).get("Generali", ["Nessuno"])
-db_artefatti = carica_db_supporto(ARTEFACTS_DB_FILE).get("Generali", ["Nessuno"])
+db_tratti_eroici = carica_db_supporto(TRAITS_DB_FILE)
+db_artefatti = carica_db_supporto(ARTEFACTS_DB_FILE)
 
 ARMATE_NEMICHE_NOTE = {
     "Khorne: Eroi d'Assalto (720pt)": [

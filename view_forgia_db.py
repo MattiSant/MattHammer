@@ -482,7 +482,7 @@ def render_forgia_db():
             st.rerun()
 
 # ==========================================
-    # TAB: TRATTI EROICI & ARTEFATTI (MULTI-MODIFICATORE)
+    # TAB: TRATTI EROICI & ARTEFATTI (CORRETTO)
     # ==========================================
     with tab_tratti_artefatti:
         st.markdown('<div class="subsection-title">Tratti Eroici ed Artefatti di Potere</div>', unsafe_allow_html=True)
@@ -492,13 +492,13 @@ def render_forgia_db():
         raw_traits = _carica_json_ausiliario(TRAITS_FILE, {})
         traits_db = raw_traits if isinstance(raw_traits, dict) and "Generali" not in raw_traits else {
             k: {"fazione": "Generale", "descrizione": k, "modificatori": {}} 
-            for k in raw_traits.get("Generali", ["Nessuno"])
+            for k in (raw_traits.get("Generali", ["Nessuno"]) if isinstance(raw_traits, dict) else ["Nessuno"])
         }
 
         raw_artefacts = _carica_json_ausiliario(ARTEFACTS_FILE, {})
         artefacts_db = raw_artefacts if isinstance(raw_artefacts, dict) and "Generali" not in raw_artefacts else {
             k: {"fazione": "Generale", "descrizione": k, "modificatori": {}} 
-            for k in raw_artefacts.get("Generali", ["Nessuno"])
+            for k in (raw_artefacts.get("Generali", ["Nessuno"]) if isinstance(raw_artefacts, dict) else ["Nessuno"])
         }
 
         if "Nessuno" not in traits_db:
@@ -508,7 +508,6 @@ def render_forgia_db():
 
         opzioni_fazione_supporto = ["Generale", "Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Altro"]
 
-        # Mappatura etichette <-> chiavi tecniche
         LABEL_TO_KEY = {
             "Save Migliorato (+Save)": "bonus_save",
             "Hit Bonus (+Hit)": "mod_hit",
@@ -520,7 +519,8 @@ def render_forgia_db():
             "Movimento Extra (+Move pollici)": "bonus_movimento",
             "Salute Extra (+PF)": "bonus_salute",
             "Controllo Extra (+OC)": "bonus_controllo",
-            "Critico al 5+": "crit_on"
+            "Critico al 5+": "crit_on",
+            "Malus Hit Subito (-Hit nemico)": "mod_hit_subito"
         }
         KEY_TO_LABEL = {v: k for k, v in LABEL_TO_KEY.items()}
 
@@ -535,17 +535,16 @@ def render_forgia_db():
             sel_t = st.selectbox("Seleziona Tratto:", ["--- Nuovo Tratto ---"] + lista_nomi_t, key="sel_tratto_gest")
             dati_t = traits_db.get(sel_t, {"fazione": "Generale", "descrizione": "", "modificatori": {}})
 
-            nome_t = st.text_input("Nome Tratto:", value="" if sel_t == "--- Nuovo Tratto ---" else sel_t, key="in_nome_t")
+            nome_t = st.text_input("Nome Tratto:", value="" if sel_t == "--- Nuovo Tratto ---" else sel_t, key=f"in_nome_t_{sel_t}")
             idx_faz_t = opzioni_fazione_supporto.index(dati_t.get("fazione", "Generale")) if dati_t.get("fazione", "Generale") in opzioni_fazione_supporto else 0
-            faz_t = st.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_t, key="in_faz_t")
-            desc_t = st.text_area("Descrizione Regola:", value=dati_t.get("descrizione", ""), height=70, key="in_desc_t")
+            faz_t = st.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_t, key=f"in_faz_t_{sel_t}")
+            desc_t = st.text_area("Descrizione Regola:", value=dati_t.get("descrizione", ""), height=70, key=f"in_desc_t_{sel_t}")
 
-            # Pre-popolamento dei modificatori esistenti
             mod_esistenti_t = dati_t.get("modificatori", {})
             default_mod_labels_t = [KEY_TO_LABEL[k] for k in mod_esistenti_t.keys() if k in KEY_TO_LABEL]
 
             scelte_mod_t = st.multiselect(
-                "Aggiungi uno o più Modificatori Attivi:", 
+                "Modificatori Attivi:", 
                 list(LABEL_TO_KEY.keys()), 
                 default=default_mod_labels_t, 
                 key=f"ms_mod_t_{sel_t}"
@@ -553,19 +552,19 @@ def render_forgia_db():
 
             modificatori_salvati_t = {}
             if scelte_mod_t:
-                st.markdown("**Valori Modificatori Selezionati:**")
+                st.markdown("**Valori Modificatori:**")
                 for mod_lbl in scelte_mod_t:
                     chiave_k = LABEL_TO_KEY[mod_lbl]
                     val_precedente = mod_esistenti_t.get(chiave_k, 1 if chiave_k != "ward_nativo" else 5)
                     
                     if chiave_k == "crit_on":
-                        st.caption("• **Critico al 5+**: Abilitato")
+                        st.caption("• **Critico al 5+**: Attivo")
                         modificatori_salvati_t["crit_on"] = 5
                     elif chiave_k == "ward_nativo":
-                        w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(val_precedente) if val_precedente in [4, 5, 6] else 1, key=f"inp_t_wd_{sel_t}")
+                        w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(val_precedente) if val_precedente in [4, 5, 6] else 1, key=f"inp_t_wd_{sel_t}_{chiave_k}")
                         modificatori_salvati_t["ward_nativo"] = w_val
                     else:
-                        c_val = st.number_input(f"Valore per {mod_lbl}:", min_value=-3, max_value=10, value=int(val_precedente), key=f"inp_t_{chiave_k}_{sel_t}")
+                        c_val = st.number_input(f"Valore {mod_lbl}:", min_value=-5, max_value=15, value=int(val_precedente), key=f"inp_t_{sel_t}_{chiave_k}")
                         modificatori_salvati_t[chiave_k] = c_val
 
             bt1, bt2 = st.columns(2)
@@ -577,7 +576,7 @@ def render_forgia_db():
                         "modificatori": modificatori_salvati_t
                     }
                     _salva_json_ausiliario(TRAITS_FILE, traits_db)
-                    st.toast(f"Tratto '{nome_t}' registrato con successo!")
+                    st.toast(f"Tratto '{nome_t}' salvato!")
                     st.rerun()
 
             if sel_t not in ["--- Nuovo Tratto ---", "Nessuno"] and bt2.button("🗑️ Elimina Tratto", use_container_width=True):
@@ -595,16 +594,16 @@ def render_forgia_db():
             sel_a = st.selectbox("Seleziona Artefatto:", ["--- Nuovo Artefatto ---"] + lista_nomi_a, key="sel_art_gest")
             dati_a = artefacts_db.get(sel_a, {"fazione": "Generale", "descrizione": "", "modificatori": {}})
 
-            nome_a = st.text_input("Nome Artefatto:", value="" if sel_a == "--- Nuovo Artefatto ---" else sel_a, key="in_nome_a")
+            nome_a = st.text_input("Nome Artefatto:", value="" if sel_a == "--- Nuovo Artefatto ---" else sel_a, key=f"in_nome_a_{sel_a}")
             idx_faz_a = opzioni_fazione_supporto.index(dati_a.get("fazione", "Generale")) if dati_a.get("fazione", "Generale") in opzioni_fazione_supporto else 0
-            faz_a = st.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_a, key="in_faz_a")
-            desc_a = st.text_area("Descrizione Regola:", value=dati_a.get("descrizione", ""), height=70, key="in_desc_a")
+            faz_a = st.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_a, key=f"in_faz_a_{sel_a}")
+            desc_a = st.text_area("Descrizione Regola:", value=dati_a.get("descrizione", ""), height=70, key=f"in_desc_a_{sel_a}")
 
             mod_esistenti_a = dati_a.get("modificatori", {})
             default_mod_labels_a = [KEY_TO_LABEL[k] for k in mod_esistenti_a.keys() if k in KEY_TO_LABEL]
 
             scelte_mod_a = st.multiselect(
-                "Aggiungi uno o più Modificatori Attivi:", 
+                "Modificatori Attivi:", 
                 list(LABEL_TO_KEY.keys()), 
                 default=default_mod_labels_a, 
                 key=f"ms_mod_a_{sel_a}"
@@ -612,19 +611,19 @@ def render_forgia_db():
 
             modificatori_salvati_a = {}
             if scelte_mod_a:
-                st.markdown("**Valori Modificatori Selezionati:**")
+                st.markdown("**Valori Modificatori:**")
                 for mod_lbl in scelte_mod_a:
                     chiave_k = LABEL_TO_KEY[mod_lbl]
                     val_precedente = mod_esistenti_a.get(chiave_k, 1 if chiave_k != "ward_nativo" else 5)
                     
                     if chiave_k == "crit_on":
-                        st.caption("• **Critico al 5+**: Abilitato")
+                        st.caption("• **Critico al 5+**: Attivo")
                         modificatori_salvati_a["crit_on"] = 5
                     elif chiave_k == "ward_nativo":
-                        w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(val_precedente) if val_precedente in [4, 5, 6] else 1, key=f"inp_a_wd_{sel_a}")
+                        w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(val_precedente) if val_precedente in [4, 5, 6] else 1, key=f"inp_a_wd_{sel_a}_{chiave_k}")
                         modificatori_salvati_a["ward_nativo"] = w_val
                     else:
-                        c_val = st.number_input(f"Valore per {mod_lbl}:", min_value=-3, max_value=10, value=int(val_precedente), key=f"inp_a_{chiave_k}_{sel_a}")
+                        c_val = st.number_input(f"Valore {mod_lbl}:", min_value=-5, max_value=15, value=int(val_precedente), key=f"inp_a_{sel_a}_{chiave_k}")
                         modificatori_salvati_a[chiave_k] = c_val
 
             ba1, ba2 = st.columns(2)
@@ -636,7 +635,7 @@ def render_forgia_db():
                         "modificatori": modificatori_salvati_a
                     }
                     _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
-                    st.toast(f"Artefatto '{nome_a}' registrato con successo!")
+                    st.toast(f"Artefatto '{nome_a}' salvato!")
                     st.rerun()
 
             if sel_a not in ["--- Nuovo Artefatto ---", "Nessuno"] and ba2.button("🗑️ Elimina Artefatto", use_container_width=True):
@@ -644,7 +643,7 @@ def render_forgia_db():
                 _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
                 st.toast(f"Artefatto '{sel_a}' eliminato!")
                 st.rerun()
-
+                
     # ==========================================
     # TAB: GESTIONE ED ELIMINAZIONE UNITÀ DAL DB
     # ==========================================
