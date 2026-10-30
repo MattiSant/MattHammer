@@ -431,47 +431,98 @@ def render_forgia_db():
                     st.error(f"Errore di scrittura sul file: {messaggio}")
 
     # ==========================================
-    # TAB: FORMAZIONI DI BATTAGLIA
+    # TAB: FORMAZIONI DI BATTAGLIA (MULTI-MODIFICATORE)
     # ==========================================
     with tab_formazioni:
         st.markdown('<div class="subsection-title">Archivio Formazioni di Battaglia</div>', unsafe_allow_html=True)
+        st.caption("Configura le Formazioni ufficiali per fazione associando regole, tempistiche e modificatori numerici attivi.")
+        
         formazioni_db = _carica_json_ausiliario(FORMATIONS_FILE, {})
         
         fazioni_disponibili = ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Grande Alleanza / Altro"]
-        fazione_f = st.selectbox("Fazione Formazione", fazioni_disponibili, key="fg_form_faz")
+        fazione_f = st.selectbox("Seleziona Fazione:", fazioni_disponibili, key="fg_form_faz")
         
+        if fazione_f not in formazioni_db:
+            formazioni_db[fazione_f] = {}
+            
         form_attuali = formazioni_db.get(fazione_f, {})
         opzioni_form = ["--- Nuova Formazione ---"] + list(form_attuali.keys())
-        scelta_form = st.selectbox("Seleziona Formazione Esistente", opzioni_form, key="fg_form_sel")
+        scelta_form = st.selectbox("Formazione da modificare:", opzioni_form, key="fg_form_sel")
         
         dati_f_sel = form_attuali.get(scelta_form, {}) if scelta_form != "--- Nuova Formazione ---" else {}
         
-        nome_form = st.text_input("Nome Formazione", value=scelta_form if scelta_form != "--- Nuova Formazione ---" else "", key="fg_fnome")
-        c_f1, c_f2 = st.columns(2)
-        fase_f = c_f1.selectbox("Fase di Attivazione", ["Hero Phase", "Movement Phase", "Shooting Phase", "Charge Phase", "Combat Phase", "Fine Turno", "Passiva / Permanente"], key="fg_ffase")
-        tipo_eff = c_f2.selectbox("Tipo Effetto", ["Rend", "Save", "Hit", "Wound", "Ward", "Controllo", "Altro"], key="fg_ftipo")
+        nome_form = st.text_input("Nome Formazione:", value="" if scelta_form == "--- Nuova Formazione ---" else scelta_form, key=f"fg_fnome_{scelta_form}")
         
-        c_f3, c_f4 = st.columns(2)
-        val_mod = c_f3.text_input("Valore Modificatore (es. +1, -1, 5+)", value=str(dati_f_sel.get("valore_modificatore", "+1")), key="fg_fval")
-        monouso = c_f4.checkbox("Monouso (Once per Battle)", value=bool(dati_f_sel.get("monouso", False)), key="fg_fmono")
+        c_f1, c_f2 = st.columns([1.5, 1])
+        fasi_disponibili = [
+            "Passiva / Permanente", "Deployment", "Hero Phase (Fase Eroi Amica o Nemica)",
+            "Movement Phase (Fase di Movimento)", "Shooting Phase (Fase di Tiro)", 
+            "Charge Phase (Fase di Carica)", "Combat Phase (Fase di Combattimento)", "Fine Turno"
+        ]
+        fase_corrente = dati_f_sel.get("fase_attivazione", "Passiva / Permanente")
+        idx_fase = fasi_disponibili.index(fase_corrente) if fase_corrente in fasi_disponibili else 0
+        fase_f = c_f1.selectbox("Fase di Attivazione:", fasi_disponibili, index=idx_fase, key=f"fg_ffase_{scelta_form}")
         
-        desc_form = st.text_area("Descrizione Regola Ufficiale", value=dati_f_sel.get("descrizione", ""), key="fg_fdesc")
+        monouso = c_f2.checkbox("Monouso (Once per Battle)", value=bool(dati_f_sel.get("monouso", False)), key=f"fg_fmono_{scelta_form}")
         
+        desc_form = st.text_area("Descrizione Regola Ufficiale:", value=dati_f_sel.get("descrizione", ""), height=70, key=f"fg_fdesc_{scelta_form}")
+
+        # Mappatura etichette <-> chiavi tecniche per formazioni
+        LABEL_TO_KEY_FORM = {
+            "Rend Extra (+Rend)": "bonus_rend",
+            "Attacchi Extra (+Atk)": "bonus_atk",
+            "Danno Extra (+Dmg)": "bonus_dmg",
+            "Hit Bonus (+Hit)": "mod_hit",
+            "Wound Bonus (+Wound)": "mod_wnd",
+            "Save Migliorato (+Save)": "bonus_save",
+            "Ward Fisso (es. 5+)": "ward_nativo",
+            "Movimento Extra (+Move pollici)": "bonus_movimento",
+            "Controllo Extra (+OC)": "bonus_controllo",
+            "Critico al 5+": "crit_on"
+        }
+        KEY_TO_LABEL_FORM = {v: k for k, v in LABEL_TO_KEY_FORM.items()}
+
+        mod_esistenti_f = dati_f_sel.get("modificatori", {})
+        default_mod_labels_f = [KEY_TO_LABEL_FORM[k] for k in mod_esistenti_f.keys() if k in KEY_TO_LABEL_FORM]
+
+        scelte_mod_f = st.multiselect(
+            "Modificatori Attivi della Formazione:", 
+            list(LABEL_TO_KEY_FORM.keys()), 
+            default=default_mod_labels_f, 
+            key=f"ms_mod_form_{fazione_f}_{scelta_form}"
+        )
+
+        modificatori_salvati_f = {}
+        if scelte_mod_f:
+            st.markdown("**Valori Modificatori:**")
+            for mod_lbl in scelte_mod_f:
+                chiave_k = LABEL_TO_KEY_FORM[mod_lbl]
+                val_precedente = mod_esistenti_f.get(chiave_k, 1 if chiave_k != "ward_nativo" else 5)
+                
+                if chiave_k == "crit_on":
+                    st.caption("• **Critico al 5+**: Attivo per le unità della formazione")
+                    modificatori_salvati_f["crit_on"] = 5
+                elif chiave_k == "ward_nativo":
+                    w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(val_precedente) if val_precedente in [4, 5, 6] else 1, key=f"inp_f_wd_{scelta_form}_{chiave_k}")
+                    modificatori_salvati_f["ward_nativo"] = w_val
+                else:
+                    c_val = st.number_input(f"Valore {mod_lbl}:", min_value=-5, max_value=15, value=int(val_precedente), key=f"inp_f_{scelta_form}_{chiave_k}")
+                    modificatori_salvati_f[chiave_k] = c_val
+
         col_s_f1, col_s_f2 = st.columns([2, 1])
         if col_s_f1.button("💾 Salva Formazione", type="primary", use_container_width=True):
-            if nome_form.strip():
+            if nome_form.strip() and nome_form != "--- Nuova Formazione ---":
                 if fazione_f not in formazioni_db:
                     formazioni_db[fazione_f] = {}
                 formazioni_db[fazione_f][nome_form.strip()] = {
                     "fase_attivazione": fase_f,
-                    "tipo_effetto": tipo_eff,
-                    "valore_modificatore": val_mod,
                     "monouso": monouso,
-                    "descrizione": desc_form
+                    "modificatori": modificatori_salvati_f,
+                    "descrizione": desc_form.strip()
                 }
                 _salva_json_ausiliario(FORMATIONS_FILE, formazioni_db)
                 st.session_state["archivio_formazioni"] = formazioni_db
-                st.toast(f"Formazione '{nome_form}' salvata!")
+                st.toast(f"Formazione '{nome_form}' registrata con successo!")
                 st.rerun()
 
         if scelta_form != "--- Nuova Formazione ---" and col_s_f2.button("🗑️ Elimina Formazione", use_container_width=True):
@@ -480,8 +531,8 @@ def render_forgia_db():
             st.session_state["archivio_formazioni"] = formazioni_db
             st.toast(f"Formazione '{scelta_form}' rimossa!")
             st.rerun()
-
-# ==========================================
+            
+    # ==========================================
     # TAB: TRATTI EROICI & ARTEFATTI (CORRETTO)
     # ==========================================
     with tab_tratti_artefatti:

@@ -3,18 +3,89 @@
         "Death Stalkers": {
             "fase_attivazione": "Hero Phase (Fase Eroi Amica o Nemica)",
             "monouso": false,
-            "tipo_effetto": "Rend",
-            "valore_modificatore": "+1",
-            "descrizione": "Scegli un'unità bersaglio nemica. Le unità amiche con questa formazione ottengono +1 Rend con le armi da mischia contro quel bersaglio finché non viene distrutto."
+            "modificatori": {
+                "bonus_rend": 1
+            },
+            "descrizione": "Scegli un'unità bersaglio nemica all'inizio della battaglia. Le unità amiche ottengono +1 Rend con le armi da mischia contro quel bersaglio finché non viene distrutto."
+        },
+        "Vanishing Phantasms": {
+            "fase_attivazione": "Movement Phase (Fase di Movimento)",
+            "monouso": false,
+            "modificatori": {
+                "bonus_movimento": 2
+            },
+            "descrizione": "Fino a 3 unità amiche possono essere riposizionate sul campo di battaglia a più di 9\" dai nemici, oppure ottengono maggiore agilità di manovra."
+        },
+        "Procession of Death": {
+            "fase_attivazione": "Passiva / Permanente",
+            "monouso": false,
+            "modificatori": {
+                "ward_nativo": 5
+            },
+            "descrizione": "La coesione e la resilienza spettrale rafforzano le truppe di fanteria amiche."
         }
     },
     "Blades of Khorne": {
-        "Khorne Bloodbound Hordes": {
-            "fase_attivazione": "Charge Phase (Fase di Carica)",
-            "monouso": true,
-            "tipo_effetto": "Attacchi",
-            "valore_modificatore": "+1",
-            "descrizione": "Una volta per battaglia, durante la fase di carica, le unità nel raggio di un eroe ottengono attacchi aggiuntivi."
+        "Bloodbound Warhorde": {
+            "fase_attivazione": "Combat Phase (Fase di Combattimento)",
+            "monouso": false,
+            "modificatori": {
+                "bonus_atk": 1
+            },
+            "descrizione": "Aggiungi 1 alla caratteristica Attacchi delle armi da mischia delle unità Bloodbound che hanno completato una carica in questo turno."
+        },
+        "Skulltake": {
+            "fase_attivazione": "Combat Phase (Fase di Combattimento)",
+            "monouso": false,
+            "modificatori": {
+                "bonus_rend": 1,
+                "bonus_dmg": 1
+            },
+            "descrizione": "Gli eroi e i campioni infliggono colpi devastanti potenziando penetrazione d'armatura e danni quando duellano con Eroi nemici."
+        }
+    },
+    "Orruk Kruleboyz": {
+        "Middul Finga": {
+            "fase_attivazione": "Shooting Phase (Fase di Tiro)",
+            "monouso": false,
+            "modificatori": {
+                "bonus_rend": 1
+            },
+            "descrizione": "Le armi da tiro caricate con veleno ottengono una penetrazione armatura migliorata."
+        },
+        "Trophy Finga": {
+            "fase_attivazione": "Passiva / Permanente",
+            "monouso": false,
+            "modificatori": {
+                "bonus_controllo": 1
+            },
+            "descrizione": "I Kruleboyz si aggrappano tenacemente ai terreni e agli obiettivi, aumentando il valore di Controllo (OC)."
+        }
+    },
+    "Sylvaneth": {
+        "Lords of the Clan": {
+            "fase_attivazione": "Combat Phase (Fase di Combattimento)",
+            "monouso": false,
+            "modificatori": {
+                "bonus_dmg": 1
+            },
+            "descrizione": "I Mostri e i Kurnoth Hunters scatenano la furia del bosco aumentando il danno degli impatti corpo a corpo."
+        },
+        "Free Spirits": {
+            "fase_attivazione": "Movement Phase (Fase di Movimento)",
+            "monouso": false,
+            "modificatori": {
+                "bonus_movimento": 2
+            },
+            "descrizione": "Aggiungi 2\" alla caratteristica di Movimento delle unità boschive."
+        }
+    },
+    "Grande Alleanza / Altro": {
+        "Formazione Standard": {
+            "fase_attivazione": "Passiva / Permanente",
+            "monouso": false,
+            "modificatori": {},
+            "descrizione": "Nessuna abilità speciale attiva."
         }
     }
 }
