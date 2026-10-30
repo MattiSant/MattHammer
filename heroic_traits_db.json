@@ -11,13 +11,6 @@
             "bonus_atk": 1
         }
     },
-    "Maestro del Campo": {
-        "fazione": "Generale",
-        "descrizione": "Aggiungi 2 al punteggio di Controllo (OC) del portatore.",
-        "modificatori": {
-            "bonus_controllo": 2
-        }
-    },
     "Cacciatore di Eroi": {
         "fazione": "Generale",
         "descrizione": "Aggiungi 1 alla caratteristica Rend delle armi da mischia contro HERO e MONSTER.",
