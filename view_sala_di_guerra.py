@@ -232,9 +232,12 @@ def render_sala_di_guerra():
         st.session_state["sdg_nemici_matchup"] = []
     
     if "db_tratti_eroici" not in st.session_state:
-        st.session_state["db_tratti_eroici"] = carica_db_supporto(TRAITS_DB_FILE).get("Generali", ["Nessuno"])
+        risultato_tratti = carica_db_supporto(TRAITS_DB_FILE)
+        st.session_state["db_tratti_eroici"] = risultato_tratti.get("Generali", ["Nessuno"]) if isinstance(risultato_tratti, dict) else risultato_tratti
+
     if "db_artefatti" not in st.session_state:
-        st.session_state["db_artefatti"] = carica_db_supporto(ARTEFACTS_DB_FILE).get("Generali", ["Nessuno"])
+        risultato_art = carica_db_supporto(ARTEFACTS_DB_FILE)
+        st.session_state["db_artefatti"] = risultato_art.get("Generali", ["Nessuno"]) if isinstance(risultato_art, dict) else risultato_art
 
     db_tratti_eroici = st.session_state["db_tratti_eroici"]
     db_artefatti = st.session_state["db_artefatti"]
