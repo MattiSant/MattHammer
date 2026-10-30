@@ -188,9 +188,14 @@ def render_forgia_db():
                     st.session_state["forgia_ward"] = sc.get("ward", "7+")
                     
                     st.session_state["forgia_armi"] = d_load.get("armi", [])
-                    st.session_state["forgia_abilita"] = d_load.get("abilita", [])
                     st.session_state["forgia_keywords"] = ", ".join(d_load.get("keywords", []))
-                    
+
+                    abilita_caricate = d_load.get("abilita", [])
+                    for ab in abilita_caricate:
+                        if "modificatori" not in ab or not isinstance(ab["modificatori"], dict):
+                            ab["modificatori"] = {}
+                    st.session_state["forgia_abilita"] = abilita_caricate
+
                     st.toast(f"Unità caricata: {unita_da_caricare}")
                 else:
                     # === RESET DEI CAMPI ===
@@ -326,13 +331,20 @@ def render_forgia_db():
             st.session_state["forgia_armi"] = armi_aggiornate
 
         # ==========================================
-        # ABILITÀ E KEYWORDS
+        # 3. ABILITÀ E KEYWORDS (CON MULTI-MODIFICATORE)
         # ==========================================
         st.markdown('<div class="section-header">3. Abilità e Keywords</div>', unsafe_allow_html=True)
         with st.container(border=True):
             if st.button("➕ Aggiungi Abilità Warscroll"):
                 st.session_state["forgia_abilita"].append({
-                    "nome": "Nuova Abilità", "tipo": "Ability", "reazione": False, "once_per_battle": False, "valore_lancio": 0, "fasi": ["Qualsiasi Fase"], "descrizione": ""
+                    "nome": "Nuova Abilità", 
+                    "tipo": "Ability", 
+                    "reazione": False, 
+                    "once_per_battle": False, 
+                    "valore_lancio": 0, 
+                    "fasi": ["Qualsiasi Fase"], 
+                    "descrizione": "",
+                    "modificatori": {}
                 })
                 st.session_state["forgia_version"] += 1
                 st.rerun()
@@ -344,19 +356,37 @@ def render_forgia_db():
                 "Charge Phase", "Combat Phase", "Fine Turno"
             ]
 
+            LABEL_TO_KEY_AB = {
+                "Attacchi Extra (+Atk)": "bonus_atk",
+                "Rend Extra (+Rend)": "bonus_rend",
+                "Danno Extra (+Dmg)": "bonus_dmg",
+                "Hit Bonus (+Hit)": "mod_hit",
+                "Wound Bonus (+Wound)": "mod_wnd",
+                "Save Migliorato (+Save)": "bonus_save",
+                "Ward Fisso / Aura (es. 4+, 5+)": "ward_nativo",
+                "Movimento Extra (+Move)": "bonus_movimento",
+                "Controllo Extra (+OC)": "bonus_controllo",
+                "Critico al 5+": "crit_on"
+            }
+            KEY_TO_LABEL_AB = {v: k for k, v in LABEL_TO_KEY_AB.items()}
+
             for a_idx, ab in enumerate(st.session_state["forgia_abilita"]):
-                with st.expander(f"✨ {ab['nome']}", expanded=True):
+                with st.expander(f"✨ {ab.get('nome', 'Abilità')}", expanded=True):
                     aa1, aa2 = st.columns([3, 1])
-                    nome_ab = aa1.text_input("Nome Abilità", value=ab["nome"], key=f"ab_nome_{a_idx}_{v_key}")
+                    nome_ab = aa1.text_input("Nome Abilità", value=ab.get("nome", ""), key=f"ab_nome_{a_idx}_{v_key}")
                     if aa2.button("🗑️ Elimina", key=f"ab_del_{a_idx}_{v_key}"):
                         st.session_state["forgia_abilita"].pop(a_idx)
                         st.session_state["forgia_version"] += 1
                         st.rerun()
 
                     r1, r2, r3 = st.columns([1.2, 1.2, 2])
-                    tipo = r1.selectbox("Tipo", ["Ability", "Passive", "Spell", "Prayer"], index=["Ability", "Passive", "Spell", "Prayer"].index(ab.get("tipo", "Ability")), key=f"ab_tipo_{a_idx}_{v_key}")
+                    tipo = r1.selectbox(
+                        "Tipo", 
+                        ["Ability", "Passive", "Spell", "Prayer"], 
+                        index=["Ability", "Passive", "Spell", "Prayer"].index(ab.get("tipo", "Ability")), 
+                        key=f"ab_tipo_{a_idx}_{v_key}"
+                    )
                     
-                    # Mostra il Valore di Lancio solo se il tipo è Spell o Prayer
                     val_lancio = 0
                     if tipo in ["Spell", "Prayer"]:
                         valore_salvato = int(ab.get("valore_lancio", 5) or 5)
@@ -367,11 +397,45 @@ def render_forgia_db():
                         once_per_battle = st.checkbox("Once per Battle", value=ab.get("once_per_battle", False), key=f"ab_once_{a_idx}_{v_key}")
                         
                     fasi_sel = r3.multiselect("Fasi di Attivazione", fasi_gioco, default=ab.get("fasi", ["Qualsiasi Fase"]), key=f"ab_fasi_{a_idx}_{v_key}")
-                    
                     descrizione = st.text_area("Descrizione dell'Effetto", value=ab.get("descrizione", ""), key=f"ab_desc_{a_idx}_{v_key}")
 
+                    # Multi-Modificatori Meccanici per Abilità
+                    mod_ab_esistenti = ab.get("modificatori", {})
+                    default_mod_ab = [KEY_TO_LABEL_AB[k] for k in mod_ab_esistenti.keys() if k in KEY_TO_LABEL_AB]
+
+                    scelte_mod_ab = st.multiselect(
+                        "Modificatori Meccanici dell'Abilità (opzionale):",
+                        list(LABEL_TO_KEY_AB.keys()),
+                        default=default_mod_ab,
+                        key=f"ms_mod_ab_{a_idx}_{v_key}"
+                    )
+
+                    mod_salvati_ab = {}
+                    if scelte_mod_ab:
+                        st.markdown("**Valori Modificatori Abilità:**")
+                        for mod_lbl in scelte_mod_ab:
+                            k_ab = LABEL_TO_KEY_AB[mod_lbl]
+                            val_prec = mod_ab_esistenti.get(k_ab, 1 if k_ab != "ward_nativo" else 5)
+                            
+                            if k_ab == "crit_on":
+                                st.caption("• **Critico al 5+**: Attivo con questa abilità")
+                                mod_salvati_ab["crit_on"] = 5
+                            elif k_ab == "ward_nativo":
+                                w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(val_prec) if val_prec in [4, 5, 6] else 1, key=f"inp_ab_wd_{a_idx}_{v_key}")
+                                mod_salvati_ab["ward_nativo"] = w_val
+                            else:
+                                c_val = st.number_input(f"Valore per {mod_lbl}:", min_value=-5, max_value=15, value=int(val_prec), key=f"inp_ab_{k_ab}_{a_idx}_{v_key}")
+                                mod_salvati_ab[k_ab] = c_val
+
                     abilita_aggiornate.append({
-                        "nome": nome_ab, "tipo": tipo, "reazione": reazione, "once_per_battle": once_per_battle, "valore_lancio": val_lancio, "fasi": fasi_sel, "descrizione": descrizione
+                        "nome": nome_ab,
+                        "tipo": tipo,
+                        "reazione": reazione,
+                        "once_per_battle": once_per_battle,
+                        "valore_lancio": val_lancio,
+                        "fasi": fasi_sel,
+                        "descrizione": descrizione,
+                        "modificatori": mod_salvati_ab
                     })
             st.session_state["forgia_abilita"] = abilita_aggiornate
 
@@ -382,8 +446,7 @@ def render_forgia_db():
                 value=st.session_state.get("forgia_keywords", ""), 
                 key=f"f_kw_{v_key}"
             )
-            st.session_state["forgia_keywords"] = kw_testo
-            
+            st.session_state["forgia_keywords"] = kw_testo            
         # ==========================================
         # VALIDAZIONE E SALVATAGGIO
         # ==========================================
