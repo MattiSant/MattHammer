@@ -4,12 +4,14 @@ import pandas as pd
 import json
 import os
 import re
-from core_engine import calcola_arma_analitico
+from core_engine import calcola_arma_analitico, _push_su_github_file
 
-ARMIES_DB_FILE = "armies_db.json"
-FORMATIONS_DB_FILE = "formations.json"
-TRAITS_DB_FILE = "heroic_traits_db.json"
-ARTEFACTS_DB_FILE = "artefacts_db.json"
+# Usa percorsi assoluti per evitare scritture in cartelle errate al riavvio
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ARMIES_DB_FILE = os.path.join(BASE_DIR, "armies_db.json")
+FORMATIONS_DB_FILE = os.path.join(BASE_DIR, "formations.json")
+TRAITS_DB_FILE = os.path.join(BASE_DIR, "heroic_traits_db.json")
+ARTEFACTS_DB_FILE = os.path.join(BASE_DIR, "artefacts_db.json")
 
 # ==========================================
 # GESTIONE ARCHIVI JSON E SUPPORTO
@@ -24,8 +26,9 @@ def carica_archivio_armate():
     return {}
 
 def salva_archivio_armate(armate_dict):
-    with open(ARMIES_DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(armate_dict, f, indent=4, ensure_ascii=False)
+    successo, messaggio = _push_su_github_file(ARMIES_DB_FILE, armate_dict, "Aggiornamento Roster Armata")
+    if not successo:
+        st.warning(messaggio)
     return True
 
 def carica_formazioni_db():

@@ -3,6 +3,8 @@ import numpy as np
 import json
 import os
 import re
+import base64
+import requests
 
 DB_FILE = "units_db.json"
 
@@ -207,11 +209,57 @@ def carica_database():
             json.dump(DEFAULT_PRESETS, f, indent=4, ensure_ascii=False)
         return DEFAULT_PRESETS.copy()
 
-def salva_nel_database(db_dict):
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(db_dict, f, indent=4, ensure_ascii=False)
-    return True, "Unità salvata nel Database locale dell'App!"
+def _push_su_github_file(filepath, json_dati, messaggio_commit="Aggiornamento Database"):
+    # 1. Salva sempre il file localmente per aggiornare l'app in tempo reale
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(json_dati, f, indent=4, ensure_ascii=False)
+        
+    messaggio_locale = f"Salvataggio locale completato ({os.path.basename(filepath)})!"
+    
+    # 2. Push su GitHub se configurato in Streamlit Secrets
+    if "GITHUB_TOKEN" in st.secrets and "GITHUB_REPO" in st.secrets:
+        token = st.secrets["GITHUB_TOKEN"]
+        repo = st.secrets["GITHUB_REPO"]
+        nome_file = os.path.basename(filepath)
+        url = f"https://api.github.com/repos/{repo}/contents/{nome_file}"
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+        
+        sha = None
+        try:
+            get_resp = requests.get(url, headers=headers)
+            if get_resp.status_code == 200:
+                sha = get_resp.json().get("sha")
+        except Exception as e:
+            return False, f"Errore GitHub (lettura): {e}"
+            
+        contenuto_str = json.dumps(json_dati, indent=4, ensure_ascii=False)
+        contenuto_b64 = base64.b64encode(contenuto_str.encode("utf-8")).decode("utf-8")
+        
+        payload = {
+            "message": f"🤖 Auto-sync: {messaggio_commit} ({nome_file})",
+            "content": contenuto_b64
+        }
+        if sha:
+            payload["sha"] = sha
+            
+        try:
+            put_resp = requests.put(url, headers=headers, json=payload)
+            if put_resp.status_code in [200, 201]:
+                return True, f"File {nome_file} sincronizzato sul Cloud GitHub!"
+            else:
+                return False, f"Salvato in locale, ma errore GitHub: {put_resp.text}"
+        except Exception as e:
+            return False, f"Errore GitHub (scrittura): {e}"
+            
+    return True, messaggio_locale
 
+
+def salva_nel_database(db_dict):
+    return _push_su_github_file(DB_FILE, db_dict, "Aggiornamento Warscroll nel Grimorio")
 def analizza_testo_copiato(testo_grezzo):
     armi_trovate = []
     linee = [l.strip() for l in testo_grezzo.split("\n") if l.strip()]

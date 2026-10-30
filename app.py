@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 from core_engine import applica_stile_globale, carica_database, salva_nel_database
 from view_testa_a_testa import render_testa_a_testa
 from view_sala_di_guerra import render_sala_di_guerra
@@ -283,7 +284,35 @@ if st.session_state["pagina_selezionata"] == "Laboratorio Tattico (Testa a Testa
             st.session_state["corrente_difesa"] = {"salute_per_modello": 0, "save": "---", "ward": "---"}
             st.session_state["form_version"] += 1
             st.rerun()
-            
+st.sidebar.markdown("---")
+
+# ================= BACKUP DATI =================
+st.sidebar.subheader("💾 Backup Archivi")
+st.sidebar.caption("Scarica i database sul PC per sicurezza.")
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+path_unita = os.path.join(BASE_DIR, "units_db.json")
+if os.path.exists(path_unita):
+    with open(path_unita, "r", encoding="utf-8") as f:
+        st.sidebar.download_button(
+            label="Scarica Grimorio (Unità)", 
+            data=f, 
+            file_name="units_db.json", 
+            mime="application/json",
+            use_container_width=True
+        )
+
+path_armate = os.path.join(BASE_DIR, "armies_db.json")
+if os.path.exists(path_armate):
+    with open(path_armate, "r", encoding="utf-8") as f:
+        st.sidebar.download_button(
+            label="Scarica Roster (Armate)", 
+            data=f, 
+            file_name="armies_db.json", 
+            mime="application/json",
+            use_container_width=True
+        )
 # Stato Cloud Sync
 st.sidebar.markdown("---")
 try:

@@ -1,6 +1,6 @@
 import streamlit as st
 import re
-from core_engine import salva_nel_database
+from core_engine import salva_nel_database, _push_su_github_file
 import json
 import os
 
@@ -18,9 +18,10 @@ def _carica_json_ausiliario(filepath, default):
     return default
 
 def _salva_json_ausiliario(filepath, dati):
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(dati, f, indent=4, ensure_ascii=False)
-
+    successo, messaggio = _push_su_github_file(filepath, dati, "Aggiornamento Archivio Ausiliario")
+    if not successo:
+        st.warning(messaggio)
+        
 def estrai_intero_da_stringa(testo, default=0):
     match = re.search(r"\d+", str(testo))
     return int(match.group(0)) if match else default
