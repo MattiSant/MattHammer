@@ -1108,5 +1108,77 @@
             "BLADES OF KHORNE",
             "BLOODBOUND"
         ]
+    },
+    "Blades of Khorne: Slaughterpriest": {
+        "fazione": "Blades of Khorne",
+        "n_modelli": 1,
+        "dimensione_basetta": "40mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 120,
+        "statistiche_cerchio": {
+            "movimento": "5\"",
+            "controllo": 2,
+            "save": "5+",
+            "salute": 6,
+            "ward": "7+"
+        },
+        "difesa": {
+            "salute_per_modello": 6,
+            "save": 5,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Bloodbathed Weapon",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "4",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "2",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "BLOOD SACRIFICE",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Hero Phase (Amica)",
+                    "Hero Phase (Nemica)"
+                ],
+                "descrizione": "Declare: Pick a unit (friendly or enemy) within this unit’s combat range to be the target.\n\nEffect: Roll a D3. On a 2+:\nInflict an amount of mortal damage on the target equal to the roll.\nThis unit gains 1 ritual point.",
+                "modificatori": {}
+            },
+            {
+                "nome": "SCORN OF SORCERY",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "Effect: This unit can use UNBIND abilities as if it had WIZARD (1).",
+                "modificatori": {}
+            }
+        ],
+        "keywords": [
+            "HERO",
+            "PRIEST (1)",
+            "INFANTRY CHAOS",
+            "BLADES OF KHORNE",
+            "BLOODBOUND"
+        ]
     }
 }
