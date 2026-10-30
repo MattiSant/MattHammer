@@ -336,6 +336,7 @@ if is_cloud:
             st.toast("✅ Sincronizzazione completata con successo!")
         else:
             st.sidebar.error("Errore durante la sincronizzazione.")
+else:
     st.sidebar.info("Modalità Locale (Offline)")
 
 # #============= ================== =================== ======================
