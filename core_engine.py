@@ -6,7 +6,8 @@ import re
 import base64
 import requests
 
-DB_FILE = "units_db.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(BASE_DIR, "units_db.json")
 
 DEFAULT_PRESETS = {
     "--- Seleziona o Resetta ---": {
@@ -210,65 +211,86 @@ def carica_database():
         return DEFAULT_PRESETS.copy()
 
 def _push_su_github_file(filepath, json_dati, messaggio_commit="Aggiornamento Database"):
-    import streamlit as st # Assicura che streamlit sia caricato nel contesto della funzione
-    
-    # 1. Salva sempre il file localmente per aggiornare l'app in tempo reale
+    # 1. Salva sempre il file localmente
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(json_dati, f, indent=4, ensure_ascii=False)
         
-    messaggio_locale = f"Salvataggio locale completato ({os.path.basename(filepath)})!"
+    nome_file = os.path.basename(filepath)
     
-    # 2. Push su GitHub se configurato in Streamlit Secrets
-    if "GITHUB_TOKEN" in st.secrets and "GITHUB_REPO" in st.secrets:
-        token = st.secrets["GITHUB_TOKEN"]
-        repo = st.secrets["GITHUB_REPO"]
-        nome_file = os.path.basename(filepath)
+    # 2. Controllo Secrets
+    if "GITHUB_TOKEN" not in st.secrets or "GITHUB_REPO" not in st.secrets:
+        msg = f"⚠️ Salvato solo in locale ({nome_file}): GITHUB_TOKEN o GITHUB_REPO mancanti in st.secrets!"
+        st.session_state["last_sync_status"] = ("warning", msg)
+        return False, msg
+
+    token = str(st.secrets["GITHUB_TOKEN"]).strip()
+    repo_raw = str(st.secrets["GITHUB_REPO"]).strip()
+    
+    # Pulisce automaticamente il repo se l'utente ha incollato l'URL intero o ".git"
+    repo = repo_raw.replace("https://github.com/", "").replace("http://github.com/", "")
+    if repo.endswith(".git"):
+        repo = repo[:-4]
+    repo = repo.strip("/")
+
+    url = f"https://api.github.com/repos/{repo}/contents/{nome_file}"
+    
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "MattHammer-Streamlit-App"
+    }
+    
+    sha = None
+    branch_usato = "main"
+    
+    # 3. Recupera lo SHA del file su GitHub
+    try:
+        get_resp = requests.get(url, headers=headers, timeout=10)
+        if get_resp.status_code == 200:
+            sha = get_resp.json().get("sha")
+        elif get_resp.status_code == 404:
+            # Prova a verificare se il repo esiste o se il branch è 'master'
+            repo_check = requests.get(f"https://api.github.com/repos/{repo}", headers=headers, timeout=10)
+            if repo_check.status_code != 200:
+                err_msg = f"❌ Repo '{repo}' non trovato o Token non valido (HTTP {repo_check.status_code}): {repo_check.text}"
+                st.session_state["last_sync_status"] = ("error", err_msg)
+                return False, err_msg
+            branch_usato = repo_check.json().get("default_branch", "main")
+        else:
+            err_msg = f"❌ Errore Lettura GitHub ({get_resp.status_code}) su {url}: {get_resp.text}"
+            st.session_state["last_sync_status"] = ("error", err_msg)
+            return False, err_msg
+    except Exception as e:
+        err_msg = f"❌ Eccezione connessione GitHub (GET): {e}"
+        st.session_state["last_sync_status"] = ("error", err_msg)
+        return False, err_msg
         
-        # URL API GITHUB: Assicurati che 'repo' sia "username/nome-repo" senza spazi
-        url = f"https://api.github.com/repos/{repo}/contents/{nome_file}"
+    # 4. Prepara e invia il file (PUT)
+    contenuto_str = json.dumps(json_dati, indent=4, ensure_ascii=False)
+    contenuto_b64 = base64.b64encode(contenuto_str.encode("utf-8")).decode("utf-8")
+    
+    payload = {
+        "message": f"🤖 Auto-sync: {messaggio_commit} ({nome_file})",
+        "content": contenuto_b64,
+        "branch": branch_usato
+    }
+    if sha:
+        payload["sha"] = sha
         
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/vnd.github.v3+json"
-        }
-        
-        sha = None
-        # Prova a ottenere lo SHA se il file esiste già su GitHub
-        try:
-            get_resp = requests.get(url, headers=headers)
-            if get_resp.status_code == 200:
-                sha = get_resp.json().get("sha")
-            elif get_resp.status_code != 404: # Se non è 404 (not found), c'è un problema di permessi/URL
-                st.error(f"Errore in Lettura GitHub (Code {get_resp.status_code}): {get_resp.text}")
-                return False, f"Errore GitHub (lettura): {get_resp.text}"
-        except Exception as e:
-            st.error(f"Errore di connessione GitHub: {e}")
-            return False, f"Errore di connessione GitHub (lettura): {e}"
-            
-        contenuto_str = json.dumps(json_dati, indent=4, ensure_ascii=False)
-        contenuto_b64 = base64.b64encode(contenuto_str.encode("utf-8")).decode("utf-8")
-        
-        payload = {
-            "message": f"🤖 Auto-sync: {messaggio_commit} ({nome_file})",
-            "content": contenuto_b64
-        }
-        if sha:
-            payload["sha"] = sha
-            
-        # Tenta di sovrascrivere o creare il file
-        try:
-            put_resp = requests.put(url, headers=headers, json=payload)
-            if put_resp.status_code in [200, 201]:
-                st.toast(f"✅ Sincronizzazione GitHub completata per {nome_file}!")
-                return True, f"File {nome_file} sincronizzato sul Cloud GitHub!"
-            else:
-                st.error(f"❌ Errore Scrittura GitHub (Code {put_resp.status_code}): {put_resp.text}")
-                return False, f"Salvato in locale, ma errore GitHub: {put_resp.text}"
-        except Exception as e:
-            st.error(f"❌ Errore di connessione GitHub durante il push: {e}")
-            return False, f"Errore GitHub (scrittura): {e}"
-            
-    return True, messaggio_locale
+    try:
+        put_resp = requests.put(url, headers=headers, json=payload, timeout=10)
+        if put_resp.status_code in [200, 201]:
+            ok_msg = f"✅ {nome_file} sincronizzato su GitHub ({repo})!"
+            st.session_state["last_sync_status"] = ("success", ok_msg)
+            return True, ok_msg
+        else:
+            err_msg = f"❌ Errore Scrittura GitHub ({put_resp.status_code}): {put_resp.text}"
+            st.session_state["last_sync_status"] = ("error", err_msg)
+            return False, err_msg
+    except Exception as e:
+        err_msg = f"❌ Eccezione connessione GitHub (PUT): {e}"
+        st.session_state["last_sync_status"] = ("error", err_msg)
+        return False, err_msg
 
 def salva_nel_database(db_dict):
     return _push_su_github_file(DB_FILE, db_dict, "Aggiornamento Warscroll nel Grimorio")

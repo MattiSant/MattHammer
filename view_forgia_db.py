@@ -4,9 +4,10 @@ from core_engine import salva_nel_database, _push_su_github_file
 import json
 import os
 
-FORMATIONS_FILE = "formations.json"
-TRAITS_FILE = "heroic_traits_db.json"
-ARTEFACTS_FILE = "artefacts_db.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FORMATIONS_FILE = os.path.join(BASE_DIR, "formations.json")
+TRAITS_FILE = os.path.join(BASE_DIR, "heroic_traits_db.json")
+ARTEFACTS_FILE = os.path.join(BASE_DIR, "artefacts_db.json")
 
 def _carica_json_ausiliario(filepath, default):
     if os.path.exists(filepath):
@@ -20,8 +21,9 @@ def _carica_json_ausiliario(filepath, default):
 def _salva_json_ausiliario(filepath, dati):
     successo, messaggio = _push_su_github_file(filepath, dati, "Aggiornamento Archivio Ausiliario")
     if not successo:
-        st.warning(messaggio)
-        
+        st.error(messaggio)
+    return successo
+
 def estrai_intero_da_stringa(testo, default=0):
     match = re.search(r"\d+", str(testo))
     return int(match.group(0)) if match else default

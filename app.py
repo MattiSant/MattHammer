@@ -313,15 +313,29 @@ if os.path.exists(path_armate):
             mime="application/json",
             use_container_width=True
         )
-# Stato Cloud Sync
+
+# Stato Cloud Sync & Diagnostica
 st.sidebar.markdown("---")
+if "last_sync_status" in st.session_state:
+    tipo_s, msg_s = st.session_state["last_sync_status"]
+    if tipo_s == "success":
+        st.sidebar.success(msg_s)
+    elif tipo_s == "warning":
+        st.sidebar.warning(msg_s)
+    else:
+        st.sidebar.error(msg_s)
+
 try:
     if "GITHUB_TOKEN" in st.secrets and "GITHUB_REPO" in st.secrets:
-        st.sidebar.success("Cloud Sync: Attivo (GitHub)")
+        st.sidebar.caption(f"🔗 Repo: `{st.secrets['GITHUB_REPO']}`")
+        if st.sidebar.button("🔄 Test Push GitHub Ora", use_container_width=True):
+            from core_engine import _push_su_github_file, DB_FILE
+            ok, msg = _push_su_github_file(DB_FILE, st.session_state["db_unita"], "Test Manuale Connessione")
+            st.rerun()
     else:
-        st.sidebar.info("Modalità Locale (Offline)")
-except Exception:
-    st.sidebar.info("Modalità Locale (Offline)")
+        st.sidebar.info("Modalità Locale (Secrets non rilevati)")
+except Exception as e:
+    st.sidebar.error(f"Errore lettura Secrets: {e}")
 #
 #
 #
