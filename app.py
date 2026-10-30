@@ -4,6 +4,7 @@ from core_engine import applica_stile_globale, carica_database, salva_nel_databa
 from view_testa_a_testa import render_testa_a_testa
 from view_sala_di_guerra import render_sala_di_guerra
 from view_forgia_db import render_forgia_db
+from core_engine import ordina_unita_per_fazione_e_nome
 
 # Configurazione della Pagina
 st.set_page_config(
@@ -259,7 +260,8 @@ if st.session_state["pagina_selezionata"] == "Laboratorio Tattico (Testa a Testa
     st.sidebar.subheader("Directory Rapida")
     st.sidebar.caption("Carica un profilo salvato nel Laboratorio.")
     
-    unita_totali = [k for k in st.session_state["db_unita"].keys() if k != "--- Seleziona o Resetta ---"]
+    unita_totali = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])
+    
     if unita_totali:
         scelta_rapida = st.sidebar.selectbox("Unità dal Grimorio", unita_totali, key="sb_quick_load")
         if st.sidebar.button("Carica nel Profilo", type="primary", use_container_width=True):

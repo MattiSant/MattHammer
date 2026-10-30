@@ -1,6 +1,6 @@
 import streamlit as st
 import re
-from core_engine import salva_nel_database, _push_su_github_file
+from core_engine import ordina_unita_per_fazione_e_nome, ordina_supporti_per_fazione_e_nome
 import json
 import os
 
@@ -152,7 +152,7 @@ def render_forgia_db():
 
     v_key = st.session_state["forgia_version"]
 
-    opzioni_db = [k for k in st.session_state["db_unita"].keys() if k != "--- Seleziona o Resetta ---"]
+    opzioni_db = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])    
     tab_unita, tab_formazioni, tab_tratti_artefatti, tab_elimina = st.tabs([
         "📜 Forgia Warscroll",
         "⚔️ Formazioni di Battaglia",
@@ -531,7 +531,7 @@ def render_forgia_db():
             st.session_state["archivio_formazioni"] = formazioni_db
             st.toast(f"Formazione '{scelta_form}' rimossa!")
             st.rerun()
-            
+
     # ==========================================
     # TAB: TRATTI EROICI & ARTEFATTI (CORRETTO)
     # ==========================================
@@ -582,8 +582,14 @@ def render_forgia_db():
         # ------------------------------------------
         with col_t:
             st.markdown("#### 📜 Gestione Tratti Eroici")
-            lista_nomi_t = list(traits_db.keys())
-            sel_t = st.selectbox("Seleziona Tratto:", ["--- Nuovo Tratto ---"] + lista_nomi_t, key="sel_tratto_gest")
+            lista_nomi_t = ordina_supporti_per_fazione_e_nome(traits_db)
+            # Mostra nel menu a tendina: "[Nighthaunt] Ombra Inafferrabile" o "[Generale] Furia Implacabile"
+            sel_t = st.selectbox(
+                "Seleziona Tratto:", 
+                ["--- Nuovo Tratto ---"] + lista_nomi_t, 
+                format_func=lambda x: f"[{traits_db[x].get('fazione', 'Generale')}] {x}" if x in traits_db and x != "Nessuno" else x,
+                key="sel_tratto_gest"
+            )
             dati_t = traits_db.get(sel_t, {"fazione": "Generale", "descrizione": "", "modificatori": {}})
 
             nome_t = st.text_input("Nome Tratto:", value="" if sel_t == "--- Nuovo Tratto ---" else sel_t, key=f"in_nome_t_{sel_t}")
@@ -641,8 +647,13 @@ def render_forgia_db():
         # ------------------------------------------
         with col_a:
             st.markdown("#### 🏺 Gestione Artefatti di Potere")
-            lista_nomi_a = list(artefacts_db.keys())
-            sel_a = st.selectbox("Seleziona Artefatto:", ["--- Nuovo Artefatto ---"] + lista_nomi_a, key="sel_art_gest")
+            lista_nomi_a = ordina_supporti_per_fazione_e_nome(artefacts_db)
+            sel_a = st.selectbox(
+                "Seleziona Artefatto:", 
+                ["--- Nuovo Artefatto ---"] + lista_nomi_a, 
+                format_func=lambda x: f"[{artefacts_db[x].get('fazione', 'Generale')}] {x}" if x in artefacts_db and x != "Nessuno" else x,
+                key="sel_art_gest"
+            )
             dati_a = artefacts_db.get(sel_a, {"fazione": "Generale", "descrizione": "", "modificatori": {}})
 
             nome_a = st.text_input("Nome Artefatto:", value="" if sel_a == "--- Nuovo Artefatto ---" else sel_a, key=f"in_nome_a_{sel_a}")

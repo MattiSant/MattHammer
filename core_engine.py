@@ -553,3 +553,45 @@ def sincronizza_tutti_i_db():
     else:
         st.session_state["cloud_sincronizzato"] = False
         return False, " | ".join(errori)
+
+def ordina_unita_per_fazione_e_nome(db_unita):
+    """
+    Restituisce le chiavi delle unità ordinate prima per Fazione e poi alfabeticamente per Nome.
+    Esclude la chiave di reset/placeholder.
+    """
+    chiavi = [k for k in db_unita.keys() if k != "--- Seleziona o Resetta ---"]
+    
+    def chiave_ordinamento(chiave):
+        dati = db_unita.get(chiave, {})
+        fazione = dati.get("fazione", "")
+        # Se la fazione non è specificata nel record, prova a ricavarla dal prefisso "Fazione: Nome"
+        if not fazione or fazione == "---":
+            fazione = chiave.split(": ")[0] if ": " in chiave else "Generica"
+        
+        nome = chiave.split(": ")[-1] if ": " in chiave else chiave
+        return (fazione.lower(), nome.lower())
+
+    return sorted(chiavi, key=chiave_ordinamento)
+
+
+def ordina_supporti_per_fazione_e_nome(db_supporti):
+    """
+    Ordina tratti o artefatti strutturati.
+    Mette sempre 'Nessuno' al primo posto, poi 'Generale', poi le fazioni specifiche in ordine alfabetico,
+    e all'interno di ogni fazione i nomi in ordine alfabetico.
+    """
+    chiavi = [k for k in db_supporti.keys() if k != "Nessuno"]
+    
+    def chiave_ordinamento(nome):
+        dati = db_supporti.get(nome, {})
+        fazione = dati.get("fazione", "Generale")
+        # Assegna priorità: "Generale" per primo (0), le altre fazioni alfabetiche dopo (1)
+        priorita = 0 if fazione.lower() == "generale" else 1
+        return (priorita, fazione.lower(), nome.lower())
+
+    ordinati = sorted(chiavi, key=chiave_ordinamento)
+    
+    # Se "Nessuno" esiste nel DB, lo rimettiamo sempre in testa
+    if "Nessuno" in db_supporti:
+        return ["Nessuno"] + ordinati
+    return ordinati
