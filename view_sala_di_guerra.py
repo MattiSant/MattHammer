@@ -739,12 +739,20 @@ def render_sala_di_guerra():
 
                 col_label = f"{nem_item['nome']}" + (" (x2)" if nem_item["rinforzata"] else "")
                 col_percentuali = []
+                kw_nemico = [str(k).upper() for k in d_nem.get("keywords", [])]
+                is_nemico_etereo = (
+                    "nighthaunt" in nem_item["nome"].lower()
+                    or "nighthaunt" in d_nem.get("fazione", "").lower()
+                    or any(k in ["NIGHTHAUNT", "ETHEREAL", "ETHEREO", "SPIRIT"] for k in kw_nemico)
+                )
 
+                is_nemico_etereo = ("nighthaunt" in nem_item["nome"].lower()) or ("nighthaunt" in d_nem.get("fazione", "").lower())
                 bersaglio_nem_struct = {
                     "save": sv_n, "ward": wd_n, "salute": hp_n, "keywords": ["INFANTRY", "HERO"],
                     "cover": False, "aod": False, "bonus_save_extra": 0,
                     "obscuring": False, "bersaglio_ha_caricato": False,
-                    "mod_ward_penalita": 0, "blocca_ward": False, "mod_wnd_nerf": 0
+                    "mod_ward_penalita": 0, "blocca_ward": False, "mod_wnd_nerf": 0,
+                    "immune_rend": is_nemico_etereo
                 }
 
                 for mia_u in unita_totali_schierate:

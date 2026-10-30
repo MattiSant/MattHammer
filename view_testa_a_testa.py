@@ -511,7 +511,13 @@ def render_testa_a_testa():
         obscuring_b = dt1.checkbox("Terreno Obscuring (-1 Hit)", value=False, key="def_obsc")
         bersaglio_carica = dt2.checkbox("Il Bersaglio ha Caricato", value=False, key="def_bchg")
         blocca_ward_b = dt3.checkbox("Ward Annullati", value=False, key="def_nowd")
-
+        keywords_upper = [str(x).upper() for x in keywords_b]
+        is_etereo_auto = (
+            "NIGHTHAUNT" in [bersaglio_sel.upper(), d_bers_db.get("fazione", "").upper() if bersaglio_sel != "--- Inserimento Manuale ---" else ""]
+            or any(k in ["NIGHTHAUNT", "ETHEREAL", "ETHEREO", "SPIRIT"] for k in keywords_upper)
+        )
+        immune_rend_b = dt1.checkbox("Etereo / Immune a Rend (Nighthaunt)", value=is_etereo_auto, key=f"def_ethereal_{bersaglio_sel}")
+        
     mod_globali_att["bersaglio_ha_caricato"] = bersaglio_carica
     for sup in config_supporti:
         sup["mod_globali"]["bersaglio_ha_caricato"] = bersaglio_carica
@@ -520,7 +526,8 @@ def render_testa_a_testa():
         "save": save_b, "ward": ward_b, "salute": salute_b, "keywords": keywords_b,
         "cover": cover_b, "aod": aod_b, "bonus_save_extra": 1 if extra_save_b else 0,
         "obscuring": obscuring_b, "bersaglio_ha_caricato": bersaglio_carica,
-        "mod_ward_penalita": 0, "blocca_ward": blocca_ward_b, "mod_wnd_nerf": 0
+        "mod_ward_penalita": 0, "blocca_ward": blocca_ward_b, "mod_wnd_nerf": 0,
+        "immune_rend": immune_rend_b
     }
 
     # ==========================================

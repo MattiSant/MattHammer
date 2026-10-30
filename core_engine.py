@@ -340,6 +340,7 @@ def calcola_arma_analitico(arma, mod_globali, bersaglio):
     rend_effettivo = (0 if str(arma["rend"]) == "---" else int(arma["rend"])) + (mod_globali["bonus_rend"] if not arma["companion"] else 0)
     if arma["anti_target"] != "Nessuno" and arma["anti_target"] in bersaglio["keywords"]: rend_effettivo += 1
     if arma["anti_charge"] and mod_globali["bersaglio_ha_caricato"]: rend_effettivo += 1
+    if bersaglio.get("immune_rend", False): rend_effettivo = 0
 
     if bersaglio["save"] >= 7: prob_save_fallito = 1.0
     else:
@@ -403,7 +404,8 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
         rend_eff = (0 if str(arma["rend"]) == "---" else int(arma["rend"])) + (mod_globali["bonus_rend"] if not arma["companion"] else 0)
         if arma["anti_target"] != "Nessuno" and arma["anti_target"] in bersaglio["keywords"]: rend_eff += 1
         if arma["anti_charge"] and mod_globali["bersaglio_ha_caricato"]: rend_eff += 1
-
+        if bersaglio.get("immune_rend", False): rend_eff = 0
+        
         if bersaglio["save"] >= 7: prob_fail_save = 1.0
         else:
             bonus_save = min(2, (1 if bersaglio["cover"] else 0) + (1 if bersaglio["aod"] else 0) + bersaglio["bonus_save_extra"])
