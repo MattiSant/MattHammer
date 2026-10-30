@@ -1,8 +1,12 @@
 import streamlit as st
 import re
-from core_engine import ordina_unita_per_fazione_e_nome, ordina_supporti_per_fazione_e_nome
 import json
 import os
+from core_engine import (
+    ordina_unita_per_fazione_e_nome, 
+    ordina_supporti_per_fazione_e_nome, 
+    salva_nel_database
+)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FORMATIONS_FILE = os.path.join(BASE_DIR, "formations.json")
