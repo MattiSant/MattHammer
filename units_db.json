@@ -1075,7 +1075,32 @@
                 "companion": false
             }
         ],
-        "abilita": [],
+        "abilita": [
+            {
+                "nome": "ICON OF THE BLOOD GOD",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "Effect: If a friendly BLOODBOUND unit wholly within 12\" of this unit uses the ‘Rally’ command, you can make 3 additional rally rolls of D6.",
+                "modificatori": {}
+            },
+            {
+                "nome": "RAGE OF KHORNE",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": true,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Combat Phase"
+                ],
+                "descrizione": "Effect: Add 1 to the Attacks characteristics of melee weapons used by friendly BLOODBOUND units for the rest of the turn.",
+                "modificatori": {}
+            }
+        ],
         "keywords": [
             "HERO",
             "INFANTRY",
