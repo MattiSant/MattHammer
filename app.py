@@ -289,7 +289,7 @@ if st.session_state["pagina_selezionata"] == "Laboratorio Tattico (Testa a Testa
 st.sidebar.markdown("---")
 
 # ================= BACKUP & DOWNLOAD ARCHIVI =================
-st.sidebar.subheader("💾 Backup Archivi")
+st.sidebar.subheader("Download Archivi")
 st.sidebar.caption("Scarica i database JSON completi per archivio locale o condivisione.")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

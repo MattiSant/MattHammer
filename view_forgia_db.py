@@ -486,41 +486,117 @@ def render_forgia_db():
     # ==========================================
     with tab_tratti_artefatti:
         st.markdown('<div class="subsection-title">Tratti Eroici ed Artefatti di Potere</div>', unsafe_allow_html=True)
+        st.caption("Configura tratti e artefatti associando i modificatori numerici attivi per la Sala di Guerra.")
+        
+        # Caricamento e migrazione automatica se il file era ancora nel vecchio formato a lista
+        raw_traits = _carica_json_ausiliario(TRAITS_FILE, {})
+        traits_db = raw_traits if isinstance(raw_traits, dict) and "Generali" not in raw_traits else {
+            k: {"fazione": "Generale", "descrizione": k, "modificatori": {}} 
+            for k in raw_traits.get("Generali", ["Nessuno"])
+        }
+        
+        raw_artefacts = _carica_json_ausiliario(ARTEFACTS_FILE, {})
+        artefacts_db = raw_artefacts if isinstance(raw_artefacts, dict) and "Generali" not in raw_artefacts else {
+            k: {"fazione": "Generale", "descrizione": k, "modificatori": {}} 
+            for k in raw_artefacts.get("Generali", ["Nessuno"])
+        }
+        
+        if "Nessuno" not in traits_db:
+            traits_db["Nessuno"] = {"fazione": "Generale", "descrizione": "Nessun tratto", "modificatori": {}}
+        if "Nessuno" not in artefacts_db:
+            artefacts_db["Nessuno"] = {"fazione": "Generale", "descrizione": "Nessun artefatto", "modificatori": {}}
+
         col_t, col_a = st.columns(2)
-        
-        traits_db = _carica_json_ausiliario(TRAITS_FILE, {"Generali": ["Nessuno"]})
-        artefacts_db = _carica_json_ausiliario(ARTEFACTS_FILE, {"Generali": ["Nessuno"]})
-        
+        opzioni_fazione_supporto = ["Generale", "Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Altro"]
+        opzioni_tipo_mod = ["Nessuno", "Attacchi Extra (+Atk)", "Rend Extra (+Rend)", "Danno Extra (+Dmg)", "Ward Fisso (es. 5+)", "Controllo Extra (+OC)", "Critico al 5+"]
+
+        # --- SEZIONE TRATTI EROICI ---
         with col_t:
-            st.markdown("**Tratti Eroici Registrati:**")
-            lista_t = traits_db.get("Generali", ["Nessuno"])
-            for t in lista_t:
-                st.write(f"• {t}")
-            nuovo_tratto = st.text_input("Nuovo Tratto Eroico (con effetto tra parentesi):", key="fg_new_t")
-            if st.button("➕ Aggiungi Tratto"):
-                if nuovo_tratto.strip() and nuovo_tratto not in lista_t:
-                    lista_t.append(nuovo_tratto.strip())
-                    traits_db["Generali"] = lista_t
+            st.markdown("#### 📜 Gestione Tratti Eroici")
+            lista_nomi_t = list(traits_db.keys())
+            sel_t = st.selectbox("Tratti Esistenti:", ["--- Nuovo Tratto ---"] + lista_nomi_t, key="sel_tratto_gest")
+            
+            dati_t = traits_db.get(sel_t, {"fazione": "Generale", "descrizione": "", "modificatori": {}})
+            nome_t = st.text_input("Nome Tratto:", value="" if sel_t == "--- Nuovo Tratto ---" else sel_t, key="in_nome_t")
+            
+            idx_faz_t = opzioni_fazione_supporto.index(dati_t.get("fazione", "Generale")) if dati_t.get("fazione", "Generale") in opzioni_fazione_supporto else 0
+            faz_t = st.selectbox("Fazione Compatibile:", opzioni_fazione_supporto, index=idx_faz_t, key="in_faz_t")
+            desc_t = st.text_area("Descrizione Regola:", value=dati_t.get("descrizione", ""), height=70, key="in_desc_t")
+            
+            ct1, ct2 = st.columns(2)
+            mod_esistenti_t = dati_t.get("modificatori", {})
+            tipo_mod_t = ct1.selectbox("Modificatore Meccanico:", opzioni_tipo_mod, key="mod_tipo_t")
+            val_mod_t = ct2.number_input("Valore Bonus:", min_value=1, max_value=10, value=1, key="mod_val_t")
+
+            bt1, bt2 = st.columns(2)
+            if bt1.button("💾 Salva Tratto", type="primary", use_container_width=True):
+                if nome_t.strip() and nome_t != "--- Nuovo Tratto ---":
+                    modificatori_salvati = {}
+                    if tipo_mod_t == "Attacchi Extra (+Atk)": modificatori_salvati["bonus_atk"] = val_mod_t
+                    elif tipo_mod_t == "Rend Extra (+Rend)": modificatori_salvati["bonus_rend"] = val_mod_t
+                    elif tipo_mod_t == "Danno Extra (+Dmg)": modificatori_salvati["bonus_dmg"] = val_mod_t
+                    elif tipo_mod_t == "Ward Fisso (es. 5+)": modificatori_salvati["ward_nativo"] = val_mod_t
+                    elif tipo_mod_t == "Controllo Extra (+OC)": modificatori_salvati["bonus_controllo"] = val_mod_t
+                    elif tipo_mod_t == "Critico al 5+": modificatori_salvati["crit_on"] = 5
+                    
+                    traits_db[nome_t.strip()] = {
+                        "fazione": faz_t,
+                        "descrizione": desc_t.strip(),
+                        "modificatori": modificatori_salvati
+                    }
                     _salva_json_ausiliario(TRAITS_FILE, traits_db)
-                    st.session_state["db_tratti_eroici"] = lista_t
-                    st.toast("Tratto aggiunto!")
+                    st.toast(f"Tratto '{nome_t}' registrato!")
                     st.rerun()
 
+            if sel_t not in ["--- Nuovo Tratto ---", "Nessuno"] and bt2.button("🗑️ Elimina Tratto", use_container_width=True):
+                del traits_db[sel_t]
+                _salva_json_ausiliario(TRAITS_FILE, traits_db)
+                st.toast(f"Tratto '{sel_t}' eliminato!")
+                st.rerun()
+
+        # --- SEZIONE ARTEFATTI ---
         with col_a:
-            st.markdown("**Artefatti di Potere Registrati:**")
-            lista_a = artefacts_db.get("Generali", ["Nessuno"])
-            for a in lista_a:
-                st.write(f"• {a}")
-            nuovo_artefatto = st.text_input("Nuovo Artefatto (con effetto tra parentesi):", key="fg_new_a")
-            if st.button("➕ Aggiungi Artefatto"):
-                if nuovo_artefatto.strip() and nuovo_artefatto not in lista_a:
-                    lista_a.append(nuovo_artefatto.strip())
-                    artefacts_db["Generali"] = lista_a
+            st.markdown("#### 🏺 Gestione Artefatti di Potere")
+            lista_nomi_a = list(artefacts_db.keys())
+            sel_a = st.selectbox("Artefatti Esistenti:", ["--- Nuovo Artefatto ---"] + lista_nomi_a, key="sel_art_gest")
+            
+            dati_a = artefacts_db.get(sel_a, {"fazione": "Generale", "descrizione": "", "modificatori": {}})
+            nome_a = st.text_input("Nome Artefatto:", value="" if sel_a == "--- Nuovo Artefatto ---" else sel_a, key="in_nome_a")
+            
+            idx_faz_a = opzioni_fazione_supporto.index(dati_a.get("fazione", "Generale")) if dati_a.get("fazione", "Generale") in opzioni_fazione_supporto else 0
+            faz_a = st.selectbox("Fazione Compatibile:", opzioni_fazione_supporto, index=idx_faz_a, key="in_faz_a")
+            desc_a = st.text_area("Descrizione Regola:", value=dati_a.get("descrizione", ""), height=70, key="in_desc_a")
+            
+            ca1, ca2 = st.columns(2)
+            tipo_mod_a = ca1.selectbox("Modificatore Meccanico:", opzioni_tipo_mod, key="mod_tipo_a")
+            val_mod_a = ca2.number_input("Valore Bonus:", min_value=1, max_value=10, value=1, key="mod_val_a")
+
+            ba1, ba2 = st.columns(2)
+            if ba1.button("💾 Salva Artefatto", type="primary", use_container_width=True):
+                if nome_a.strip() and nome_a != "--- Nuovo Artefatto ---":
+                    modificatori_salvati_a = {}
+                    if tipo_mod_a == "Attacchi Extra (+Atk)": modificatori_salvati_a["bonus_atk"] = val_mod_a
+                    elif tipo_mod_a == "Rend Extra (+Rend)": modificatori_salvati_a["bonus_rend"] = val_mod_a
+                    elif tipo_mod_a == "Danno Extra (+Dmg)": modificatori_salvati_a["bonus_dmg"] = val_mod_a
+                    elif tipo_mod_a == "Ward Fisso (es. 5+)": modificatori_salvati_a["ward_nativo"] = val_mod_a
+                    elif tipo_mod_a == "Controllo Extra (+OC)": modificatori_salvati_a["bonus_controllo"] = val_mod_a
+                    elif tipo_mod_a == "Critico al 5+": modificatori_salvati_a["crit_on"] = 5
+                    
+                    artefacts_db[nome_a.strip()] = {
+                        "fazione": faz_a,
+                        "descrizione": desc_a.strip(),
+                        "modificatori": modificatori_salvati_a
+                    }
                     _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
-                    st.session_state["db_artefatti"] = lista_a
-                    st.toast("Artefatto aggiunto!")
+                    st.toast(f"Artefatto '{nome_a}' registrato!")
                     st.rerun()
 
+            if sel_a not in ["--- Nuovo Artefatto ---", "Nessuno"] and ba2.button("🗑️ Elimina Artefatto", use_container_width=True):
+                del artefacts_db[sel_a]
+                _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
+                st.toast(f"Artefatto '{sel_a}' eliminato!")
+                st.rerun()
+                
     # ==========================================
     # TAB: GESTIONE ED ELIMINAZIONE UNITÀ DAL DB
     # ==========================================

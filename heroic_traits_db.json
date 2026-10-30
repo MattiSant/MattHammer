@@ -1,10 +1,43 @@
 {
-    "Generali": [
-        "Nessuno",
-        "Furia Implacabile (+1 Attacchi)",
-        "Maestro del Campo (+2 Controllo Obiettivi)",
-        "Cacciatore di Eroi (+1 Rend contro Eroi/Mostri)",
-        "Protettore Ancestrale (Aura Ward protettiva)",
-        "Tratto CroccoSpaccaTutto ( +10 danni se gioca i sylvaneth)"
-    ]
+    "Nessuno": {
+        "fazione": "Generale",
+        "descrizione": "Nessun tratto eroico assegnato.",
+        "modificatori": {}
+    },
+    "Furia Implacabile": {
+        "fazione": "Generale",
+        "descrizione": "Aggiungi 1 alla caratteristica Attacchi delle armi da mischia del portatore.",
+        "modificatori": {
+            "bonus_atk": 1
+        }
+    },
+    "Maestro del Campo": {
+        "fazione": "Generale",
+        "descrizione": "Aggiungi 2 al punteggio di Controllo (OC) del portatore.",
+        "modificatori": {
+            "bonus_controllo": 2
+        }
+    },
+    "Cacciatore di Eroi": {
+        "fazione": "Generale",
+        "descrizione": "Aggiungi 1 alla caratteristica Rend delle armi da mischia contro HERO e MONSTER.",
+        "modificatori": {
+            "bonus_rend": 1,
+            "condizione": "Anti-HERO/MONSTER"
+        }
+    },
+    "Protettore Ancestrale": {
+        "fazione": "Generale",
+        "descrizione": "Il portatore ottiene un tiro Ward di 5+.",
+        "modificatori": {
+            "ward_nativo": 5
+        }
+    },
+    "Ombra Inafferrabile": {
+        "fazione": "Nighthaunt",
+        "descrizione": "Il portatore sottrae 1 ai tiri per colpire nemici che lo bersagliano.",
+        "modificatori": {
+            "mod_hit_subito": -1
+        }
+    }
 }

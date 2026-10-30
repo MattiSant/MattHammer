@@ -1,10 +1,42 @@
 {
-    "Generali": [
-        "Nessuno",
-        "Talismano di Guardia (Ward 5+ al portatore)",
-        "Lama Squarciante (+1 Rend a un'arma da mischia)",
-        "Pietra del Vuoto (Unbind extra)",
-        "Elmo del Comando (Riduce costo Comandi di 1 CP)",
-        "Accetta del Crocchetta ( Taglia pure ji sassi)"
-    ]
+    "Nessuno": {
+        "fazione": "Generale",
+        "descrizione": "Nessun artefatto equipaggiato.",
+        "modificatori": {}
+    },
+    "Talismano di Guardia": {
+        "fazione": "Generale",
+        "descrizione": "Il portatore ottiene un tiro Ward di 5+ nativo.",
+        "modificatori": {
+            "ward_nativo": 5
+        }
+    },
+    "Lama Squarciante": {
+        "fazione": "Generale",
+        "descrizione": "Aggiungi 1 alla caratteristica Rend di una delle armi da mischia del portatore.",
+        "modificatori": {
+            "bonus_rend": 1
+        }
+    },
+    "Elmo del Comando": {
+        "fazione": "Generale",
+        "descrizione": "Una volta per round di battaglia, riduci di 1 il costo in CP di un comando emesso da questo eroe.",
+        "modificatori": {
+            "riduzione_cp": 1
+        }
+    },
+    "Pietra del Vuoto": {
+        "fazione": "Generale",
+        "descrizione": "Aggiungi 1 ai tiri di Dissoluzione (Unbind) o Banish effettuati dal portatore.",
+        "modificatori": {
+            "bonus_unbind": 1
+        }
+    },
+    "Luce del Trapasso": {
+        "fazione": "Nighthaunt",
+        "descrizione": "Le armi da mischia del portatore ottengono Critico al 5+.",
+        "modificatori": {
+            "crit_on": 5
+        }
+    }
 }
