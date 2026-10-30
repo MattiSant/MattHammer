@@ -319,8 +319,29 @@ def render_forgia_db():
                     dmg = s5.selectbox("Damage", opzioni_dadi, index=opzioni_dadi.index(str(arma.get("dmg", "1"))) if str(arma.get("dmg", "1")) in opzioni_dadi else 1, key=f"a_dmg_{idx}_{v_key}")
 
                     ab1, ab2, ab3, ab4, ab5 = st.columns(5)
-                    crit = ab1.selectbox("Critico", ["Nessuno", "Crit (Mortal)", "Crit (Auto-wound)"], index=["Nessuno", "Crit (Mortal)", "Crit (Auto-wound)"].index(arma.get("crit_type", "Nessuno")), key=f"a_crt_{idx}_{v_key}")
-                    anti = ab2.selectbox("Anti-Keyword (+1 Rend)", ["Nessuno", "HERO", "INFANTRY", "CAVALRY", "MONSTER"], index=["Nessuno", "HERO", "INFANTRY", "CAVALRY", "MONSTER"].index(arma.get("anti_target", "Nessuno")), key=f"a_ant_{idx}_{v_key}")
+
+                    opzioni_critico = ["Nessuno", "Crit (Mortal)", "Crit (Auto-wound)", "Crit (2 Hits)"]
+                    tipo_critico_attuale = arma.get("crit_type", "Nessuno")
+                    idx_crit = opzioni_critico.index(tipo_critico_attuale) if tipo_critico_attuale in opzioni_critico else 0
+
+                    crit = ab1.selectbox(
+                        "Critico", 
+                        opzioni_critico, 
+                        index=idx_crit, 
+                        key=f"a_crt_{idx}_{v_key}"
+                    )                   
+
+                    opzioni_anti = ["Nessuno", "HERO", "INFANTRY", "CAVALRY", "MONSTER", "WAR MACHINE", "CHARGE"]
+                    tipo_anti_attuale = arma.get("anti_target", "Nessuno")
+                    idx_anti = opzioni_anti.index(tipo_anti_attuale) if tipo_anti_attuale in opzioni_anti else 0
+
+                    anti = ab2.selectbox(
+                        "Anti-Keyword (+1 Rend)", 
+                        opzioni_anti, 
+                        index=idx_anti, 
+                        key=f"a_ant_{idx}_{v_key}"
+                    )
+                    
                     ranged = ab3.checkbox("Arma da Tiro", value=arma.get("ranged", False), key=f"a_rng_{idx}_{v_key}")
                     
                     valore_gittata = arma.get("range", "12\"" if arma.get("ranged", False) else "Melee")
