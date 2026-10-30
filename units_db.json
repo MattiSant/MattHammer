@@ -1,4 +1,32 @@
 {
+    "--- Seleziona o Resetta ---": {
+        "fazione": "---",
+        "n_modelli": 0,
+        "campione": false,
+        "punti": 0,
+        "difesa": {
+            "salute_per_modello": 0,
+            "save": "---",
+            "ward": "---"
+        },
+        "armi": [
+            {
+                "nome": "---",
+                "attiva": false,
+                "ranged": false,
+                "atk": "---",
+                "hit": "---",
+                "wnd": "---",
+                "rend": "---",
+                "dmg": "---",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ]
+    },
     "Nighthaunt: Knight of Shrouds": {
         "fazione": "Nighthaunt",
         "n_modelli": 1,
@@ -40,18 +68,29 @@
                 "nome": "STOLEN HOURS",
                 "tipo": "Passive",
                 "reazione": false,
-                "fasi": ["Fine della Fase di Combattimento"],
+                "fasi": [
+                    "Fine della Fase di Combattimento"
+                ],
                 "descrizione": "The bearer of a Sword of Stolen Hours can steal vital energy from a foe and use it to increase their own power. Effect: Each time this unit uses a FIGHT ability, after that FIGHT ability has been resolved, Heal (X) this unit, where X is the number of damage points allocated to enemy units by combat attacks made as part of that FIGHT ability."
             },
             {
                 "nome": "INFANTRY OVERSEER",
                 "tipo": "Ability",
                 "reazione": true,
-                "fasi": ["Fase di Combattimento"],
+                "fasi": [
+                    "Fase di Combattimento"
+                ],
                 "descrizione": "Reaction: You declared a FIGHT ability for this unit. Effect: Pick a friendly non-HERO Nighthaunt INFANTRY unit that has not used a FIGHT ability this turn and is within this unit's combat range to be the target. The target can be picked to use a FIGHT ability immediately after the FIGHT ability used by this unit has been resolved."
             }
         ],
-        "keywords": ["Hero", "Infantry", "Fly", "Ward (5+)", "Death", "Nighthaunt"]
+        "keywords": [
+            "Hero",
+            "Infantry",
+            "Fly",
+            "Ward (5+)",
+            "Death",
+            "Nighthaunt"
+        ]
     },
     "Nighthaunt: Guardian of Souls": {
         "fazione": "Nighthaunt",
@@ -94,11 +133,20 @@
                 "nome": "NIGHTMARE LANTERN",
                 "tipo": "Ability",
                 "reazione": false,
-                "fasi": ["Hero Phase (Fase Eroi Amica)"],
+                "fasi": [
+                    "Hero Phase (Fase Eroi Amica)"
+                ],
                 "descrizione": "Effect: Add 1 to wound rolls for attacks made by friendly Nighthaunt units while they are wholly within 12\" of this unit."
             }
         ],
-        "keywords": ["Hero", "Infantry", "Wizard (1)", "Ward (5+)", "Death", "Nighthaunt"]
+        "keywords": [
+            "Hero",
+            "Infantry",
+            "Wizard (1)",
+            "Ward (5+)",
+            "Death",
+            "Nighthaunt"
+        ]
     },
     "Nighthaunt: Scriptor Mortis": {
         "fazione": "Nighthaunt",
@@ -141,11 +189,19 @@
                 "nome": "JUDGE, JURY AND EXECUTIONER",
                 "tipo": "Ability",
                 "reazione": false,
-                "fasi": ["Hero Phase (Fase Eroi Amica)"],
+                "fasi": [
+                    "Hero Phase (Fase Eroi Amica)"
+                ],
                 "descrizione": "Effect: Pick an enemy unit to be 'Sentenced'. Friendly Nighthaunt units gain Crit (Mortal) against that unit."
             }
         ],
-        "keywords": ["Hero", "Infantry", "Ward (5+)", "Death", "Nighthaunt"]
+        "keywords": [
+            "Hero",
+            "Infantry",
+            "Ward (5+)",
+            "Death",
+            "Nighthaunt"
+        ]
     },
     "Nighthaunt: Bladegheist Revenants": {
         "fazione": "Nighthaunt",
@@ -188,11 +244,19 @@
                 "nome": "WHIRLWIND OF DESTRUCTION",
                 "tipo": "Passive",
                 "reazione": false,
-                "fasi": ["Combat Phase (Fase di Combattimento)"],
+                "fasi": [
+                    "Combat Phase (Fase di Combattimento)"
+                ],
                 "descrizione": "Effect: Add 1 to the Attacks characteristic of this unit's weapons if it charged this turn."
             }
         ],
-        "keywords": ["Infantry", "Fly", "Ward (5+)", "Death", "Nighthaunt"]
+        "keywords": [
+            "Infantry",
+            "Fly",
+            "Ward (5+)",
+            "Death",
+            "Nighthaunt"
+        ]
     },
     "Nighthaunt: Grimghast Reapers": {
         "fazione": "Nighthaunt",
@@ -235,11 +299,19 @@
                 "nome": "REAPED LIKE CORN",
                 "tipo": "Passive",
                 "reazione": false,
-                "fasi": ["Combat Phase (Fase di Combattimento)"],
+                "fasi": [
+                    "Combat Phase (Fase di Combattimento)"
+                ],
                 "descrizione": "Effect: Add 1 to the Attacks characteristic of this unit's weapons if the target unit has 5 or more models."
             }
         ],
-        "keywords": ["Infantry", "Fly", "Ward (5+)", "Death", "Nighthaunt"]
+        "keywords": [
+            "Infantry",
+            "Fly",
+            "Ward (5+)",
+            "Death",
+            "Nighthaunt"
+        ]
     },
     "Nighthaunt: Spirit Hosts": {
         "fazione": "Nighthaunt",
@@ -282,11 +354,19 @@
                 "nome": "DRAWN TO WAR",
                 "tipo": "Passive",
                 "reazione": false,
-                "fasi": ["Any Phase"],
+                "fasi": [
+                    "Any Phase"
+                ],
                 "descrizione": "Effect: Friendly Nighthaunt INFANTRY HEROES within 3\" of this unit have a Ward (4+) instead of Ward (5+)."
             }
         ],
-        "keywords": ["Beast", "Fly", "Ward (5+)", "Death", "Nighthaunt"]
+        "keywords": [
+            "Beast",
+            "Fly",
+            "Ward (5+)",
+            "Death",
+            "Nighthaunt"
+        ]
     },
     "Sylvaneth: Grove Guardian": {
         "fazione": "Sylvaneth",
@@ -344,11 +424,18 @@
                 "nome": "SPIRITUAL RAMPART",
                 "tipo": "Passive",
                 "reazione": false,
-                "fasi": ["Hero Phase (Fase Eroi Amica)", "Hero Phase (Fase Eroi Nemica)"],
+                "fasi": [
+                    "Hero Phase (Fase Eroi Amica)",
+                    "Hero Phase (Fase Eroi Nemica)"
+                ],
                 "descrizione": "Effect: Friendly Sylvaneth units wholly within 6\" of this unit benefit from cover."
             }
         ],
-        "keywords": ["Hero", "Monster", "Sylvaneth"]
+        "keywords": [
+            "Hero",
+            "Monster",
+            "Sylvaneth"
+        ]
     },
     "Sylvaneth: Branchwych": {
         "fazione": "Sylvaneth",
@@ -391,11 +478,18 @@
                 "nome": "BLESSINGS OF THE FOREST",
                 "tipo": "Ability",
                 "reazione": false,
-                "fasi": ["Hero Phase (Fase Eroi Amica)"],
+                "fasi": [
+                    "Hero Phase (Fase Eroi Amica)"
+                ],
                 "descrizione": "Effect: Heal up to D3 wounds allocated to this unit."
             }
         ],
-        "keywords": ["Hero", "Infantry", "Wizard (1)", "Sylvaneth"]
+        "keywords": [
+            "Hero",
+            "Infantry",
+            "Wizard (1)",
+            "Sylvaneth"
+        ]
     },
     "Sylvaneth: Dryads": {
         "fazione": "Sylvaneth",
@@ -438,11 +532,16 @@
                 "nome": "WOODLAND BLENDING",
                 "tipo": "Passive",
                 "reazione": false,
-                "fasi": ["Any Phase"],
+                "fasi": [
+                    "Any Phase"
+                ],
                 "descrizione": "Effect: This unit has a 5+ Ward while wholly within 6\" of friendly Awildwood terrain features."
             }
         ],
-        "keywords": ["Infantry", "Sylvaneth"]
+        "keywords": [
+            "Infantry",
+            "Sylvaneth"
+        ]
     },
     "Sylvaneth: Kurnoth Hunters With Greatswords": {
         "fazione": "Sylvaneth",
@@ -485,11 +584,16 @@
                 "nome": "AURA OF GRACE",
                 "tipo": "Passive",
                 "reazione": false,
-                "fasi": ["Combat Phase (Fase di Combattimento)"],
+                "fasi": [
+                    "Combat Phase (Fase di Combattimento)"
+                ],
                 "descrizione": "Effect: Each time a model in this unit is slain in combat, roll a dice; on a 4+, it can fight before being removed from play."
             }
         ],
-        "keywords": ["Infantry", "Sylvaneth"]
+        "keywords": [
+            "Infantry",
+            "Sylvaneth"
+        ]
     },
     "Orruk Kruleboyz: Hobgrot Slittaboss": {
         "fazione": "Orruk Kruleboyz",
@@ -532,11 +636,18 @@
                 "nome": "SNEAKY STABBER",
                 "tipo": "Ability",
                 "reazione": false,
-                "fasi": ["Hero Phase (Fase Eroi Amica)"],
+                "fasi": [
+                    "Hero Phase (Fase Eroi Amica)"
+                ],
                 "descrizione": "Effect: Pick an enemy unit within combat range and inflict 1 mortal wound on a roll of 3+."
             }
         ],
-        "keywords": ["Hero", "Infantry", "Kruleboyz", "Orruk"]
+        "keywords": [
+            "Hero",
+            "Infantry",
+            "Kruleboyz",
+            "Orruk"
+        ]
     },
     "Orruk Kruleboyz: Hobgrot Slittaz": {
         "fazione": "Orruk Kruleboyz",
@@ -594,11 +705,17 @@
                 "nome": "EXPERIMENTAHL WEAPONRY",
                 "tipo": "Passive",
                 "reazione": false,
-                "fasi": ["Shooting Phase (Fase di Tiro)"],
+                "fasi": [
+                    "Shooting Phase (Fase di Tiro)"
+                ],
                 "descrizione": "Effect: Scrap-grenades have an increased range when targeting larger units."
             }
         ],
-        "keywords": ["Infantry", "Kruleboyz", "Orruk"]
+        "keywords": [
+            "Infantry",
+            "Kruleboyz",
+            "Orruk"
+        ]
     },
     "Orruk Kruleboyz: Gutrippaz": {
         "fazione": "Orruk Kruleboyz",
@@ -641,11 +758,17 @@
                 "nome": "DIRTY FIGHTERS",
                 "tipo": "Ability",
                 "reazione": false,
-                "fasi": ["Combat Phase (Fase di Combattimento)"],
+                "fasi": [
+                    "Combat Phase (Fase di Combattimento)"
+                ],
                 "descrizione": "Effect: Roll a D6 when targeted in combat; on a 6, reduce incoming damage."
             }
         ],
-        "keywords": ["Infantry", "Kruleboyz", "Orruk"]
+        "keywords": [
+            "Infantry",
+            "Kruleboyz",
+            "Orruk"
+        ]
     },
     "Orruk Kruleboyz: Killaboss on Great Gnashtoof": {
         "fazione": "Orruk Kruleboyz",
@@ -703,11 +826,18 @@
                 "nome": "YOU GO THAT WAY, I'LL GO THIS WAY",
                 "tipo": "Ability",
                 "reazione": false,
-                "fasi": ["Movement Phase (Movimento Amico)"],
+                "fasi": [
+                    "Movement Phase (Movimento Amico)"
+                ],
                 "descrizione": "Effect: Give a movement command to a friendly Kruleboyz unit."
             }
         ],
-        "keywords": ["Hero", "Cavalry", "Kruleboyz", "Orruk"]
+        "keywords": [
+            "Hero",
+            "Cavalry",
+            "Kruleboyz",
+            "Orruk"
+        ]
     },
     "Khorne: Warlord Tank (2+ Save)": {
         "fazione": "Blades of Khorne",
@@ -750,10 +880,17 @@
                 "nome": "BLOOD FOR THE BLOOD GOD",
                 "tipo": "Passive",
                 "reazione": false,
-                "fasi": ["Combat Phase (Fase di Combattimento)"],
+                "fasi": [
+                    "Combat Phase (Fase di Combattimento)"
+                ],
                 "descrizione": "Effect: Gain blood tithe points whenever models are slain."
             }
         ],
-        "keywords": ["Hero", "Infantry", "Blades of Khorne", "Khorne"]
+        "keywords": [
+            "Hero",
+            "Infantry",
+            "Blades of Khorne",
+            "Khorne"
+        ]
     }
 }
