@@ -288,36 +288,6 @@ if st.session_state["pagina_selezionata"] == "Laboratorio Tattico (Testa a Testa
 
 st.sidebar.markdown("---")
 
-# ================= BACKUP DATI =================
-st.sidebar.subheader("💾 Backup Archivi")
-st.sidebar.caption("Scarica i database sul PC per sicurezza.")
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-path_unita = os.path.join(BASE_DIR, "units_db.json")
-if os.path.exists(path_unita):
-    with open(path_unita, "r", encoding="utf-8") as f:
-        st.sidebar.download_button(
-            label="Scarica Grimorio (Unità)", 
-            data=f, 
-            file_name="units_db.json", 
-            mime="application/json",
-            use_container_width=True
-        )
-
-path_armate = os.path.join(BASE_DIR, "armies_db.json")
-if os.path.exists(path_armate):
-    with open(path_armate, "r", encoding="utf-8") as f:
-        st.sidebar.download_button(
-            label="Scarica Roster (Armate)", 
-            data=f, 
-            file_name="armies_db.json", 
-            mime="application/json",
-            use_container_width=True
-        )
-
-st.sidebar.markdown("---")
-
 # ================= BACKUP & DOWNLOAD ARCHIVI =================
 st.sidebar.subheader("💾 Backup Archivi")
 st.sidebar.caption("Scarica i database JSON completi per archivio locale o condivisione.")
@@ -368,7 +338,7 @@ if is_cloud:
             st.sidebar.error("Errore durante la sincronizzazione.")
 else:
     st.sidebar.info("Modalità Locale (Offline)")
-    
+
 # #============= ================== =================== ======================
 # ========== TRY-CATCH PER ERRORI DI SYNC
 # st.sidebar.markdown("---")
