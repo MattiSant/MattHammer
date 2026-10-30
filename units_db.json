@@ -950,5 +950,92 @@
             "Infantry",
             "Sylvaneth"
         ]
+    },
+    "Blades of Khorne: Mighty Lord of Khorne": {
+        "fazione": "Blades of Khorne",
+        "n_modelli": 1,
+        "dimensione_basetta": "60mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 110,
+        "statistiche_cerchio": {
+            "movimento": "5\"",
+            "controllo": 2,
+            "save": "3+",
+            "salute": 7,
+            "ward": "7+"
+        },
+        "difesa": {
+            "salute_per_modello": 7,
+            "save": 3,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Flesh Hound’s Blood‑dark Claws",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "4",
+                "hit": 4,
+                "wnd": 3,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": true
+            },
+            {
+                "nome": "Axe of Khorne",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "5",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 2,
+                "dmg": "2",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "LORD OF THE BLOODBOUND",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "Effect: Add 1 to wound rolls for friendly BLOODBOUND INFANTRY units while they are wholly within 12\" of this unit.",
+                "modificatori": {}
+            },
+            {
+                "nome": "BRING ME THEIR SKULL!",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Combat Phase"
+                ],
+                "descrizione": "Declare: Pick another friendly BLOODBOUND INFANTRY HERO wholly within 12\" of this unit to be the target.\n\nEffect: The target has STRIKE-FIRST for the rest of the turn.",
+                "modificatori": {}
+            }
+        ],
+        "keywords": [
+            "HERO",
+            "INFANTRY",
+            "CHAOS",
+            "BLADES OF KHORNE",
+            "BLOODBOUND"
+        ]
     }
 }
