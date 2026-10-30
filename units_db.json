@@ -1037,5 +1037,51 @@
             "BLADES OF KHORNE",
             "BLOODBOUND"
         ]
+    },
+    "Blades of Khorne: Bloodsecrator": {
+        "fazione": "Blades of Khorne",
+        "n_modelli": 1,
+        "dimensione_basetta": "32mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 110,
+        "statistiche_cerchio": {
+            "movimento": "5\"",
+            "controllo": 5,
+            "save": "3+",
+            "salute": 6,
+            "ward": "7+"
+        },
+        "difesa": {
+            "salute_per_modello": 6,
+            "save": 3,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Ensorcelled Axe",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "4",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "2",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [],
+        "keywords": [
+            "HERO",
+            "INFANTRY",
+            "CHAOS",
+            "BLADES OF KHORNE",
+            "BLOODBOUND"
+        ]
     }
 }
