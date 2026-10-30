@@ -4,7 +4,8 @@ import pandas as pd
 import re
 from core_engine import (
     calcola_arma_analitico,
-    simula_monte_carlo
+    simula_monte_carlo,
+    ordina_unita_per_fazione_e_nome
 )
 
 # Funzione helper per estrarre in sicurezza numeri interi da stringhe/dizionari
@@ -132,8 +133,9 @@ def render_testa_a_testa():
     if "lista_supporti_attivi" not in st.session_state:
         st.session_state["lista_supporti_attivi"] = []
 
-    opzioni_db = ["--- Inserimento Manuale ---"] + [k for k in st.session_state["db_unita"].keys() if k != "--- Seleziona o Resetta ---"]
-
+    unita_ordinate = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])
+    opzioni_db = ["--- Inserimento Manuale ---"] + unita_ordinate
+    
     # ==========================================
     # SEZIONE 1: SCHIERAMENTO D'ASSALTO (PRINCIPALE)
     # ==========================================
