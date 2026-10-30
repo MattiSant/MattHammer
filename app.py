@@ -328,14 +328,26 @@ except Exception:
     is_cloud = False
 
 if is_cloud:
-    st.sidebar.success("Cloud Sync: Attivo")
-    if st.sidebar.button("🔄 Sincronizza con Cloud", use_container_width=True):
-        from core_engine import _push_su_github_file, DB_FILE
-        ok, msg = _push_su_github_file(DB_FILE, st.session_state["db_unita"], "Sincronizzazione Manuale da Sidebar")
+    # Inizializza lo stato se non presente (all'avvio consideriamo sincronizzato)
+    if "cloud_sincronizzato" not in st.session_state:
+        st.session_state["cloud_sincronizzato"] = True
+
+    gia_sincronizzato = st.session_state["cloud_sincronizzato"]
+
+    if gia_sincronizzato:
+        st.sidebar.success("🟢 Cloud sincronizzato con successo")
+    else:
+        st.sidebar.warning("🟡 Modifiche locali da sincronizzare")
+
+    if st.sidebar.button("🔄 Sincronizza con Cloud", use_container_width=True, disabled=gia_sincronizzato):
+        from core_engine import sincronizza_tutti_i_db
+        ok, msg = sincronizza_tutti_i_db()
         if ok:
-            st.toast("✅ Sincronizzazione completata con successo!")
+            st.toast("✅ Tutti i database sincronizzati con successo!")
         else:
-            st.sidebar.error("Errore durante la sincronizzazione.")
+            st.sidebar.error(f"Errore: {msg}")
+        st.rerun()
+
 else:
     st.sidebar.info("Modalità Locale (Offline)")
 

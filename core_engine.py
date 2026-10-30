@@ -211,6 +211,13 @@ def carica_database():
         return DEFAULT_PRESETS.copy()
 
 def _push_su_github_file(filepath, json_dati, messaggio_commit="Aggiornamento Database"):
+    # Quando viene scritto un file, le modifiche locali richiedono o aggiornano lo stato
+    st.session_state["cloud_sincronizzato"] = False
+    
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(json_dati, f, indent=4, ensure_ascii=False)
+        
+    nome_file = os.path.basename(filepath)
     # 1. Salva sempre il file localmente
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(json_dati, f, indent=4, ensure_ascii=False)
@@ -513,3 +520,36 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
 
     if ha_ward: danni_totali_sim = np.random.binomial(danni_totali_sim.astype(int), 1.0 - ((7 - ward_target) / 6.0))
     return danni_totali_sim
+
+def sincronizza_tutti_i_db():
+    """
+    Esegue il push su GitHub di tutti e 5 i database JSON contemporaneamente.
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    archivi = [
+        "units_db.json",
+        "armies_db.json",
+        "formations.json",
+        "heroic_traits_db.json",
+        "artefacts_db.json"
+    ]
+    
+    errori = []
+    for nome_f in archivi:
+        path_completo = os.path.join(base_dir, nome_f)
+        if os.path.exists(path_completo):
+            try:
+                with open(path_completo, "r", encoding="utf-8") as f:
+                    dati = json.load(f)
+                ok, msg = _push_su_github_file(path_completo, dati, f"Sync Completo ({nome_f})")
+                if not ok:
+                    errori.append(f"{nome_f}: {msg}")
+            except Exception as e:
+                errori.append(f"{nome_f}: {e}")
+
+    if not errori:
+        st.session_state["cloud_sincronizzato"] = True
+        return True, "Tutti i database sono stati sincronizzati con successo!"
+    else:
+        st.session_state["cloud_sincronizzato"] = False
+        return False, " | ".join(errori)
