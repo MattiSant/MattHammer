@@ -511,14 +511,21 @@ def render_testa_a_testa():
         obscuring_b = dt1.checkbox("Terreno Obscuring (-1 Hit)", value=False, key="def_obsc")
         bersaglio_carica = dt2.checkbox("Il Bersaglio ha Caricato", value=False, key="def_bchg")
         blocca_ward_b = dt3.checkbox("Ward Annullati", value=False, key="def_nowd")
+        
+        # Calcolo sicuro per la spunta "Etereo"
+        is_etereo_auto = False
         keywords_upper = [str(x).upper() for x in keywords_b]
-        is_etereo_auto = (
-            "NIGHTHAUNT" in [bersaglio_sel.upper(), d_bers_db.get("fazione", "").upper() if bersaglio_sel != "--- Inserimento Manuale ---" else ""]
-            or any(k in ["NIGHTHAUNT", "ETHEREAL", "ETHEREO", "SPIRIT"] for k in keywords_upper)
-        )
-        immune_rend_b = dt1.checkbox("Etereo / Immune a Rend (Nighthaunt)", value=is_etereo_auto, key=f"def_ethereal_{bersaglio_sel}")
+        if bersaglio_sel != "--- Inserimento Manuale ---" and bersaglio_sel in st.session_state["db_unita"]:
+            fazione_bersaglio = st.session_state["db_unita"][bersaglio_sel].get("fazione", "").upper()
+            is_etereo_auto = ("NIGHTHAUNT" in bersaglio_sel.upper()) or ("NIGHTHAUNT" in fazione_bersaglio)
+        
+        if not is_etereo_auto:
+            is_etereo_auto = any(k in ["NIGHTHAUNT", "ETHEREAL", "ETHEREO", "SPIRIT"] for k in keywords_upper)
+            
+        immune_rend_b = dt1.checkbox("Etereo / Immune a Rend (Nighthaunt)", value=is_etereo_auto, key="def_ethereal")
         
     mod_globali_att["bersaglio_ha_caricato"] = bersaglio_carica
+
     for sup in config_supporti:
         sup["mod_globali"]["bersaglio_ha_caricato"] = bersaglio_carica
 
