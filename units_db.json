@@ -950,5 +950,235 @@
             "Infantry",
             "Sylvaneth"
         ]
+    },
+    "Blades of Khorne: Mighty Lord of Khorne": {
+        "fazione": "Blades of Khorne",
+        "n_modelli": 1,
+        "dimensione_basetta": "60mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 110,
+        "statistiche_cerchio": {
+            "movimento": "5\"",
+            "controllo": 2,
+            "save": "3+",
+            "salute": 7,
+            "ward": "7+"
+        },
+        "difesa": {
+            "salute_per_modello": 7,
+            "save": 3,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Flesh Hound’s Blood‑dark Claws",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "4",
+                "hit": 4,
+                "wnd": 3,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": true
+            },
+            {
+                "nome": "Axe of Khorne",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "5",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 2,
+                "dmg": "2",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "LORD OF THE BLOODBOUND",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "Effect: Add 1 to wound rolls for friendly BLOODBOUND INFANTRY units while they are wholly within 12\" of this unit.",
+                "modificatori": {}
+            },
+            {
+                "nome": "BRING ME THEIR SKULL!",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Combat Phase"
+                ],
+                "descrizione": "Declare: Pick another friendly BLOODBOUND INFANTRY HERO wholly within 12\" of this unit to be the target.\n\nEffect: The target has STRIKE-FIRST for the rest of the turn.",
+                "modificatori": {}
+            }
+        ],
+        "keywords": [
+            "HERO",
+            "INFANTRY",
+            "CHAOS",
+            "BLADES OF KHORNE",
+            "BLOODBOUND"
+        ]
+    },
+    "Blades of Khorne: Bloodsecrator": {
+        "fazione": "Blades of Khorne",
+        "n_modelli": 1,
+        "dimensione_basetta": "32mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 110,
+        "statistiche_cerchio": {
+            "movimento": "5\"",
+            "controllo": 5,
+            "save": "3+",
+            "salute": 6,
+            "ward": "7+"
+        },
+        "difesa": {
+            "salute_per_modello": 6,
+            "save": 3,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Ensorcelled Axe",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "4",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "2",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "ICON OF THE BLOOD GOD",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "Effect: If a friendly BLOODBOUND unit wholly within 12\" of this unit uses the ‘Rally’ command, you can make 3 additional rally rolls of D6.",
+                "modificatori": {}
+            },
+            {
+                "nome": "RAGE OF KHORNE",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": true,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Combat Phase"
+                ],
+                "descrizione": "Effect: Add 1 to the Attacks characteristics of melee weapons used by friendly BLOODBOUND units for the rest of the turn.",
+                "modificatori": {}
+            }
+        ],
+        "keywords": [
+            "HERO",
+            "INFANTRY",
+            "CHAOS",
+            "BLADES OF KHORNE",
+            "BLOODBOUND"
+        ]
+    },
+    "Blades of Khorne: Slaughterpriest": {
+        "fazione": "Blades of Khorne",
+        "n_modelli": 1,
+        "dimensione_basetta": "40mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 120,
+        "statistiche_cerchio": {
+            "movimento": "5\"",
+            "controllo": 2,
+            "save": "5+",
+            "salute": 6,
+            "ward": "7+"
+        },
+        "difesa": {
+            "salute_per_modello": 6,
+            "save": 5,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Bloodbathed Weapon",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "4",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "2",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "BLOOD SACRIFICE",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Hero Phase (Amica)",
+                    "Hero Phase (Nemica)"
+                ],
+                "descrizione": "Declare: Pick a unit (friendly or enemy) within this unit’s combat range to be the target.\n\nEffect: Roll a D3. On a 2+:\nInflict an amount of mortal damage on the target equal to the roll.\nThis unit gains 1 ritual point.",
+                "modificatori": {}
+            },
+            {
+                "nome": "SCORN OF SORCERY",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "Effect: This unit can use UNBIND abilities as if it had WIZARD (1).",
+                "modificatori": {}
+            }
+        ],
+        "keywords": [
+            "HERO",
+            "PRIEST (1)",
+            "INFANTRY CHAOS",
+            "BLADES OF KHORNE",
+            "BLOODBOUND"
+        ]
     }
 }
