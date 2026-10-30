@@ -277,6 +277,7 @@ def render_testa_a_testa():
         
         stat_c_att = d_att_db.get("statistiche_cerchio", {})
         dif_att = d_att_db.get("difesa", {})
+        abilita_att = d_att_db.get("abilita", [])
 
         st.markdown('<div class="subsection-title">Warscroll Unità (Sola Lettura)</div>', unsafe_allow_html=True)
         c_w1, c_w2 = st.columns([1, 2.5])
@@ -288,7 +289,7 @@ def render_testa_a_testa():
                 <b>Move:</b> {stat_c_att.get("movimento", "6\"")}<br>
                 <b>OC:</b> {stat_c_att.get("controllo", 1)}<br>
                 <b>Save:</b> {stat_c_att.get("save", f"{dif_att.get('save', 4)}+")}<br>
-                <b>Salute:</b> {stat_c_att.get("salute", dif_att.get("salute_per_modello", 2))}<br>
+                <b>Salute:</b> {stat_c_att.get("salute", dif_att.get('salute_per_modello', 2))}<br>
                 <b>Ward:</b> {stat_c_att.get("ward", f"{dif_att.get('ward', 7)}+")}
             </div>
             """, unsafe_allow_html=True)
@@ -297,6 +298,35 @@ def render_testa_a_testa():
                 rinforzata_att = st.checkbox("Schiera Rinforzata (x2)", value=False)
             else:
                 st.caption("Unità non rinforzabile")
+                
+        with c_w2:
+            st.markdown("**Profili d'Arma:**")
+            for arma in armi_attaccante:
+                if str(arma.get("hit")) != "---":
+                    re_str = arma.get('rend', 0)
+                    cr_str = arma.get('crit_type', 'Nessuno')
+                    cp_str = " | Companion" if arma.get("companion", False) else ""
+                    st.markdown(f"""
+                    <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #8c6d46; padding: 6px 10px; margin-bottom: 5px;">
+                        <b>⚔️ {arma['nome']}</b> {cp_str}<br>
+                        <small>Atk: <b>{arma['atk']}</b> | Hit: <b>{arma['hit']}+</b> | Wnd: <b>{arma['wnd']}+</b> | Rend: <b>{re_str}</b> | Dmg: <b>{arma['dmg']}</b> | Critico: <b>{cr_str}</b> | Range: <b>{arma.get('range', 'Melee')}</b></small>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            # --- ABILITÀ DELL'UNITÀ PRINCIPALE IN SOLA LETTURA ---
+            if abilita_att:
+                st.markdown("**Abilità della Warscroll:**")
+                for ab in abilita_att:
+                    is_reaz = ab.get("reazione", False)
+                    tipo_ab = ab.get("tipo", "Ability")
+                    fasi_txt = ", ".join(ab.get("fasi", ["Generica"]))
+                    colore_bordo = "#c0392b" if is_reaz else "#b38b4d"
+                    st.markdown(f"""
+                    <div style="background: rgba(45, 29, 17, 0.5); border-left: 3px solid {colore_bordo}; padding: 6px 10px; margin-bottom: 6px; border-radius: 3px; font-size: 0.9rem;">
+                        <small style="color: #d8c29d;"><b>[{tipo_ab} — {fasi_txt}]</b></small><br>
+                        <b>{ab.get('nome', 'Abilità')}</b>: {ab.get('descrizione', '')}
+                    </div>
+                    """, unsafe_allow_html=True)
                 
         with c_w2:
             for arma in armi_attaccante:
@@ -392,26 +422,36 @@ def render_testa_a_testa():
             for s_idx, sup_elem in enumerate(st.session_state["lista_supporti_attivi"]):
                 nome_db = sup_elem["chiave_db"]
                 dati_u_db = st.session_state["db_unita"].get(nome_db, {})
-                
-                # Calcola i punti prima per mostrarli nell'intestazione
                 punti_base_sup = estrai_intero_sicuro(dati_u_db.get("punti", 0))
+                abilita_sup = dati_u_db.get("abilita", [])
                 
                 with st.container(border=True):
                     cs_h1, cs_h2, cs_h3 = st.columns([2.5, 1, 1])
                     
-                    # La checkbox è renderizzata prima del titolo per il calcolo, 
-                    # ma Streamlit la posizionerà regolarmente nella sua colonna.
                     sup_elem["rinforzata"] = cs_h2.checkbox("Rinforzata (x2)", value=sup_elem.get("rinforzata", False), key=f"rinf_s_{s_idx}")
                     punti_sup = punti_base_sup * (2 if sup_elem["rinforzata"] else 1)
                     
                     cs_h1.markdown(f"**Supporto #{s_idx+1}:** {nome_db} (`{punti_sup} pt`)")
-                    
-                    if cs_h3.button("Rimuovi", key=f"del_s_{s_idx}"): supporti_da_rimuovere.append(s_idx)
+                    if cs_h3.button("Rimuovi", key=f"del_s_{s_idx}"): 
+                        supporti_da_rimuovere.append(s_idx)
 
+                    # --- CHECKBOX COMPATTATE SU UN'UNICA RIGA ---
                     sb1, sb2, sb3 = st.columns(3)
                     sup_elem["carica"] = sb1.checkbox("Carica", value=sup_elem.get("carica", False), key=f"chg_s_{s_idx}")
                     sup_elem["all_out_attack"] = sb2.checkbox("All-out Attack", value=sup_elem.get("all_out_attack", False), key=f"aoa_s_{s_idx}")
                     sup_elem["crit_5"] = sb3.checkbox("Critico al 5+", value=sup_elem.get("crit_5", False), key=f"c5_s_{s_idx}")
+
+                    # --- STAMPA DELLE ABILITÀ DELL'UNITÀ DI SUPPORTO ---
+                    if abilita_sup:
+                        with st.expander(f"✨ Visualizza Abilità Warscroll ({len(abilita_sup)})", expanded=False):
+                            for ab_s in abilita_sup:
+                                fasi_s_txt = ", ".join(ab_s.get("fasi", ["Generica"]))
+                                st.markdown(f"""
+                                <div style="background: rgba(0,0,0,0.25); border-left: 2px solid #8c6d46; padding: 5px 8px; margin-bottom: 4px; border-radius: 3px; font-size: 0.85rem;">
+                                    <small style="color: #d8c29d;"><b>[{ab_s.get('tipo', 'Ability')} — {fasi_s_txt}]</b></small><br>
+                                    <b>{ab_s.get('nome', 'Abilità')}</b>: {ab_s.get('descrizione', '')}
+                                </div>
+                                """, unsafe_allow_html=True)
 
                     with st.expander("Modificatori Extra (Supporto)"):
                         mh1, mh2 = st.columns(2)
@@ -444,9 +484,10 @@ def render_testa_a_testa():
                         }
                     })
             if supporti_da_rimuovere:
-                for idx_canc in sorted(supporti_da_rimuovere, reverse=True): st.session_state["lista_supporti_attivi"].pop(idx_canc)
+                for idx_canc in sorted(supporti_da_rimuovere, reverse=True): 
+                    st.session_state["lista_supporti_attivi"].pop(idx_canc)
                 st.rerun()
-                
+
     # ==========================================
     # SEZIONE 2: BERSAGLIO DESIGNATO
     # ==========================================
