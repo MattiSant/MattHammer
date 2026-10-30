@@ -327,19 +327,6 @@ def render_testa_a_testa():
                         <b>{ab.get('nome', 'Abilità')}</b>: {ab.get('descrizione', '')}
                     </div>
                     """, unsafe_allow_html=True)
-                
-        with c_w2:
-            for arma in armi_attaccante:
-                if str(arma.get("hit")) != "---":
-                    re_str = arma.get('rend', 0)
-                    cr_str = arma.get('crit_type', 'Nessuno')
-                    cp_str = " | Companion" if arma.get("companion", False) else ""
-                    st.markdown(f"""
-                    <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #8c6d46; padding: 6px 10px; margin-bottom: 5px;">
-                        <b>⚔️ {arma['nome']}</b> {cp_str}<br>
-                        <small>Atk: <b>{arma['atk']}</b> | Hit: <b>{arma['hit']}+</b> | Wnd: <b>{arma['wnd']}+</b> | Rend: <b>{re_str}</b> | Dmg: <b>{arma['dmg']}</b> | Critico: <b>{cr_str}</b> | Range: <b>{arma.get('range', 'Melee')}</b></small>
-                    </div>
-                    """, unsafe_allow_html=True)
 
 
     # ==========================================
