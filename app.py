@@ -284,6 +284,8 @@ if st.session_state["pagina_selezionata"] == "Laboratorio Tattico (Testa a Testa
             st.session_state["corrente_difesa"] = {"salute_per_modello": 0, "save": "---", "ward": "---"}
             st.session_state["form_version"] += 1
             st.rerun()
+
+
 st.sidebar.markdown("---")
 
 # ================= BACKUP DATI =================
@@ -314,29 +316,84 @@ if os.path.exists(path_armate):
             use_container_width=True
         )
 
-# Stato Cloud Sync & Diagnostica
 st.sidebar.markdown("---")
-if "last_sync_status" in st.session_state:
-    tipo_s, msg_s = st.session_state["last_sync_status"]
-    if tipo_s == "success":
-        st.sidebar.success(msg_s)
-    elif tipo_s == "warning":
-        st.sidebar.warning(msg_s)
-    else:
-        st.sidebar.error(msg_s)
 
+# ================= BACKUP & DOWNLOAD ARCHIVI =================
+st.sidebar.subheader("💾 Backup Archivi")
+st.sidebar.caption("Scarica i database JSON completi per archivio locale o condivisione.")
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Elenco completo di tutti i database del progetto
+ARCHIVI_JSON = [
+    ("units_db.json", "📜 Grimorio (Unità)"),
+    ("armies_db.json", "⚔️ Roster (Armate)"),
+    ("formations.json", "🛡️ Formazioni"),
+    ("heroic_traits_db.json", "✨ Tratti Eroici"),
+    ("artefacts_db.json", "🏺 Artefatti")
+]
+
+for file_json, etichetta in ARCHIVI_JSON:
+    path_file = os.path.join(BASE_DIR, file_json)
+    if os.path.exists(path_file):
+        with open(path_file, "r", encoding="utf-8") as f:
+            st.sidebar.download_button(
+                label=etichetta,
+                data=f.read(),
+                file_name=file_json,
+                mime="application/json",
+                use_container_width=True,
+                key=f"dl_{file_json}"
+            )
+
+st.sidebar.markdown("---")
+
+# ================= STATO CLOUD SYNC & PULSANTE =================
+st.sidebar.subheader("☁️ Cloud Sync")
+
+is_cloud = False
 try:
-    if "GITHUB_TOKEN" in st.secrets and "GITHUB_REPO" in st.secrets:
-        st.sidebar.caption(f"🔗 Repo: `{st.secrets['GITHUB_REPO']}`")
-        if st.sidebar.button("🔄 Test Push GitHub Ora", use_container_width=True):
-            from core_engine import _push_su_github_file, DB_FILE
-            ok, msg = _push_su_github_file(DB_FILE, st.session_state["db_unita"], "Test Manuale Connessione")
-            st.rerun()
-    else:
-        st.sidebar.info("Modalità Locale (Secrets non rilevati)")
-except Exception as e:
-    st.sidebar.error(f"Errore lettura Secrets: {e}")
+    is_cloud = ("GITHUB_TOKEN" in st.secrets and "GITHUB_REPO" in st.secrets)
+except Exception:
+    is_cloud = False
+
+if is_cloud:
+    st.sidebar.success("Cloud Sync: Attivo")
+    if st.sidebar.button("🔄 Sincronizza con Cloud", use_container_width=True):
+        from core_engine import _push_su_github_file, DB_FILE
+        ok, msg = _push_su_github_file(DB_FILE, st.session_state["db_unita"], "Sincronizzazione Manuale da Sidebar")
+        if ok:
+            st.sidebar.toast("Sincronizzazione completata con successo!")
+        else:
+            st.sidebar.error("Errore durante la sincronizzazione.")
+else:
+    st.sidebar.info("Modalità Locale (Offline)")
+    
+# #============= ================== =================== ======================
+# ========== TRY-CATCH PER ERRORI DI SYNC
+# st.sidebar.markdown("---")
+# if "last_sync_status" in st.session_state:
+#    tipo_s, msg_s = st.session_state["last_sync_status"]
+#    if tipo_s == "success":
+#        st.sidebar.success(msg_s)
+#    elif tipo_s == "warning":
+#        st.sidebar.warning(msg_s)
+#    else:
+#        st.sidebar.error(msg_s)
+
+# try:
+#    if "GITHUB_TOKEN" in st.secrets and "GITHUB_REPO" in st.secrets:
+#        st.sidebar.caption(f"🔗 Repo: `{st.secrets['GITHUB_REPO']}`")
+#        if st.sidebar.button("🔄 Test Push GitHub Ora", use_container_width=True):
+#            from core_engine import _push_su_github_file, DB_FILE
+#            ok, msg = _push_su_github_file(DB_FILE, st.session_state["db_unita"], "Test Manuale Connessione")
+#            st.rerun()
+#    else:
+#        st.sidebar.info("Modalità Locale (Secrets non rilevati)")
+# except Exception as e:
+#    st.sidebar.error(f"Errore lettura Secrets: {e}")
 #
+# #============= ================== =================== ======================
 #
 #
 # ==========================================
