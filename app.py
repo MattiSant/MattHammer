@@ -71,16 +71,16 @@ if "target_version" not in st.session_state:
 #
 st.markdown("""
 <style>
-    /* Effetto particelle fluttuanti (braci ardenti e scintille d'oro) */
+    /* Effetto particelle fluttuanti (braci ardenti e scintille d'oro ad alta definizione) */
     .ember-wrapper {
         position: relative;
         overflow: hidden;
-        border-radius: 4px 18px 4px 18px;
-        background: radial-gradient(circle at 50% 100%, #2e1a0b 0%, #150f0a 65%, #0b0805 100%);
+        border-radius: 4px 20px 4px 20px;
+        background: radial-gradient(circle at 50% 100%, #3a1e0b 0%, #180f08 65%, #0b0704 100%);
         border: 2px solid #8c6d46;
         border-top: 3px solid #d4af37;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.8), inset 0 0 50px rgba(212, 175, 55, 0.12);
-        padding: 50px 25px 40px 25px;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.9), inset 0 0 60px rgba(212, 175, 55, 0.18);
+        padding: 55px 25px 45px 25px;
         text-align: center;
         margin-bottom: 25px;
     }
@@ -93,12 +93,12 @@ st.markdown("""
         right: 0;
         bottom: 0;
         background-image: 
-            radial-gradient(3px 3px at 15% 90%, rgba(255, 170, 50, 0.95), transparent),
+            radial-gradient(3px 3px at 15% 90%, rgba(255, 175, 60, 0.95), transparent),
             radial-gradient(2px 2px at 30% 80%, rgba(255, 215, 0, 0.9), transparent),
-            radial-gradient(3px 3px at 45% 95%, rgba(255, 120, 20, 0.85), transparent),
-            radial-gradient(2px 2px at 60% 85%, rgba(255, 200, 80, 0.9), transparent),
-            radial-gradient(4px 4px at 75% 92%, rgba(255, 140, 30, 0.9), transparent),
-            radial-gradient(2px 2px at 85% 78%, rgba(255, 225, 110, 0.8), transparent);
+            radial-gradient(3.5px 3.5px at 45% 95%, rgba(255, 120, 20, 0.9), transparent),
+            radial-gradient(2px 2px at 60% 85%, rgba(255, 205, 90, 0.95), transparent),
+            radial-gradient(4px 4px at 75% 92%, rgba(255, 140, 30, 0.95), transparent),
+            radial-gradient(2.5px 2.5px at 85% 78%, rgba(255, 225, 120, 0.85), transparent);
         background-size: 100% 100%;
         animation: riseEmbers 7s linear infinite;
         pointer-events: none;
@@ -106,62 +106,71 @@ st.markdown("""
 
     .ember-wrapper::after {
         animation-delay: 3.5s;
-        animation-duration: 9s;
-        opacity: 0.75;
+        animation-duration: 9.5s;
+        opacity: 0.8;
     }
 
     @keyframes riseEmbers {
         0% { transform: translateY(100%) scale(0.9); opacity: 0; }
-        20% { opacity: 1; }
-        80% { opacity: 0.8; }
-        100% { transform: translateY(-30%) scale(1.15); opacity: 0; }
+        15% { opacity: 1; }
+        85% { opacity: 0.85; }
+        100% { transform: translateY(-30%) scale(1.2); opacity: 0; }
     }
 
     .hero-title {
         font-family: 'Cinzel Decorative', serif !important;
-        font-size: 3.4rem !important;
+        font-size: 3.5rem !important;
         font-weight: 900 !important;
         color: #f7d57f !important;
-        letter-spacing: 5px !important;
+        letter-spacing: 6px !important;
         text-transform: uppercase;
         margin-bottom: 4px !important;
-        text-shadow: 0 4px 15px rgba(0,0,0,0.9), 0 0 25px rgba(212, 175, 55, 0.45);
+        text-shadow: 0 4px 18px rgba(0,0,0,0.95), 0 0 30px rgba(212, 175, 55, 0.5);
     }
 
     .hero-subtitle {
         font-family: 'Cinzel', serif !important;
-        font-size: 1.15rem !important;
-        letter-spacing: 2px !important;
+        font-size: 1.18rem !important;
+        letter-spacing: 2.2px !important;
         color: #d8c29d !important;
         text-transform: uppercase;
         margin-bottom: 14px !important;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.9);
     }
 
     .hero-desc {
         font-family: 'Crimson Pro', serif !important;
-        font-size: 1.18rem !important;
+        font-size: 1.2rem !important;
         font-style: italic;
-        color: #bfae93 !important;
-        max-width: 780px;
+        color: #c9b79c !important;
+        max-width: 800px;
         margin: 0 auto !important;
-        line-height: 1.5;
+        line-height: 1.55;
     }
 
+    /* Carte dei Moduli nel Portale con effetto elevazione */
     .hub-card {
-        background: linear-gradient(135deg, #1f160e 0%, #150f09 100%);
-        border: 2px solid #6b4e2d;
-        border-top: 3px solid #b38b4d;
-        border-radius: 4px 12px 4px 12px;
-        padding: 22px;
+        background: linear-gradient(135deg, #22170f 0%, #150e09 100%);
+        border: 2px solid #7c5a33;
+        border-top: 3px solid #d4af37;
+        border-radius: 4px 14px 4px 14px;
+        padding: 24px;
         height: 100%;
-        box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.65), inset 0 0 20px rgba(212,175,55,0.05);
+        transition: all 0.3s ease;
+    }
+    .hub-card:hover {
+        border-color: #d4af37;
+        box-shadow: 0 12px 28px rgba(0,0,0,0.85), 0 0 15px rgba(212,175,55,0.3);
+        transform: translateY(-3px);
     }
     .hub-card h3 {
         font-family: 'Cinzel', serif !important;
-        color: #e6c665 !important;
-        border-bottom: 1px solid rgba(179,139,77,0.4);
-        padding-bottom: 6px;
+        color: #f5d680 !important;
+        border-bottom: 1px solid rgba(212,175,55,0.4);
+        padding-bottom: 8px;
         margin-top: 0;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.8);
     }
 </style>
 """, unsafe_allow_html=True)

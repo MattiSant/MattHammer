@@ -96,33 +96,37 @@ def render_testa_a_testa():
         .section-header {
             font-family: 'Cinzel Decorative', serif !important;
             font-size: 1.85rem !important;
-            color: #f5d680 !important;
-            letter-spacing: 1.5px !important;
+            color: #f7d57f !important;
+            letter-spacing: 1.8px !important;
             text-transform: uppercase;
             border-bottom: 2px solid #8c6d46 !important;
             padding-bottom: 6px;
             margin-top: 15px;
-            margin-bottom: 4px;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            margin-bottom: 6px;
+            text-shadow: 0 3px 10px rgba(0,0,0,0.85), 0 0 12px rgba(212, 175, 55, 0.25);
         }
         .subsection-title {
             font-family: 'Cinzel', serif !important;
             font-size: 1.25rem !important;
             color: #e6c665 !important;
             font-weight: 700 !important;
-            letter-spacing: 0.6px !important;
+            letter-spacing: 0.8px !important;
             border-bottom: 1px dashed rgba(140, 109, 70, 0.45);
-            padding-bottom: 3px;
-            margin-bottom: 6px;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
         }
+        /* Warscroll Card Dark: con bordura in bronzo lucido e glow interno */
         .warscroll-box {
-            background: linear-gradient(135deg, #1c150e 0%, #120e0a 100%);
+            position: relative;
+            background: linear-gradient(135deg, #20170f 0%, #120d08 100%);
             border: 2px solid #8c6d46;
-            border-radius: 6px;
-            padding: 12px;
+            border-top: 3px solid #d4af37;
+            border-radius: 4px 12px 4px 12px;
+            padding: 14px 16px;
             margin-top: 8px;
             margin-bottom: 12px;
             color: #f4ecd8;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.65), inset 0 0 25px rgba(212, 175, 55, 0.08);
         }
     </style>
     """, unsafe_allow_html=True)
@@ -135,7 +139,7 @@ def render_testa_a_testa():
 
     unita_ordinate = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])
     opzioni_db = ["--- Inserimento Manuale ---"] + unita_ordinate
-    
+
     # ==========================================
     # SEZIONE 1: SCHIERAMENTO D'ASSALTO (PRINCIPALE)
     # ==========================================
@@ -840,38 +844,34 @@ def render_testa_a_testa():
                 overflow: hidden; /* Assicura che i bordi arrotondati vengano rispettati */
             }
             .matrix-table th {
-                background-color: #120e0a !important;
-                border-bottom: 1px solid #8c6d46 !important;
-                border-right: 1px solid #8c6d46 !important;
-                color: #e6c665 !important;
-                padding: 10px;
+                background: linear-gradient(180deg, #1d140c 0%, #100b07 100%) !important;
+                border-bottom: 2px solid #8c6d46 !important;
+                border-right: 1px solid rgba(140, 109, 70, 0.5) !important;
+                color: #f7d57f !important;
+                padding: 12px 10px;
                 text-align: center !important;
                 font-weight: bold;
                 font-size: 1.05rem;
                 letter-spacing: 1px;
-            }
-            /* Rimuovi il bordo destro sull'ultima colonna delle intestazioni */
-            .matrix-table th:last-child {
-                 border-right: none !important;
+                text-shadow: 0 2px 5px rgba(0,0,0,0.9);
             }
             .matrix-table tbody tr th {
+                background: linear-gradient(90deg, #170f09 0%, #120d08 100%) !important;
                 text-align: left !important;
                 border-right: 2px solid #8c6d46 !important;
                 border-bottom: 1px solid rgba(140, 109, 70, 0.4) !important;
-            }
-            /* Rimuovi il bordo inferiore sull'ultima riga delle intestazioni di riga */
-            .matrix-table tbody tr:last-child th {
-                border-bottom: none !important;
+                color: #e6c665 !important;
+                padding: 10px 14px;
             }
             .matrix-table td {
-                border-right: 1px solid rgba(140, 109, 70, 0.4) !important;
-                border-bottom: 1px solid rgba(140, 109, 70, 0.4) !important;
-                padding: 12px 10px;
+                border-right: 1px solid rgba(140, 109, 70, 0.35) !important;
+                border-bottom: 1px solid rgba(140, 109, 70, 0.35) !important;
+                padding: 14px 10px;
                 text-align: center !important;
                 color: #ffffff !important;
                 font-weight: 700;
-                font-size: 1.15rem;
-                text-shadow: 1px 1px 5px rgba(0,0,0,1), -1px -1px 3px rgba(0,0,0,0.8);
+                font-size: 1.18rem;
+                text-shadow: 0 2px 6px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8);
             }
             /* Rimuovi bordi extra sulle ultime righe/colonne */
             .matrix-table tbody tr td:last-child {

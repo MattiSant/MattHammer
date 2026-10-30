@@ -108,33 +108,35 @@ def render_forgia_db():
         .section-header {
             font-family: 'Cinzel Decorative', serif !important;
             font-size: 1.85rem !important;
-            color: #f5d680 !important;
-            letter-spacing: 1.5px !important;
+            color: #f7d57f !important;
+            letter-spacing: 1.8px !important;
             text-transform: uppercase;
             border-bottom: 2px solid #8c6d46 !important;
             padding-bottom: 6px;
             margin-top: 15px;
-            margin-bottom: 4px;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            margin-bottom: 6px;
+            text-shadow: 0 3px 10px rgba(0,0,0,0.85), 0 0 12px rgba(212, 175, 55, 0.25);
         }
         .subsection-title {
             font-family: 'Cinzel', serif !important;
             font-size: 1.25rem !important;
             color: #e6c665 !important;
             font-weight: 700 !important;
-            letter-spacing: 0.6px !important;
+            letter-spacing: 0.8px !important;
             border-bottom: 1px dashed rgba(140, 109, 70, 0.45);
-            padding-bottom: 3px;
-            margin-bottom: 6px;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
         }
         .warscroll-box {
-            background: linear-gradient(135deg, #1c150e 0%, #120e0a 100%);
+            background: linear-gradient(135deg, #22180f 0%, #120d08 100%);
             border: 2px solid #8c6d46;
-            border-radius: 6px;
-            padding: 15px;
+            border-top: 3px solid #d4af37;
+            border-radius: 4px 14px 4px 14px;
+            padding: 16px;
             margin-top: 8px;
             margin-bottom: 12px;
             color: #f4ecd8;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.7), inset 0 0 25px rgba(212, 175, 55, 0.1);
         }
     </style>
     """, unsafe_allow_html=True)
@@ -341,7 +343,7 @@ def render_forgia_db():
                         index=idx_anti, 
                         key=f"a_ant_{idx}_{v_key}"
                     )
-                    
+
                     ranged = ab3.checkbox("Arma da Tiro", value=arma.get("ranged", False), key=f"a_rng_{idx}_{v_key}")
                     
                     valore_gittata = arma.get("range", "12\"" if arma.get("ranged", False) else "Melee")

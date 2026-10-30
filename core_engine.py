@@ -25,17 +25,40 @@ def applica_stile_globale():
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800&family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
+        /* Sfondo generale con trama impercettibile a pergamena scura e cenere */
         .stApp {
             background-color: #120e0a;
-            background-image: radial-gradient(circle at 50% 15%, #241b12 0%, #120e0a 75%);
+            background-image: 
+                radial-gradient(circle at 50% 12%, rgba(58, 41, 24, 0.55) 0%, rgba(18, 14, 10, 0.95) 75%),
+                radial-gradient(2px 2px at 20% 30%, rgba(212, 175, 55, 0.15), transparent),
+                radial-gradient(1.5px 1.5px at 80% 40%, rgba(255, 140, 30, 0.15), transparent);
             color: #f4ecd8;
             font-family: 'Crimson Pro', 'Georgia', serif;
             font-size: 1.05rem;
         }
+
+        /* Scrollbar personalizzata a stile forgia/bronzo antico */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #140e09;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #7c5e3c 0%, #3d2817 100%);
+            border-radius: 4px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #b38b4d;
+        }
+
+        /* Sidebar: legno laccato scuro con finiture dorate */
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #1b140d 0%, #120d08 100%);
-            border-right: 3px double #8c6d46;
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.7);
+            background: linear-gradient(180deg, #18120b 0%, #0d0906 100%);
+            border-right: 2px solid #6b4e2d;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.85);
             color: #e6dfcc;
         }
         [data-testid="stSidebar"] label, [data-testid="stSidebar"] .stMarkdown {
@@ -44,22 +67,32 @@ def applica_stile_globale():
         }
         [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
             font-family: 'Cinzel', serif !important;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
             color: #d4af37 !important;
             border-bottom: 1px solid #5c4730;
-            padding-bottom: 4px;
+            padding-bottom: 5px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.8);
         }
+
+        /* Riquadri / Container principali: Pergamena Imperiale con doppia bordura */
         div[data-testid="stVerticalBlock"] div[data-testid="stContainer"] {
-            background: linear-gradient(135deg, #f5eedc 0%, #e9dec3 50%, #dfd1b0 100%) !important;
-            border: 3px double #6e5233 !important;
-            border-top: 4px solid #9c7a44 !important;
+            background: linear-gradient(135deg, #f7f1e1 0%, #ede3cb 50%, #e2d4b3 100%) !important;
+            border: 2px solid #6e5233 !important;
+            outline: 1px solid rgba(212, 175, 55, 0.35);
+            outline-offset: -5px;
+            border-top: 4px solid #b38b4d !important;
             border-bottom: 4px solid #4a3520 !important;
-            border-radius: 3px 14px 3px 14px !important;
+            border-radius: 4px 14px 4px 14px !important;
             padding: 24px !important;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65), inset 0 0 35px rgba(139, 101, 59, 0.28) !important;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.75), inset 0 0 40px rgba(139, 101, 59, 0.22) !important;
             color: #241c11 !important;
             margin-bottom: 18px !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
+        div[data-testid="stContainer"]:hover {
+            box-shadow: 0 14px 35px rgba(0, 0, 0, 0.85), inset 0 0 45px rgba(212, 175, 55, 0.15) !important;
+        }
+
         div[data-testid="stContainer"] h1, 
         div[data-testid="stContainer"] h2, 
         div[data-testid="stContainer"] h3,
@@ -68,9 +101,9 @@ def applica_stile_globale():
             font-family: 'Cinzel', serif !important;
             font-weight: 700 !important;
             letter-spacing: 0.8px !important;
-            border-bottom: 1px solid rgba(140, 109, 70, 0.4);
+            border-bottom: 1px solid rgba(140, 109, 70, 0.45);
             padding-bottom: 6px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         div[data-testid="stContainer"] p, 
         div[data-testid="stContainer"] label,
@@ -89,81 +122,127 @@ def applica_stile_globale():
         div[data-testid="stContainer"] [data-testid="stCaptionContainer"] p {
             color: #5a4631 !important;
         }
+
+        /* Titoli di primo livello con luminescenza runica */
         h1 {
-            color: #e6c665 !important;
+            color: #f7d57f !important;
             font-family: 'Cinzel Decorative', serif !important;
             font-weight: 700 !important;
-            letter-spacing: 2px !important;
-            text-shadow: 0 3px 8px rgba(0, 0, 0, 0.85), 0 0 15px rgba(212, 175, 55, 0.25);
+            letter-spacing: 2.5px !important;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.9), 0 0 20px rgba(212, 175, 55, 0.35);
             text-transform: uppercase;
         }
         h2, h3 {
             color: #ebd597 !important;
             font-family: 'Cinzel', serif !important;
             letter-spacing: 1.2px !important;
-            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
         }
+
+        /* Separatore dorato sfumato */
         hr {
             border: 0 !important;
             height: 2px !important;
-            background: linear-gradient(90deg, rgba(18,14,10,0) 0%, rgba(179,139,77,0.8) 50%, rgba(18,14,10,0) 100%) !important;
-            margin: 1.5rem 0 !important;
+            background: linear-gradient(90deg, rgba(18,14,10,0) 0%, rgba(212,175,55,0.85) 50%, rgba(18,14,10,0) 100%) !important;
+            margin: 1.6rem 0 !important;
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
         }
+
+        /* Expander stilizzati a sigillo */
         .streamlit-expanderHeader {
-            background: linear-gradient(90deg, #dfcfa9 0%, #d2be92 100%) !important;
+            background: linear-gradient(90deg, #e3d3ae 0%, #d4bf94 100%) !important;
             border: 1px solid #7c5e3c !important;
-            border-left: 5px solid #8c622b !important;
-            border-radius: 3px 8px 3px 8px !important;
+            border-left: 5px solid #a37535 !important;
+            border-radius: 4px 10px 4px 10px !important;
             color: #241c11 !important;
             font-family: 'Cinzel', serif !important;
             font-weight: 700 !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            transition: all 0.25s ease;
         }
+        .streamlit-expanderHeader:hover {
+            border-left: 5px solid #d4af37 !important;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.45);
+        }
+
+        /* Campi di input e textarea */
         input, textarea, select {
-            background-color: #2c1d11 !important;
+            background-color: #22160d !important;
             color: #fdf6e2 !important;
-            border: 1px solid #9c7a44 !important;
-            border-radius: 3px !important;
+            border: 1px solid #8c6d46 !important;
+            border-radius: 4px !important;
             font-family: 'Crimson Pro', serif !important;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.7);
         }
+        input:focus, textarea:focus {
+            border-color: #d4af37 !important;
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.5), inset 0 2px 5px rgba(0,0,0,0.8) !important;
+        }
+
         div[data-baseweb="select"] > div {
-            background-color: #2c1d11 !important;
+            background-color: #22160d !important;
             color: #fdf6e2 !important;
-            border: 1px solid #9c7a44 !important;
-            border-radius: 3px !important;
+            border: 1px solid #8c6d46 !important;
+            border-radius: 4px !important;
         }
         div[data-baseweb="select"] span {
             color: #fdf6e2 !important;
             font-family: 'Crimson Pro', serif !important;
         }
+
+        /* Pulsanti base */
         button[data-baseweb="button"] {
-            background-color: #3d2817 !important;
+            background: linear-gradient(180deg, #382416 0%, #24160c 100%) !important;
             color: #fdf6e2 !important;
             border: 1px solid #8c6d46 !important;
+            border-radius: 4px !important;
+            font-family: 'Cinzel', serif !important;
+            transition: all 0.25s ease;
         }
+        button[data-baseweb="button"]:hover {
+            border-color: #d4af37 !important;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* Schede / Tabs del grimorio */
         button[data-baseweb="tab"] {
             font-family: 'Cinzel', serif !important;
             font-weight: 700 !important;
             letter-spacing: 0.8px !important;
-            color: #c9b79c !important;
-            background-color: #1c150e !important;
+            color: #bda688 !important;
+            background-color: #1a120b !important;
             border: 1px solid #4a3723 !important;
             border-bottom: none !important;
             border-radius: 6px 6px 0 0 !important;
             padding: 10px 18px !important;
             margin-right: 4px !important;
+            transition: all 0.25s ease;
+        }
+        button[data-baseweb="tab"]:hover {
+            color: #f7d57f !important;
+            background-color: #291c12 !important;
         }
         button[data-baseweb="tab"][aria-selected="true"] {
-            background: linear-gradient(180deg, #3d2c1b 0%, #24190f 100%) !important;
-            color: #f0c961 !important;
-            border-top: 2px solid #d4af37 !important;
+            background: linear-gradient(180deg, #3d2c1b 0%, #20150b 100%) !important;
+            color: #f7d57f !important;
+            border-top: 3px solid #d4af37 !important;
+            box-shadow: 0 -3px 12px rgba(212, 175, 55, 0.25);
         }
+
+        /* Riquadri metriche con gemme bronzate */
         div[data-testid="metric-container"] {
-            background: linear-gradient(145deg, #2b2117 0%, #1a130c 100%);
-            border: 2px solid #9c7a44;
+            background: linear-gradient(145deg, #281d13 0%, #17100a 100%);
+            border: 2px solid #8c6d46;
             border-top: 3px solid #d4af37;
             padding: 16px;
             border-radius: 4px 12px 4px 12px;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.65);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.7), inset 0 0 20px rgba(212, 175, 55, 0.08);
+            transition: transform 0.2s ease;
+        }
+        div[data-testid="metric-container"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(0,0,0,0.85), 0 0 12px rgba(212, 175, 55, 0.35);
         }
         div[data-testid="metric-container"] label {
             color: #d4af37 !important;
@@ -175,22 +254,25 @@ def applica_stile_globale():
             color: #fdf6e2 !important;
             font-family: 'Cinzel', serif !important;
             font-weight: 700;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
+
+        /* Pulsanti Primari (Oro fuso & Rame) */
         .stButton button[kind="primary"] {
             background: linear-gradient(135deg, #7a4f10 0%, #b38b4d 50%, #8a5a14 100%);
             color: #fffde6 !important;
-            border: 1px solid #e6c665;
+            border: 1px solid #f0ca65;
             font-family: 'Cinzel', serif !important;
             font-weight: 700;
-            letter-spacing: 0.8px;
-            border-radius: 3px 10px 3px 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            letter-spacing: 0.9px;
+            border-radius: 4px 10px 4px 10px;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.6), inset 0 0 10px rgba(255,255,255,0.2);
             transition: all 0.25s ease;
         }
         .stButton button[kind="primary"]:hover {
-            background: linear-gradient(135deg, #9c6818 0%, #cfa55a 50%, #b38b4d 100%);
-            box-shadow: 0 0 14px rgba(212, 175, 55, 0.65);
-            transform: translateY(-1px);
+            background: linear-gradient(135deg, #9c6818 0%, #d4af37 50%, #b38b4d 100%);
+            box-shadow: 0 0 18px rgba(212, 175, 55, 0.75), 0 6px 14px rgba(0,0,0,0.8);
+            transform: translateY(-2px);
         }
     </style>
     """, unsafe_allow_html=True)

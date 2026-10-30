@@ -154,53 +154,61 @@ def render_sala_di_guerra():
         .section-header {
             font-family: 'Cinzel Decorative', serif !important;
             font-size: 1.85rem !important;
-            color: #f5d680 !important;
-            letter-spacing: 1.5px !important;
+            color: #f7d57f !important;
+            letter-spacing: 1.8px !important;
             text-transform: uppercase;
             border-bottom: 2px solid #8c6d46 !important;
             padding-bottom: 6px;
             margin-top: 15px;
-            margin-bottom: 4px;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            margin-bottom: 6px;
+            text-shadow: 0 3px 10px rgba(0,0,0,0.85), 0 0 12px rgba(212, 175, 55, 0.25);
         }
         .subsection-title {
             font-family: 'Cinzel', serif !important;
             font-size: 1.25rem !important;
             color: #e6c665 !important;
             font-weight: 700 !important;
-            letter-spacing: 0.6px !important;
+            letter-spacing: 0.8px !important;
             border-bottom: 1px dashed rgba(230, 198, 101, 0.45);
-            padding-bottom: 3px;
-            margin-bottom: 6px;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
         }
         div[data-testid="stContainer"] .subsection-title {
             color: #5a3c1e !important;
             border-bottom: 1px dashed rgba(90, 60, 30, 0.4);
         }
         .warscroll-box {
-            background: linear-gradient(135deg, #1c150e 0%, #120e0a 100%);
+            background: linear-gradient(135deg, #22180f 0%, #120d08 100%);
             border: 2px solid #8c6d46;
-            border-radius: 6px;
-            padding: 12px;
+            border-top: 3px solid #d4af37;
+            border-radius: 4px 12px 4px 12px;
+            padding: 14px 16px;
             margin-top: 8px;
             margin-bottom: 12px;
             color: #f4ecd8;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.7), inset 0 0 25px rgba(212, 175, 55, 0.08);
         }
+        /* Box Abilità Passive / Normali: bronzo satinato */
         .ability-box {
-            background: rgba(45, 29, 17, 0.6);
-            border-left: 4px solid #b38b4d;
-            border: 1px solid #5c4730;
-            padding: 8px 12px;
-            margin: 6px 0;
-            border-radius: 3px;
+            background: linear-gradient(90deg, rgba(50, 32, 18, 0.75) 0%, rgba(32, 20, 11, 0.6) 100%);
+            border-left: 4px solid #d4af37;
+            border: 1px solid #6b4d2a;
+            border-left-width: 4px;
+            padding: 9px 13px;
+            margin: 7px 0;
+            border-radius: 3px 8px 8px 3px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
         }
+        /* Box Reazioni: cremisi regale e rubino */
         .ability-box-reaction {
-            background: rgba(55, 18, 18, 0.65);
-            border-left: 4px solid #c0392b;
-            border: 1px solid #78281f;
-            padding: 8px 12px;
-            margin: 6px 0;
-            border-radius: 3px;
+            background: linear-gradient(90deg, rgba(65, 20, 20, 0.8) 0%, rgba(40, 12, 12, 0.6) 100%);
+            border-left: 4px solid #e74c3c;
+            border: 1px solid #852a20;
+            border-left-width: 4px;
+            padding: 9px 13px;
+            margin: 7px 0;
+            border-radius: 3px 8px 8px 3px;
+            box-shadow: 0 2px 8px rgba(192, 57, 43, 0.25);
         }
     </style>
     """, unsafe_allow_html=True)
