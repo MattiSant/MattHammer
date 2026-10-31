@@ -900,7 +900,7 @@
         "dimensione_basetta": "50mm",
         "può_essere_rinforzata": true,
         "campione": true,
-        "punti": 220,
+        "punti": 210,
         "statistiche_cerchio": {
             "movimento": "5\"",
             "controllo": 2,
@@ -918,6 +918,7 @@
                 "nome": "Kurnoth Greatsword",
                 "attiva": true,
                 "ranged": false,
+                "range": "Melee",
                 "atk": "4",
                 "hit": 3,
                 "wnd": 3,
@@ -930,20 +931,7 @@
                 "companion": false
             }
         ],
-        "abilita": [
-            {
-                "nome": "AURA OF GRACE",
-                "tipo": "Passive",
-                "reazione": false,
-                "once_per_battle": false,
-                "valore_lancio": 0,
-                "fasi": [
-                    "Combat Phase (Fase di Combattimento)"
-                ],
-                "descrizione": "Effect: Each time a model in this unit is slain in combat, roll a dice; on a 4+, it can fight before being removed from play.",
-                "modificatori": {}
-            }
-        ],
+        "abilita": [],
         "keywords": [
             "Infantry",
             "Sylvaneth"
