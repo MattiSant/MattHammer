@@ -418,12 +418,13 @@
                 "nome": "Spectral Claws and Daggers",
                 "attiva": true,
                 "ranged": false,
+                "range": "Melee",
                 "atk": "6",
                 "hit": 4,
-                "wnd": 5,
+                "wnd": 4,
                 "rend": 0,
                 "dmg": "1",
-                "crit_type": "Nessuno",
+                "crit_type": "Crit (Auto-wound)",
                 "anti_target": "Nessuno",
                 "charge_dmg": false,
                 "anti_charge": false,
@@ -438,20 +439,17 @@
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Any Phase"
+                    "Qualsiasi Fase"
                 ],
-                "descrizione": "Effect: Friendly Nighthaunt INFANTRY HEROES within 3\" of this unit have a Ward (4+) instead of Ward (5+).",
-                "modificatori": {
-                    "ward_nativo": 4
-                }
+                "descrizione": "Effect: Friendly NIGHTHAUNT INFANTRY HEROES have WARD (4+) while they are wholly within this unit’s combat range.",
+                "modificatori": {}
             }
         ],
         "keywords": [
-            "Beast",
-            "Fly",
-            "Ward (5+)",
-            "Death",
-            "Nighthaunt"
+            "INFANTRY",
+            "FLY",
+            "WARD (5+) DEATH",
+            "NIGHTHAUNT"
         ]
     },
     "Orruk Kruleboyz: Gutrippaz": {
