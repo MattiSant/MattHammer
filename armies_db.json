@@ -54,5 +54,45 @@
             }
         ],
         "ausiliari": []
+    },
+    "Nighthaunt: Path to Glory - NightHaunt": {
+        "nome": "Path to Glory - NightHaunt",
+        "fazione": "Nighthaunt",
+        "formazione": "Death Stalkers",
+        "limite_punti": 720,
+        "punti_totali": 700,
+        "reggimenti": [
+            {
+                "leader": "Nighthaunt: Knight of Shrouds",
+                "is_generale": true,
+                "rinforzato": false,
+                "tratto_eroico": "Nessuno",
+                "artefatto": "Nessuno",
+                "seguito": [
+                    {
+                        "nome": "Nighthaunt: Bladegheist Revenants",
+                        "rinforzata": false
+                    },
+                    {
+                        "nome": "Nighthaunt: Spirit Hosts",
+                        "rinforzata": false
+                    }
+                ]
+            },
+            {
+                "leader": "Nighthaunt: Guardian of Souls",
+                "is_generale": false,
+                "rinforzato": false,
+                "tratto_eroico": "Nessuno",
+                "artefatto": "Nessuno",
+                "seguito": [
+                    {
+                        "nome": "Nighthaunt: Grimghast Reapers",
+                        "rinforzata": false
+                    }
+                ]
+            }
+        ],
+        "ausiliari": []
     }
 }
