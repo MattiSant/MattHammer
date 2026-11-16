@@ -288,7 +288,7 @@ def render_sala_di_guerra():
 
         formato_scelto = col_f3.selectbox(
             "Formato Battaglia",
-            ["Path to Glory (720 pt Personalizzati)", "Path to Glory Standard (600 pt)", "Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
+            ["Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
             index=0
         )
 
@@ -538,10 +538,12 @@ def render_sala_di_guerra():
                 if fc3.button("✖", key=f"del_fol_{r_idx}_{f_idx}"):
                     seguito_da_rimuovere.append(f_idx)
 
-                # --- CONTROLLO KEYWORD HERO PER ASSEGNARE TRATTO/ARTEFATTO ---
-                is_hero_fol = any("HERO" in str(k).upper() for k in d_fol_db.get("keywords", []))
-                if is_hero_fol:
+                # --- INTERFACCIA EQUIPAGGIAMENTO EROI NEL SEGUITO ---
+                kw_fol = [str(k).upper() for k in d_fol_db.get("keywords", [])]
+                if "HERO" in kw_fol:
+                    st.markdown("<div style='margin-top:-5px; margin-bottom:10px; padding-left:15px;'><small style='color:#d4af37;'>✨ <i>Eroe (Può equipaggiare Tratti e Artefatti)</i></small></div>", unsafe_allow_html=True)
                     tf_col1, tf_col2 = st.columns(2)
+                    
                     idx_t_f = db_tratti_eroici.index(fol.get("tratto_eroico", "Nessuno")) if fol.get("tratto_eroico", "Nessuno") in db_tratti_eroici else 0
                     fol["tratto_eroico"] = tf_col1.selectbox("Tratto Eroico", db_tratti_eroici, index=idx_t_f, key=f"fol_trait_{r_idx}_{f_idx}_v{st.session_state['sdg_roster_version']}")
                     
