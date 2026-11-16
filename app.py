@@ -184,7 +184,7 @@ st.markdown("""
 #
 #
 st.sidebar.title("MATTHAMMER")
-st.sidebar.caption("AoS 4e Tactical Suite v4.19")
+st.sidebar.caption("AoS 4e Tactical Suite - v1.0 Official")
 st.sidebar.markdown("---")
 
 # Iniezione CSS per trasformare il radio button in un menu premium in stile tomo magico
@@ -234,7 +234,7 @@ st.sidebar.markdown('<div style="color:#e6c665; font-family:\'Cinzel\', serif; f
 MAPPA_NAV = {
     "Portale Principale": "Portale Principale (Home)",
     "Laboratorio Tattico": "Laboratorio Tattico (Testa a Testa)",
-    "Sala di Guerra (BETA)": "Sala di Guerra (Costruttore Armate)",
+    "Sala di Guerra": "Sala di Guerra (Costruttore Armate)",
     "Forgia del Grimorio": "Forgia del Grimorio (Database)"
 }
 NOMI_UI = list(MAPPA_NAV.keys())

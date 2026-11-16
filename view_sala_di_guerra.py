@@ -283,7 +283,7 @@ def render_sala_di_guerra():
     armate_salvate = list(st.session_state["archivio_armate"].keys())
     if armate_salvate:
         with st.expander("📂 Carica un'Armata dal tuo Archivio", expanded=False):
-            c_load1, c_load2 = st.columns([3, 1])
+            c_load1, c_load2, c_load3 = st.columns([2.5, 1, 1])
             armata_da_caricare = c_load1.selectbox("Seleziona Armata:", ["--- Scegli Armata ---"] + armate_salvate)
             if c_load2.button("📥 Carica Armata", type="primary", use_container_width=True):
                 if armata_da_caricare != "--- Scegli Armata ---":
@@ -299,6 +299,12 @@ def render_sala_di_guerra():
                         "Vanguard (1000 pt)" if dati_armata.get("limite_punti") == 1000 else "Strike Force (1500 pt)"
                     )
                     st.toast(f"Armata '{armata_da_caricare}' caricata!", icon="✅")
+                    st.rerun()
+            if c_load3.button("🗑️ Elimina", use_container_width=True):
+                if armata_da_caricare != "--- Scegli Armata ---":
+                    del st.session_state["archivio_armate"][armata_da_caricare]
+                    salva_archivio_armate(st.session_state["archivio_armate"])
+                    st.toast(f"Armata '{armata_da_caricare}' eliminata dall'archivio!", icon="🗑️")
                     st.rerun()
 
     # ==========================================
@@ -475,6 +481,13 @@ def render_sala_di_guerra():
                 index=idx_art, 
                 key=f"reg_art_{r_idx}_v{st.session_state['sdg_roster_version']}"
             )
+
+            if reg.get("tratto_eroico", "Nessuno") != "Nessuno":
+                desc_tr = st.session_state["db_tratti_eroici_dict"].get(reg["tratto_eroico"], {}).get("descrizione", "")
+                st.caption(f"✨ **{reg['tratto_eroico']}:** {desc_tr}")
+            if reg.get("artefatto", "Nessuno") != "Nessuno":
+                desc_ar = st.session_state["db_artefatti_dict"].get(reg["artefatto"], {}).get("descrizione", "")
+                st.caption(f"🏺 **{reg['artefatto']}:** {desc_ar}")
 
             if reg["leader"] in st.session_state["db_unita"]:
                 d_lead = st.session_state["db_unita"][reg["leader"]]
@@ -729,6 +742,21 @@ def render_sala_di_guerra():
         st.progress(perc_punti, text=f"Punti Spesi: {punti_totali} / {limite_punti} pt ({(punti_totali/float(limite_punti))*100:.1f}%)")
 
         v1, v2, v3 = st.columns(3)
+
+        n_tratti_attivi = sum(
+            (1 if r.get("tratto_eroico", "Nessuno") != "Nessuno" else 0) +
+            sum(1 for f in r.get("seguito", []) if f.get("tratto_eroico", "Nessuno") != "Nessuno")
+            for r in st.session_state["sdg_reggimenti"]
+        )
+        n_artefatti_attivi = sum(
+            (1 if r.get("artefatto", "Nessuno") != "Nessuno" else 0) +
+            sum(1 for f in r.get("seguito", []) if f.get("artefatto", "Nessuno") != "Nessuno")
+            for r in st.session_state["sdg_reggimenti"]
+        )
+
+        if n_tratti_attivi > 1 or n_artefatti_attivi > 1:
+            st.warning(f"⚠️ **Nota Regolamento Matched Play:** Hai equipaggiato **{n_tratti_attivi} Tratti Eroici** e **{n_artefatti_attivi} Artefatti** (il limite standard da torneo è 1 Tratto e 1 Artefatto per armata).")
+        
         if 0 < punti_totali <= limite_punti:
             v1.success(f"Punti in Regola ({punti_totali}/{limite_punti})")
         elif punti_totali > limite_punti:
@@ -779,21 +807,115 @@ def render_sala_di_guerra():
             st.dataframe(pd.DataFrame(righe_rendimento), use_container_width=True, hide_index=True)
 
             with st.container(border=True):
-                st.markdown("#### Avvertimenti dello Stratega e Sinergie")
+                st.markdown("#### Avvertimenti dello Stratega e Sinergie (Analisi Keywords)")
                 consigli_speciali = []
-                if any("Knight of Shrouds" in u["chiave_db"] for u in unita_totali_schierate) and any("Guardian of Souls" in u["chiave_db"] for u in unita_totali_schierate):
-                    consigli_speciali.append("**Sinergia Warlord & Supporto:** Il *Knight of Shrouds* attiva immediatamente una fanteria amica con *Infantry Overseer* e si cura con *Stolen Hours*, mentre il *Guardian of Souls* dà +1 Wound.")
-                if any("Spirit Hosts" in u["chiave_db"] for u in unita_totali_schierate):
-                    consigli_speciali.append("**Ancoraggio Difensivo (Spirit Hosts):** *Drawn to War* fornisce **Ward (4+)** agli eroi di fanteria Nighthaunt entro 3\".")
-                if any("Scriptor Mortis" in u["chiave_db"] for u in unita_totali_schierate):
-                    consigli_speciali.append("**Anti-Tank (Scriptor Mortis):** Condanna il bersaglio corazzato nemico per conferire *Crit (Mortal)* alle unità Nighthaunt.")
+
+                # 1. Raccolta Keywords, Ruoli e Abilità di tutte le unità schierate
+                all_kw = set()
+                n_infantry = 0
+                n_cavalry = 0
+                n_monster = 0
+                n_fly = 0
+                n_ward_nativo = 0
+                eroi_schierati = []
+                truppe_schierate = []
+
+                for u in unita_totali_schierate:
+                    d_db = st.session_state["db_unita"].get(u["chiave_db"], {})
+                    # Normalizza keywords (gestisce anche stringhe unite come "INFANTRY CHAOS")
+                    kws_raw = d_db.get("keywords", [])
+                    kws = set()
+                    for k in kws_raw:
+                        for token in str(k).upper().replace(",", " ").split():
+                            kws.add(token)
+                        kws.add(str(k).upper().strip())
+                    all_kw.update(kws)
+
+                    is_hero = "HERO" in kws
+                    if is_hero:
+                        eroi_schierati.append((u["etichetta"], d_db, kws))
+                    else:
+                        truppe_schierate.append((u["etichetta"], d_db, kws))
+
+                    if "INFANTRY" in kws and not is_hero:
+                        n_infantry += 1
+                    if "CAVALRY" in kws:
+                        n_cavalry += 1
+                    if "MONSTER" in kws:
+                        n_monster += 1
+                    if "FLY" in kws:
+                        n_fly += 1
+                    if u["profilo_difensivo"]["ward"] <= 6 or any("WARD" in k for k in kws):
+                        n_ward_nativo += 1
+
+                # 2. Analisi Sinergie Automatiche dalle Abilità delle Warscrolls in campo
+                for u in unita_totali_schierate:
+                    d_db = st.session_state["db_unita"].get(u["chiave_db"], {})
+                    nome_breve = u["chiave_db"].split(": ")[-1]
+                    for ab in d_db.get("abilita", []):
+                        desc_up = ab.get("descrizione", "").upper()
+                        nome_ab = ab.get("nome", "Abilità")
+
+                        # Sinergie verso INFANTRY amica
+                        if "FRIENDLY" in desc_up and "INFANTRY" in desc_up:
+                            if n_infantry > 0:
+                                consigli_speciali.append(f"**Sinergia Keyword [INFANTRY] ({nome_breve} — *{nome_ab}*):** Quest'abilità potenzia o supporta le tue **{n_infantry} unità di Fanteria** in lista. Mantienile entro il raggio dell'aura.")
+                            else:
+                                consigli_speciali.append(f"**Sinergia Inutilizzata ({nome_breve} — *{nome_ab}*):** Quest'abilità richiede unità amiche **INFANTRY** (non-Eroe), ma non ne hai schierate nella lista!")
+
+                        # Sinergie specifiche BLOODBOUND (Blades of Khorne)
+                        if "BLOODBOUND" in desc_up and "FRIENDLY" in desc_up:
+                            if "STRIKE-FIRST" in desc_up:
+                                eroi_bb = [e[0] for e in eroi_schierati if "BLOODBOUND" in e[2] and nome_breve not in e[0]]
+                                if eroi_bb:
+                                    consigli_speciali.append(f"**Combo Strike-First ({nome_breve} — *{nome_ab}*):** Puoi conferire *Strike-First* a un altro Eroe **BLOODBOUND** in lista ({', '.join(eroi_bb)}). Falli caricare insieme!")
+                                else:
+                                    consigli_speciali.append(f"**Bersaglio Mancante ({nome_breve} — *{nome_ab}*):** Richiede un altro **BLOODBOUND INFANTRY HERO** entro 12\" per attivare *Strike-First*, ma non hai altri eroi compatibili.")
+                            elif "+1" in desc_up or "ADD 1" in desc_up:
+                                consigli_speciali.append(f"**Moltiplicatore di Forza [BLOODBOUND] ({nome_breve} — *{nome_ab}*):** Potenzia gli attacchi o i tiri per ferire delle tue unità con keyword **BLOODBOUND**.")
+
+                        # Sinergie Anti-Cura / Blocco Rally
+                        if "CANNOT BE HEALED" in desc_up:
+                            consigli_speciali.append(f"**Blocco Rigenerazione ({nome_breve} — *{nome_ab}*):** Impedisce cure e resurrezioni nemiche in mischia. Mandalo contro bersagli che si rigenerano o evocano modelli.")
+
+                # 3. Analisi Tattica per Keywords di Fazione e Struttura Armata
+                if "NIGHTHAUNT" in all_kw:
+                    if n_fly == len(unita_totali_schierate):
+                        consigli_speciali.append("**Armata Spettrale Volante [FLY + ETHEREAL]:** Tutte le tue unità ignorano il Rend nemico e scavalcano schermi e terreni. Usa la mobilità per isolare i supporti avversari.")
+                    if any("Spirit Hosts" in u["chiave_db"] for u in unita_totali_schierate) and len(eroi_schierati) > 0:
+                        consigli_speciali.append("**Scudo Corporale [INFANTRY HERO]:** Gli *Spirit Hosts* forniscono **Ward (4+)** ai tuoi Eroi di fanteria Nighthaunt entro il raggio di combattimento.")
+
+                if "BLADES OF KHORNE" in all_kw or "KHORNE" in all_kw:
+                    if len(eroi_schierati) >= 3 and len(truppe_schierate) == 0:
+                        consigli_speciali.append("**Assetto Herohammer [SOLO HERO]:** Hai schierato esclusivamente Eroi. Alto output offensivo, ma **basso Controllo Mappa (OC)** e vulnerabilità alle cariche di orda: sfrutta i terreni per non farti circondare.")
+                    if any("PRIEST" in k for k in all_kw):
+                        consigli_speciali.append("**Sinergia Rituale [PRIEST]:** Hai Sacerdoti in campo per accumulare punti rituali e contrastare la magia nemica.")
+
+                if "KRULEBOYZ" in all_kw:
+                    unita_crit_mortal = [u["etichetta"] for u in unita_totali_schierate if any(a.get("crit_type") == "Crit (Mortal)" for a in st.session_state["db_unita"].get(u["chiave_db"], {}).get("armi", []))]
+                    if unita_crit_mortal:
+                        consigli_speciali.append(f"**Veleno Mortale [CRIT (MORTAL)]:** Le unità {', '.join(unita_crit_mortal)} infliggono Danni Mortali sui colpi critici. Ideali per abbattere nemici con Save 2+/3+.")
+
+                if "SYLVANETH" in all_kw:
+                    if "MONSTER" in all_kw:
+                        consigli_speciali.append("**Presenza Boschiva [MONSTER]:** Hai unità **MONSTER** in lista in grado di usare le abilità *Rampage* e assorbire le cariche centrali.")
+
+                # 4. Check-up Globale dei Ruoli (Mobilità, Magia, Rend, Resilienza)
+                if n_cavalry == 0 and n_fly == 0:
+                    consigli_speciali.append("**Bassa Mobilità Tattica (Nessun [CAVALRY] o [FLY]):** L'armata si muove interamente a piedi. Rischi di subire l'iniziativa sugli obiettivi laterali; tieni da parte 1 CP per *At the Double* (Corsa +6\").")
+
+                if n_ward_nativo == 0:
+                    consigli_speciali.append("**Vulnerabilità ai Danni Mortali (Nessun [WARD]):** Nessuna unità possiede un tiro Ward attivo. Fai estrema attenzione a magie, preghiere e armi con *Crit (Mortal)*.")
+
                 if max_rend_armata < 2:
-                    consigli_speciali.append("**Penetrazione Armatura Limitata:** Il Rend massimo nativo è basso. Sfrutta formazioni o debuff al Save contro bersagli con Save 2+/3+.")
+                    consigli_speciali.append("**Penetrazione Armatura Limitata (Rend < 2):** Contro bersagli corazzati (Save 2+/3+) farai fatica a passare l'armatura. Sfrutta i bonus di Formazione o le armi con *Crit (Mortal)*.")
+
                 if livello_magico_tot == 0 and livello_preti_tot == 0:
-                    consigli_speciali.append("**Assenza di Supporto Arcano:** Nessun Mago o Prete in lista (nessun Unbind/Banish disponibile).")
-                if not consigli_speciali:
-                    consigli_speciali.append("**Bilanciamento Solido:** La lista copre bene i ruoli offensivi e di controllo mappa.")
-                for cs in consigli_speciali:
+                    consigli_speciali.append("**Assenza di [WIZARD] e [PRIEST]:** Non hai modo di dissipare incantesimi (*Unbind*) o bandire manifestazioni nemiche, a meno di abilità speciali o artefatti.")
+
+                # Rimuove eventuali duplicati mantenendo l'ordine
+                consigli_unici = list(dict.fromkeys(consigli_speciali))
+                for cs in consigli_unici:
                     st.markdown(f"- {cs}")
 
     # ==========================================
@@ -1119,3 +1241,11 @@ def render_sala_di_guerra():
 
             testo_completo_export = "\n".join(linee_export)
             st.text_area("Pergamena dell'Esercito:", value=testo_completo_export, height=300)
+
+            st.download_button(
+                label="📜 Scarica Pergamena Torneo (.txt)",
+                data=testo_completo_export,
+                file_name=f"{st.session_state['sdg_nome_armata'].replace(' ', '_')}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
