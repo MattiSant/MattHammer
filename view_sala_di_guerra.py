@@ -6,7 +6,8 @@ import os
 from core_engine import (
     calcola_arma_analitico,
     _push_su_github_file,
-    ordina_unita_per_fazione_e_nome
+    ordina_unita_per_fazione_e_nome,
+    ordina_supporti_per_fazione_e_nome
 )
 from utils import (
     estrai_valore_keyword,
@@ -259,10 +260,10 @@ def render_sala_di_guerra():
         st.session_state["sdg_nemici_matchup"] = []
     
     st.session_state["db_tratti_eroici_dict"] = carica_db_supporto_dict(TRAITS_DB_FILE)
-    st.session_state["db_tratti_eroici"] = list(st.session_state["db_tratti_eroici_dict"].keys())
+    st.session_state["db_tratti_eroici"] = ordina_supporti_per_fazione_e_nome(st.session_state["db_tratti_eroici_dict"])
 
     st.session_state["db_artefatti_dict"] = carica_db_supporto_dict(ARTEFACTS_DB_FILE)
-    st.session_state["db_artefatti"] = list(st.session_state["db_artefatti_dict"].keys())
+    st.session_state["db_artefatti"] = ordina_supporti_per_fazione_e_nome(st.session_state["db_artefatti_dict"])
 
     db_tratti_eroici = st.session_state["db_tratti_eroici"]
     db_artefatti = st.session_state["db_artefatti"]
@@ -293,6 +294,10 @@ def render_sala_di_guerra():
                     st.session_state["sdg_reggimenti"] = dati_armata.get("reggimenti", [])
                     st.session_state["sdg_ausiliari"] = dati_armata.get("ausiliari", [])
                     st.session_state["sdg_roster_version"] += 1
+                    st.session_state["sdg_limite_custom"] = dati_armata.get("limite_punti", 720)
+                    st.session_state["sdg_formato_scelto"] = "Personalizzato (Custom)" if dati_armata.get("limite_punti") not in [1000, 1500] else (
+                        "Vanguard (1000 pt)" if dati_armata.get("limite_punti") == 1000 else "Strike Force (1500 pt)"
+                    )
                     st.toast(f"Armata '{armata_da_caricare}' caricata!", icon="✅")
                     st.rerun()
 
@@ -306,7 +311,11 @@ def render_sala_di_guerra():
         st.markdown('<div class="subsection-title">Generalità dell\'Esercito</div>', unsafe_allow_html=True)
         
         col_f1, col_f2, col_f3, col_f4 = st.columns([1.5, 1.2, 1.3, 1])
-        st.session_state["sdg_nome_armata"] = col_f1.text_input("Nome della Lista", value=st.session_state["sdg_nome_armata"])
+        st.session_state["sdg_nome_armata"] = col_f1.text_input(
+            "Nome della Lista", 
+            value=st.session_state["sdg_nome_armata"],
+            key=f"inp_nome_armata_v{st.session_state['sdg_roster_version']}"
+        )
         
         lista_fazioni_disp = ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Grande Alleanza / Altro"]
         idx_faz = lista_fazioni_disp.index(st.session_state["sdg_fazione_armata"]) if st.session_state["sdg_fazione_armata"] in lista_fazioni_disp else 0
@@ -325,7 +334,9 @@ def render_sala_di_guerra():
         elif "2000" in formato_scelto:
             limite_punti = 2000
         else:
-            limite_punti = col_f4.number_input("Punti Custom", min_value=100, max_value=5000, value=100, step=10)
+            val_custom = int(st.session_state.get("sdg_limite_custom", 720))
+            limite_punti = col_f4.number_input("Punti Custom", min_value=100, max_value=5000, value=val_custom, step=10)
+            st.session_state["sdg_limite_custom"] = limite_punti
 
         st.markdown("---")
         st.markdown('<div class="subsection-title">Formazione di Battaglia (Battle Formation)</div>', unsafe_allow_html=True)
@@ -976,7 +987,11 @@ def render_sala_di_guerra():
                 st.markdown("---")
                 k1, k2, k3, k4 = st.columns(4)
                 k1.metric("Tuo Danno Inflitto", f"{danno_mio_inflitto:.1f} / {prof_dif_nem_duello['salute']} PF", f"{perc_nem_rimossa*100:.0f}% vita nemica")
-                k2.metric("Modelli Nemici Uccisi", f"{modelli_nem_uccisi} / {prof_dif_nem_duello['n_modelli']} mod.", f"{modelli_nem_superstiti} superstiti")
+                if prof_dif_nem_duello["n_modelli"] == 1:
+                    hp_restanti_eroe = max(0.0, float(prof_dif_nem_duello["salute"]) - danno_mio_inflitto)
+                    k2.metric("Stato Bersaglio Singolo", f"{hp_restanti_eroe:.1f} PF rimasti", "Eliminato!" if hp_restanti_eroe == 0 else "Ancora attivo")
+                else:
+                    k2.metric("Modelli Nemici Uccisi", f"{modelli_nem_uccisi} / {prof_dif_nem_duello['n_modelli']} mod.", f"{modelli_nem_superstiti} superstiti")
                 k3.metric("Danno Subito al Contrattacco", f"{danno_subito_contrattacco:.1f} / {mia_sel['salute']} PF", f"-{miei_modelli_persi} tuoi modelli")
                 k4.metric(
                     "Convenienza Scambio (Punti)", 
@@ -1054,6 +1069,7 @@ def render_sala_di_guerra():
                     st.session_state["archivio_armate"][nuova_chiave] = payload_armata
                     salva_archivio_armate(st.session_state["archivio_armate"])
                     st.session_state["conferma_sovrascrittura_armata"] = False
+                    st.session_state["sdg_roster_version"] += 1
                     st.toast(f"Creata nuova lista '{nuova_chiave}'!", icon="✅")
                     st.rerun()
                     
