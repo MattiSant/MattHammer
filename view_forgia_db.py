@@ -628,25 +628,25 @@ def render_forgia_db():
     # ==========================================
     with tab_tratti_artefatti:
         st.markdown('<div class="subsection-title">Tratti Eroici ed Artefatti di Potere</div>', unsafe_allow_html=True)
-        st.caption("Configura tratti e artefatti associando molteplici modificatori attivi (Save, Hit, Wound, Atk, Rend, Dmg, Ward, ecc.).")
+        st.caption("Configura tratti e artefatti associando costo in punti e modificatori attivi (Save, Hit, Wound, Atk, Rend, Dmg, Ward, ecc.).")
 
         # Caricamento e migrazione automatica
         raw_traits = _carica_json_ausiliario(TRAITS_FILE, {})
         traits_db = raw_traits if isinstance(raw_traits, dict) and "Generali" not in raw_traits else {
-            k: {"fazione": "Generale", "descrizione": k, "modificatori": {}} 
+            k: {"fazione": "Generale", "punti": 0, "descrizione": k, "modificatori": {}} 
             for k in (raw_traits.get("Generali", ["Nessuno"]) if isinstance(raw_traits, dict) else ["Nessuno"])
         }
 
         raw_artefacts = _carica_json_ausiliario(ARTEFACTS_FILE, {})
         artefacts_db = raw_artefacts if isinstance(raw_artefacts, dict) and "Generali" not in raw_artefacts else {
-            k: {"fazione": "Generale", "descrizione": k, "modificatori": {}} 
+            k: {"fazione": "Generale", "punti": 0, "descrizione": k, "modificatori": {}} 
             for k in (raw_artefacts.get("Generali", ["Nessuno"]) if isinstance(raw_artefacts, dict) else ["Nessuno"])
         }
 
         if "Nessuno" not in traits_db:
-            traits_db["Nessuno"] = {"fazione": "Generale", "descrizione": "Nessun tratto assegnato.", "modificatori": {}}
+            traits_db["Nessuno"] = {"fazione": "Generale", "punti": 0, "descrizione": "Nessun tratto assegnato.", "modificatori": {}}
         if "Nessuno" not in artefacts_db:
-            artefacts_db["Nessuno"] = {"fazione": "Generale", "descrizione": "Nessun artefatto equipaggiato.", "modificatori": {}}
+            artefacts_db["Nessuno"] = {"fazione": "Generale", "punti": 0, "descrizione": "Nessun artefatto equipaggiato.", "modificatori": {}}
 
         opzioni_fazione_supporto = ["Generale", "Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Altro"]
 
@@ -674,14 +674,13 @@ def render_forgia_db():
         with col_t:
             st.markdown("#### 📜 Gestione Tratti Eroici")
             lista_nomi_t = ordina_supporti_per_fazione_e_nome(traits_db)
-            # Mostra nel menu a tendina: "[Nighthaunt] Ombra Inafferrabile" o "[Generale] Furia Implacabile"
             sel_t = st.selectbox(
                 "Seleziona Tratto:", 
                 ["--- Nuovo Tratto ---"] + lista_nomi_t, 
                 format_func=lambda x: f"[{traits_db[x].get('fazione', 'Generale')}] {x}" if x in traits_db and x != "Nessuno" else x,
                 key="sel_tratto_gest"
             )
-            dati_t = traits_db.get(sel_t, {"fazione": "Generale", "descrizione": "", "modificatori": {}})
+            dati_t = traits_db.get(sel_t, {"fazione": "Generale", "punti": 0, "descrizione": "", "modificatori": {}})
 
             nome_t = st.text_input("Nome Tratto:", value="" if sel_t == "--- Nuovo Tratto ---" else sel_t, key=f"in_nome_t_{sel_t}")
             
@@ -720,7 +719,7 @@ def render_forgia_db():
                         modificatori_salvati_t[chiave_k] = c_val
 
             bt1, bt2 = st.columns(2)
-            if bt1.button("💾 Salva Tratto", type="primary", use_container_width=True):
+            if bt1.button("💾 Salva Tratto", type="primary", use_container_width=True, key="btn_salva_tratto"):
                 if nome_t.strip() and nome_t != "--- Nuovo Tratto ---":
                     traits_db[nome_t.strip()] = {
                         "fazione": faz_t,
@@ -732,11 +731,12 @@ def render_forgia_db():
                     st.toast(f"Tratto '{nome_t}' salvato con successo!", icon="✅")
                     st.rerun()
 
-            if sel_t not in ["--- Nuovo Tratto ---", "Nessuno"] and bt2.button("🗑️ Elimina Tratto", use_container_width=True):
-                del traits_db[sel_t]
-                _salva_json_ausiliario(TRAITS_FILE, traits_db)
-                st.toast(f"Tratto '{sel_t}' eliminato!", icon="🗑️")
-                st.rerun()
+            if sel_t not in ["--- Nuovo Tratto ---", "Nessuno"]:
+                if bt2.button("🗑️ Elimina Tratto", use_container_width=True, key="btn_elim_tratto"):
+                    del traits_db[sel_t]
+                    _salva_json_ausiliario(TRAITS_FILE, traits_db)
+                    st.toast(f"Tratto '{sel_t}' eliminato!", icon="🗑️")
+                    st.rerun()
 
         # ------------------------------------------
         # SEZIONE ARTEFATTI DI POTERE
@@ -750,7 +750,7 @@ def render_forgia_db():
                 format_func=lambda x: f"[{artefacts_db[x].get('fazione', 'Generale')}] {x}" if x in artefacts_db and x != "Nessuno" else x,
                 key="sel_art_gest"
             )
-            dati_a = artefacts_db.get(sel_a, {"fazione": "Generale", "descrizione": "", "modificatori": {}})
+            dati_a = artefacts_db.get(sel_a, {"fazione": "Generale", "punti": 0, "descrizione": "", "modificatori": {}})
 
             nome_a = st.text_input("Nome Artefatto:", value="" if sel_a == "--- Nuovo Artefatto ---" else sel_a, key=f"in_nome_a_{sel_a}")
             
@@ -789,7 +789,7 @@ def render_forgia_db():
                         modificatori_salvati_a[chiave_k] = c_val
 
             ba1, ba2 = st.columns(2)
-            if ba1.button("💾 Salva Artefatto", type="primary", use_container_width=True):
+            if ba1.button("💾 Salva Artefatto", type="primary", use_container_width=True, key="btn_salva_artefatto"):
                 if nome_a.strip() and nome_a != "--- Nuovo Artefatto ---":
                     artefacts_db[nome_a.strip()] = {
                         "fazione": faz_a,
@@ -801,17 +801,12 @@ def render_forgia_db():
                     st.toast(f"Artefatto '{nome_a}' salvato con successo!", icon="✅")
                     st.rerun()
 
-            if sel_a not in ["--- Nuovo Artefatto ---", "Nessuno"] and ba2.button("🗑️ Elimina Artefatto", use_container_width=True):
-                del artefacts_db[sel_a]
-                _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
-                st.toast(f"Artefatto '{sel_a}' eliminato!", icon="🗑️")
-                st.rerun()
-
-            if sel_a not in ["--- Nuovo Artefatto ---", "Nessuno"] and ba2.button("🗑️ Elimina Artefatto", use_container_width=True):
-                del artefacts_db[sel_a]
-                _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
-                st.toast(f"Artefatto '{sel_a}' eliminato!")
-                st.rerun()
+            if sel_a not in ["--- Nuovo Artefatto ---", "Nessuno"]:
+                if ba2.button("🗑️ Elimina Artefatto", use_container_width=True, key="btn_elim_artefatto"):
+                    del artefacts_db[sel_a]
+                    _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
+                    st.toast(f"Artefatto '{sel_a}' eliminato!", icon="🗑️")
+                    st.rerun()
                 
     # ==========================================
     # TAB: GESTIONE ED ELIMINAZIONE UNITÀ DAL DB
