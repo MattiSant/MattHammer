@@ -624,7 +624,7 @@ def render_forgia_db():
             st.rerun()
 
     # ==========================================
-    # TAB: TRATTI EROICI & ARTEFATTI (CORRETTO)
+    # TAB: TRATTI EROICI & ARTEFATTI (BLINDATO CON CHIAVI UNICHE)
     # ==========================================
     with tab_tratti_artefatti:
         st.markdown('<div class="subsection-title">Tratti Eroici ed Artefatti di Potere</div>', unsafe_allow_html=True)
@@ -678,18 +678,18 @@ def render_forgia_db():
                 "Seleziona Tratto:", 
                 ["--- Nuovo Tratto ---"] + lista_nomi_t, 
                 format_func=lambda x: f"[{traits_db[x].get('fazione', 'Generale')}] {x}" if x in traits_db and x != "Nessuno" else x,
-                key="sel_tratto_gest"
+                key="tratto_selectbox_main"
             )
             dati_t = traits_db.get(sel_t, {"fazione": "Generale", "punti": 0, "descrizione": "", "modificatori": {}})
 
-            nome_t = st.text_input("Nome Tratto:", value="" if sel_t == "--- Nuovo Tratto ---" else sel_t, key=f"in_nome_t_{sel_t}")
+            nome_t = st.text_input("Nome Tratto:", value="" if sel_t == "--- Nuovo Tratto ---" else sel_t, key=f"tratto_nome_{sel_t}")
             
             c_ft1, c_ft2 = st.columns([1.5, 1])
             idx_faz_t = opzioni_fazione_supporto.index(dati_t.get("fazione", "Generale")) if dati_t.get("fazione", "Generale") in opzioni_fazione_supporto else 0
-            faz_t = c_ft1.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_t, key=f"in_faz_t_{sel_t}")
-            punti_t = c_ft2.number_input("Costo in Punti:", min_value=0, max_value=500, value=int(dati_t.get("punti", 0)), step=10, key=f"in_pt_t_{sel_t}")
+            faz_t = c_ft1.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_t, key=f"tratto_fazione_{sel_t}")
+            punti_t = c_ft2.number_input("Costo in Punti:", min_value=0, max_value=500, value=int(dati_t.get("punti", 0)), step=10, key=f"tratto_punti_{sel_t}")
             
-            desc_t = st.text_area("Descrizione Regola:", value=dati_t.get("descrizione", ""), height=70, key=f"in_desc_t_{sel_t}")
+            desc_t = st.text_area("Descrizione Regola:", value=dati_t.get("descrizione", ""), height=70, key=f"tratto_descrizione_{sel_t}")
 
             mod_esistenti_t = dati_t.get("modificatori", {})
             default_mod_labels_t = [KEY_TO_LABEL[k] for k in mod_esistenti_t.keys() if k in KEY_TO_LABEL]
@@ -698,7 +698,7 @@ def render_forgia_db():
                 "Modificatori Attivi:", 
                 list(LABEL_TO_KEY.keys()), 
                 default=default_mod_labels_t, 
-                key=f"ms_mod_t_{sel_t}"
+                key=f"tratto_multiselect_{sel_t}"
             )
 
             modificatori_salvati_t = {}
@@ -712,14 +712,14 @@ def render_forgia_db():
                         st.caption("• **Critico al 5+**: Attivo")
                         modificatori_salvati_t["crit_on"] = 5
                     elif chiave_k == "ward_nativo":
-                        w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(val_precedente) if val_precedente in [4, 5, 6] else 1, key=f"inp_t_wd_{sel_t}_{chiave_k}")
+                        w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(val_precedente) if val_precedente in [4, 5, 6] else 1, key=f"tratto_ward_{sel_t}_{chiave_k}")
                         modificatori_salvati_t["ward_nativo"] = w_val
                     else:
-                        c_val = st.number_input(f"Valore {mod_lbl}:", min_value=-5, max_value=15, value=int(val_precedente), key=f"inp_t_{sel_t}_{chiave_k}")
+                        c_val = st.number_input(f"Valore {mod_lbl}:", min_value=-5, max_value=15, value=int(val_precedente), key=f"tratto_valore_{sel_t}_{chiave_k}")
                         modificatori_salvati_t[chiave_k] = c_val
 
             bt1, bt2 = st.columns(2)
-            if bt1.button("💾 Salva Tratto", type="primary", use_container_width=True, key="btn_salva_tratto"):
+            if bt1.button("💾 Salva Tratto", type="primary", use_container_width=True, key=f"tratto_btn_salva_{sel_t}"):
                 if nome_t.strip() and nome_t != "--- Nuovo Tratto ---":
                     traits_db[nome_t.strip()] = {
                         "fazione": faz_t,
@@ -732,7 +732,7 @@ def render_forgia_db():
                     st.rerun()
 
             if sel_t not in ["--- Nuovo Tratto ---", "Nessuno"]:
-                if bt2.button("🗑️ Elimina Tratto", use_container_width=True, key="btn_elim_tratto"):
+                if bt2.button("🗑️ Elimina Tratto", use_container_width=True, key=f"tratto_btn_elimina_{sel_t}"):
                     del traits_db[sel_t]
                     _salva_json_ausiliario(TRAITS_FILE, traits_db)
                     st.toast(f"Tratto '{sel_t}' eliminato!", icon="🗑️")
@@ -748,18 +748,18 @@ def render_forgia_db():
                 "Seleziona Artefatto:", 
                 ["--- Nuovo Artefatto ---"] + lista_nomi_a, 
                 format_func=lambda x: f"[{artefacts_db[x].get('fazione', 'Generale')}] {x}" if x in artefacts_db and x != "Nessuno" else x,
-                key="sel_art_gest"
+                key="art_selectbox_main"
             )
             dati_a = artefacts_db.get(sel_a, {"fazione": "Generale", "punti": 0, "descrizione": "", "modificatori": {}})
 
-            nome_a = st.text_input("Nome Artefatto:", value="" if sel_a == "--- Nuovo Artefatto ---" else sel_a, key=f"in_nome_a_{sel_a}")
+            nome_a = st.text_input("Nome Artefatto:", value="" if sel_a == "--- Nuovo Artefatto ---" else sel_a, key=f"art_nome_{sel_a}")
             
             c_fa1, c_fa2 = st.columns([1.5, 1])
             idx_faz_a = opzioni_fazione_supporto.index(dati_a.get("fazione", "Generale")) if dati_a.get("fazione", "Generale") in opzioni_fazione_supporto else 0
-            faz_a = c_fa1.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_a, key=f"in_faz_a_{sel_a}")
-            punti_a = c_fa2.number_input("Costo in Punti:", min_value=0, max_value=500, value=int(dati_a.get("punti", 0)), step=10, key=f"in_pt_a_{sel_a}")
+            faz_a = c_fa1.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_a, key=f"art_fazione_{sel_a}")
+            punti_a = c_fa2.number_input("Costo in Punti:", min_value=0, max_value=500, value=int(dati_a.get("punti", 0)), step=10, key=f"art_punti_{sel_a}")
             
-            desc_a = st.text_area("Descrizione Regola:", value=dati_a.get("descrizione", ""), height=70, key=f"in_desc_a_{sel_a}")
+            desc_a = st.text_area("Descrizione Regola:", value=dati_a.get("descrizione", ""), height=70, key=f"art_descrizione_{sel_a}")
 
             mod_esistenti_a = dati_a.get("modificatori", {})
             default_mod_labels_a = [KEY_TO_LABEL[k] for k in mod_esistenti_a.keys() if k in KEY_TO_LABEL]
@@ -768,7 +768,7 @@ def render_forgia_db():
                 "Modificatori Attivi:", 
                 list(LABEL_TO_KEY.keys()), 
                 default=default_mod_labels_a, 
-                key=f"ms_mod_a_{sel_a}"
+                key=f"art_multiselect_{sel_a}"
             )
 
             modificatori_salvati_a = {}
@@ -782,14 +782,14 @@ def render_forgia_db():
                         st.caption("• **Critico al 5+**: Attivo")
                         modificatori_salvati_a["crit_on"] = 5
                     elif chiave_k == "ward_nativo":
-                        w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(val_precedente) if val_precedente in [4, 5, 6] else 1, key=f"inp_a_wd_{sel_a}_{chiave_k}")
+                        w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(val_precedente) if val_precedente in [4, 5, 6] else 1, key=f"art_ward_{sel_a}_{chiave_k}")
                         modificatori_salvati_a["ward_nativo"] = w_val
                     else:
-                        c_val = st.number_input(f"Valore {mod_lbl}:", min_value=-5, max_value=15, value=int(val_precedente), key=f"inp_a_{sel_a}_{chiave_k}")
+                        c_val = st.number_input(f"Valore {mod_lbl}:", min_value=-5, max_value=15, value=int(val_precedente), key=f"art_valore_{sel_a}_{chiave_k}")
                         modificatori_salvati_a[chiave_k] = c_val
 
             ba1, ba2 = st.columns(2)
-            if ba1.button("💾 Salva Artefatto", type="primary", use_container_width=True, key="btn_salva_artefatto"):
+            if ba1.button("💾 Salva Artefatto", type="primary", use_container_width=True, key=f"art_btn_salva_{sel_a}"):
                 if nome_a.strip() and nome_a != "--- Nuovo Artefatto ---":
                     artefacts_db[nome_a.strip()] = {
                         "fazione": faz_a,
@@ -802,12 +802,11 @@ def render_forgia_db():
                     st.rerun()
 
             if sel_a not in ["--- Nuovo Artefatto ---", "Nessuno"]:
-                if ba2.button("🗑️ Elimina Artefatto", use_container_width=True, key="btn_elim_artefatto"):
+                if ba2.button("🗑️ Elimina Artefatto", use_container_width=True, key=f"art_btn_elimina_{sel_a}"):
                     del artefacts_db[sel_a]
                     _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
                     st.toast(f"Artefatto '{sel_a}' eliminato!", icon="🗑️")
                     st.rerun()
-                
     # ==========================================
     # TAB: GESTIONE ED ELIMINAZIONE UNITÀ DAL DB
     # ==========================================
