@@ -32,13 +32,6 @@
             "bonus_unbind": 1
         }
     },
-    "Luce del Trapasso": {
-        "fazione": "Nighthaunt",
-        "descrizione": "Le armi da mischia del portatore ottengono Critico al 5+.",
-        "modificatori": {
-            "crit_on": 5
-        }
-    },
     "Brazier of Nagashizzar": {
         "fazione": "Nighthaunt",
         "punti": 0,
