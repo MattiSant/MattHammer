@@ -94,5 +94,23 @@
             }
         ],
         "ausiliari": []
+    },
+    "Nighthaunt: Armata Path to Glory": {
+        "nome": "Armata Path to Glory",
+        "fazione": "Nighthaunt",
+        "formazione": "Death Stalkers",
+        "limite_punti": 720,
+        "punti_totali": 0,
+        "reggimenti": [
+            {
+                "leader": "--- Scegli Eroe Leader ---",
+                "is_generale": true,
+                "rinforzato": false,
+                "tratto_eroico": "Furia Implacabile",
+                "artefatto": "Talismano di Guardia",
+                "seguito": []
+            }
+        ],
+        "ausiliari": []
     }
 }
