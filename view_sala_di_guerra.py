@@ -14,12 +14,16 @@ from utils import (
     estrai_intero_sicuro
 )
 
+# Usa percorsi assoluti per evitare scritture in cartelle errate al riavvio
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARMIES_DB_FILE = os.path.join(BASE_DIR, "armies_db.json")
 FORMATIONS_DB_FILE = os.path.join(BASE_DIR, "formations.json")
 TRAITS_DB_FILE = os.path.join(BASE_DIR, "heroic_traits_db.json")
 ARTEFACTS_DB_FILE = os.path.join(BASE_DIR, "artefacts_db.json")
 
+# ==========================================
+# GESTIONE ARCHIVI JSON E SUPPORTO
+# ==========================================
 def carica_archivio_armate():
     if os.path.exists(ARMIES_DB_FILE):
         try:
@@ -75,6 +79,9 @@ ARMATE_NEMICHE_NOTE = {
     ]
 }
 
+# ==========================================
+# FUNZIONI DI CALCOLO E SUPPORTO TATTICO
+# ==========================================
 def costruisci_bersaglio_da_db(nome_unita, dati_u_db, rinforzata=False, bonus_extra=None):
     bonus_extra = bonus_extra or {}
     dif = dati_u_db.get("difesa", {})
@@ -158,6 +165,7 @@ def calcola_output_unita_su_bersaglio(dati_unita_db, rinforzata, bersaglio_test,
         "attacchi_tot": attacchi_tot
     }
 
+
 # ==========================================
 # VISTA PRINCIPALE: SALA DI GUERRA
 # ==========================================
@@ -201,7 +209,6 @@ def render_sala_di_guerra():
             color: #f4ecd8;
             box-shadow: 0 6px 18px rgba(0,0,0,0.7), inset 0 0 25px rgba(212, 175, 55, 0.08);
         }
-        /* Box Abilità Passive / Normali: bronzo satinato */
         .ability-box {
             background: linear-gradient(90deg, rgba(50, 32, 18, 0.75) 0%, rgba(32, 20, 11, 0.6) 100%);
             border-left: 4px solid #d4af37;
@@ -212,7 +219,6 @@ def render_sala_di_guerra():
             border-radius: 3px 8px 8px 3px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.4);
         }
-        /* Box Reazioni: cremisi regale e rubino */
         .ability-box-reaction {
             background: linear-gradient(90deg, rgba(65, 20, 20, 0.8) 0%, rgba(40, 12, 12, 0.6) 100%);
             border-left: 4px solid #e74c3c;
@@ -252,13 +258,11 @@ def render_sala_di_guerra():
     if "sdg_nemici_matchup" not in st.session_state:
         st.session_state["sdg_nemici_matchup"] = []
     
-    if "db_tratti_eroici_dict" not in st.session_state:
-        st.session_state["db_tratti_eroici_dict"] = carica_db_supporto_dict(TRAITS_DB_FILE)
-        st.session_state["db_tratti_eroici"] = list(st.session_state["db_tratti_eroici_dict"].keys())
+    st.session_state["db_tratti_eroici_dict"] = carica_db_supporto_dict(TRAITS_DB_FILE)
+    st.session_state["db_tratti_eroici"] = list(st.session_state["db_tratti_eroici_dict"].keys())
 
-    if "db_artefatti_dict" not in st.session_state:
-        st.session_state["db_artefatti_dict"] = carica_db_supporto_dict(ARTEFACTS_DB_FILE)
-        st.session_state["db_artefatti"] = list(st.session_state["db_artefatti_dict"].keys())
+    st.session_state["db_artefatti_dict"] = carica_db_supporto_dict(ARTEFACTS_DB_FILE)
+    st.session_state["db_artefatti"] = list(st.session_state["db_artefatti_dict"].keys())
 
     db_tratti_eroici = st.session_state["db_tratti_eroici"]
     db_artefatti = st.session_state["db_artefatti"]
@@ -289,6 +293,7 @@ def render_sala_di_guerra():
                     st.session_state["sdg_reggimenti"] = dati_armata.get("reggimenti", [])
                     st.session_state["sdg_ausiliari"] = dati_armata.get("ausiliari", [])
                     st.session_state["sdg_roster_version"] += 1
+                    st.toast(f"Armata '{armata_da_caricare}' caricata!", icon="✅")
                     st.rerun()
 
     # ==========================================
@@ -309,14 +314,12 @@ def render_sala_di_guerra():
 
         formato_scelto = col_f3.selectbox(
             "Formato Battaglia",
-            ["Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
+            ["Path to Glory (720 pt)", "Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
             index=0
         )
 
         if "720" in formato_scelto:
             limite_punti = 720
-        elif "600" in formato_scelto:
-            limite_punti = 600
         elif "1000" in formato_scelto:
             limite_punti = 1000
         elif "1500" in formato_scelto:
@@ -333,7 +336,7 @@ def render_sala_di_guerra():
         fazioni_disponibili_db = st.session_state["archivio_formazioni"]
         formazioni_fazione = fazioni_disponibili_db.get(st.session_state["sdg_fazione_armata"], {
             "Formazione Standard": {
-                "fase_attivazione": "Nessuna", "monouso": False, "tipo_effetto": "Nessuno", "valore_modificatore": "0", "descrizione": "Nessuna abilità speciale attiva."
+                "fase_attivazione": "Nessuna", "monouso": False, "modificatori": {}, "descrizione": "Nessuna abilità speciale attiva."
             }
         })
 
@@ -344,7 +347,7 @@ def render_sala_di_guerra():
         st.session_state["sdg_formazione_scelta"] = formazione_selezionata
 
         dati_form = formazioni_fazione.get(formazione_selezionata, {
-            "fase_attivazione": "Hero Phase", "monouso": False, "tipo_effetto": "Nessuno", "valore_modificatore": "0", "descrizione": "Descrizione non disponibile."
+            "fase_attivazione": "Passiva", "monouso": False, "modificatori": {}, "descrizione": "Descrizione non disponibile."
         })
 
         mod_formazione_attiva = dati_form.get("modificatori", {})
@@ -380,7 +383,6 @@ def render_sala_di_guerra():
         st.rerun()
 
     if col_btn_reg2.button("Svuota Roster Completo"):
-        # 1. Pulisce tutte le chiavi dei widget di Streamlit legate ai reggimenti
         chiavi_da_eliminare = [
             k for k in st.session_state.keys()
             if k.startswith("reg_lead_") or k.startswith("reg_trait_") or k.startswith("reg_art_") or k.startswith("fol_")
@@ -388,7 +390,6 @@ def render_sala_di_guerra():
         for k in chiavi_da_eliminare:
             del st.session_state[k]
 
-        # 2. Resetta la struttura dati del Reggimento #1
         st.session_state["sdg_reggimenti"] = [{
             "leader": "--- Scegli Eroe Leader ---",
             "is_generale": True,
@@ -398,8 +399,6 @@ def render_sala_di_guerra():
             "seguito": []
         }]
         st.session_state["sdg_ausiliari"] = []
-        
-        # 3. Incrementa la versione per costringere Streamlit a ricreare i widget da zero
         st.session_state["sdg_roster_version"] += 1
         st.rerun()
 
@@ -432,7 +431,6 @@ def render_sala_di_guerra():
             lista_scelta_leader = ["--- Scegli Eroe Leader ---"] + eroi_db_filtrati
             idx_lead = lista_scelta_leader.index(reg["leader"]) if reg["leader"] in lista_scelta_leader else 0
             
-            # Selectbox Leader con chiave dinamica di versione
             reg["leader"] = lc1.selectbox(
                 "Leader (Solo Eroi)", 
                 lista_scelta_leader, 
@@ -457,8 +455,6 @@ def render_sala_di_guerra():
 
             tc1, tc2 = st.columns(2)
             idx_tratto = db_tratti_eroici.index(reg.get("tratto_eroico", "Nessuno")) if reg.get("tratto_eroico", "Nessuno") in db_tratti_eroici else 0
-            
-            # Selectbox Tratto Eroico con chiave dinamica di versione
             reg["tratto_eroico"] = tc1.selectbox(
                 "Tratto Eroico (Heroic Trait)", 
                 db_tratti_eroici, 
@@ -467,8 +463,6 @@ def render_sala_di_guerra():
             )
 
             idx_art = db_artefatti.index(reg.get("artefatto", "Nessuno")) if reg.get("artefatto", "Nessuno") in db_artefatti else 0
-            
-            # Selectbox Artefatto con chiave dinamica di versione
             reg["artefatto"] = tc2.selectbox(
                 "Artefatto di Potere", 
                 db_artefatti, 
@@ -559,7 +553,6 @@ def render_sala_di_guerra():
                 if fc3.button("✖", key=f"del_fol_{r_idx}_{f_idx}"):
                     seguito_da_rimuovere.append(f_idx)
 
-                # --- INTERFACCIA EQUIPAGGIAMENTO EROI NEL SEGUITO ---
                 kw_fol = [str(k).upper() for k in d_fol_db.get("keywords", [])]
                 if "HERO" in kw_fol:
                     st.markdown("<div style='margin-top:-5px; margin-bottom:10px; padding-left:15px;'><small style='color:#d4af37;'>✨ <i>Eroe (Può equipaggiare Tratti e Artefatti)</i></small></div>", unsafe_allow_html=True)
@@ -846,13 +839,16 @@ def render_sala_di_guerra():
                     st.session_state["sdg_nemici_matchup"] = []
                     st.rerun()
 
-        if len(unita_totali_schierate) > 0 and len(st.session_state["sdg_nemici_matchup"]) > 0:
-            # Costruzione profili completi dei nemici
+        # Filtra solo i nemici effettivamente presenti nel DB (rimuove eventuali vecchie unità non valide in sessione)
+        nemici_validi = [
+            n for n in st.session_state["sdg_nemici_matchup"]
+            if n.get("nome") in st.session_state["db_unita"]
+        ]
+
+        if len(unita_totali_schierate) > 0 and len(nemici_validi) > 0:
             nemici_elaborati = []
-            for n_idx, nem_item in enumerate(st.session_state["sdg_nemici_matchup"]):
-                d_nem = st.session_state["db_unita"].get(nem_item["nome"], {})
-                if not d_nem:
-                    continue
+            for n_idx, nem_item in enumerate(nemici_validi):
+                d_nem = st.session_state["db_unita"][nem_item["nome"]]
                 rinf_n = bool(nem_item.get("rinforzata", False))
                 prof_dif_n = costruisci_bersaglio_da_db(nem_item["nome"], d_nem, rinf_n)
                 perf_n_base = calcola_output_unita_su_bersaglio(d_nem, rinf_n, bersaglio_medio_riferimento)
@@ -887,12 +883,10 @@ def render_sala_di_guerra():
                 col_ris = []
                 for mia_u in unita_totali_schierate:
                     d_mia = st.session_state["db_unita"][mia_u["chiave_db"]]
-                    # Danno che la mia unità infligge al nemico (% vita tolta)
                     ris_att = calcola_output_unita_su_bersaglio(d_mia, mia_u["rinforzata"], nem["profilo_difensivo"], mia_u["bonus_unita"], ha_caricato=True)
                     perc_inflitta = min(100.0, (ris_att["danno_totale"] / float(nem["profilo_difensivo"]["salute"])) * 100.0)
                     col_att.append(round(perc_inflitta, 1))
 
-                    # Danno che il nemico infligge alla mia unità se la attacca a pieno organico (% mia vita persa)
                     ris_sub = calcola_output_unita_su_bersaglio(nem["dati_db"], nem["rinforzata"], mia_u["profilo_difensivo"], ha_caricato=True)
                     perc_subita = min(100.0, (ris_sub["danno_totale"] / float(mia_u["salute"])) * 100.0)
                     col_ris.append(round(perc_subita, 1))
@@ -941,7 +935,6 @@ def render_sala_di_guerra():
                 d_mia_db = st.session_state["db_unita"][mia_sel["chiave_db"]]
                 d_nem_db = nem_sel["dati_db"]
 
-                # Preparazione profili con opzioni attive
                 bonus_miei_duello = dict(mia_sel["bonus_unita"])
                 if mia_aoa:
                     bonus_miei_duello["mod_hit"] = bonus_miei_duello.get("mod_hit", 0) + 1
@@ -963,7 +956,6 @@ def render_sala_di_guerra():
                 if danno_mio_inflitto >= prof_dif_nem_duello["salute"]:
                     modelli_nem_superstiti = 0
 
-                # Contrattacco dei soli modelli superstiti nemici (solo armi da mischia in fase di combattimento)
                 out_contrattacco_nem = calcola_output_unita_su_bersaglio(
                     d_nem_db, nem_sel["rinforzata"], prof_dif_mio_duello,
                     ha_caricato=False, n_modelli_override=modelli_nem_superstiti
@@ -972,7 +964,6 @@ def render_sala_di_guerra():
                 hp_per_mod_mio = prof_dif_mio_duello["salute_per_modello"]
                 miei_modelli_persi = min(prof_dif_mio_duello["n_modelli"], int(danno_subito_contrattacco // hp_per_mod_mio))
 
-                # Calcolo Valore Punti Neutralizzati vs Punti Persi
                 perc_nem_rimossa = min(1.0, danno_mio_inflitto / float(prof_dif_nem_duello["salute"]))
                 perc_mia_persa = min(1.0, danno_subito_contrattacco / float(prof_dif_mio_duello["salute"]))
                 pt_nem_neutralizzati = prof_dif_nem_duello["punti"] * perc_nem_rimossa
@@ -991,7 +982,6 @@ def render_sala_di_guerra():
                 k3.metric("Danno Subito al Contrattacco", f"{danno_subito_contrattacco:.1f} / {mia_sel['salute']} PF", f"-{miei_modelli_persi} tuoi modelli")
                 k4.metric("Bilancio Scambio Punti", f"{bilancio_netto_pt:+.0f} pt", f"Guadagni {pt_nem_neutralizzati:.0f}pt | Perdi {pt_miei_persi:.0f}pt")
 
-                # Verdetto Intelligente d'Ingaggio
                 if modelli_nem_superstiti == 0:
                     st.success(f"🟢 **INGAGGIO PERFETTO (Wipeout al Primo Colpo):** Spazzi via completamente **{nem_sel['etichetta']}** prima che possa contrattaccare! Subisci **0 danni** di risposta e neutralizzi **{prof_dif_nem_duello['punti']} pt** nemici.")
                 elif bilancio_netto_pt >= 25 and perc_mia_persa < 0.65:
@@ -1026,7 +1016,7 @@ def render_sala_di_guerra():
                     "ausiliari": st.session_state["sdg_ausiliari"]
                 }
                 salva_archivio_armate(st.session_state["archivio_armate"])
-                st.toast(f"Armata '{chiave_armata}' salvata con successo!")
+                st.toast(f"Armata '{chiave_armata}' salvata con successo!", icon="✅")
                 st.rerun()
 
             linee_export = [

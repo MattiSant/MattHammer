@@ -328,7 +328,7 @@ def render_testa_a_testa():
     st.markdown("---")
     with st.expander("🛡️ Forze Alleate di Supporto (Attacco Combinato)", expanded=bool(st.session_state["lista_supporti_attivi"])):
         col_sel_sup, col_btn_sup = st.columns([3, 1])
-        opzioni_db_supporto = [k for k in st.session_state["db_unita"].keys() if k != "--- Seleziona o Resetta ---"]
+        opzioni_db_supporto = unita_ordinate
         unita_da_aggiungere = col_sel_sup.selectbox("Scegli supporto dal DB:", ["--- Scegli unità ---"] + opzioni_db_supporto, key="sel_nuovo_supporto")
         
         if col_btn_sup.button("➕ Schiera Supporto"):
@@ -404,7 +404,7 @@ def render_testa_a_testa():
                             "bonus_rend": sup_elem["bonus_rend"], 
                             "bonus_dmg": sup_elem["bonus_dmg"],
                             "crit_on": 5 if sup_elem["crit_5"] else 6,
-                            "mortal_extra_dadi": 0, "mortal_extra_tipo": 6, "mortal_extra_soglia": "Nessuna (Somma i valori)", "mortal_extra_fisso": 0
+                            "mortal_extra_dadi": 0, "mortal_extra_tipo": 6, "mortal_extra_soglia": "Nessuna (Somma)", "mortal_extra_fisso": 0
                         }
                     })
             if supporti_da_rimuovere:
@@ -466,6 +466,12 @@ def render_testa_a_testa():
             keywords_b = [str(k).upper() for k in d_bers_db.get("keywords", ["INFANTRY"])]
             
             cw2.markdown(f"**Salute Totale:** `{salute_b} PF`\n\n**Valore:** `{punti_b} pt`")
+            abilita_bers = d_bers_db.get("abilita", [])
+            if abilita_bers:
+                with st.expander(f"🛡️ Abilità della Warscroll Bersaglio ({len(abilita_bers)})", expanded=False):
+                    for ab_b in abilita_bers:
+                        fasi_b_txt = ", ".join(ab_b.get("fasi", ["Generica"]))
+                        st.markdown(f"<small style='color:#d8c29d;'><b>[{ab_b.get('tipo', 'Ability')} — {fasi_b_txt}]</b></small> <b>{ab_b.get('nome', '')}:</b> {ab_b.get('descrizione', '')}", unsafe_allow_html=True)
 
     with st.container(border=True):
         st.markdown("**Buff Difensivi e Terreno del Bersaglio (Modificabili)**")
