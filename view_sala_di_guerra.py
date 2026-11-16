@@ -314,20 +314,18 @@ def render_sala_di_guerra():
 
         formato_scelto = col_f3.selectbox(
             "Formato Battaglia",
-            ["Path to Glory (720 pt)", "Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
+            ["Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
             index=0
         )
 
-        if "720" in formato_scelto:
-            limite_punti = 720
-        elif "1000" in formato_scelto:
+        if "1000" in formato_scelto:
             limite_punti = 1000
         elif "1500" in formato_scelto:
             limite_punti = 1500
         elif "2000" in formato_scelto:
             limite_punti = 2000
         else:
-            limite_punti = col_f4.number_input("Punti Custom", min_value=100, max_value=5000, value=720, step=10)
+            limite_punti = col_f4.number_input("Punti Custom", min_value=100, max_value=5000, value=100, step=10)
 
         st.markdown("---")
         st.markdown('<div class="subsection-title">Formazione di Battaglia (Battle Formation)</div>', unsafe_allow_html=True)
@@ -745,9 +743,9 @@ def render_sala_di_guerra():
     m4.metric("Controllo Mappa (OC)", f"{oc_totale_armata} Punti OC", f"{len(unita_totali_schierate)} Unità")
 
     tab_diag, tab_matchup, tab_export = st.tabs([
-        "🩺 Check-Up Strategico & Rendimento Unità",
-        "⚔️ Confronto Armate & Comparatore d'Ingaggio",
-        "📜 Salvataggio & Pergamena Torneo"
+        "Check-Up Strategico & Rendimento Unità",
+        "Confronto Armate & Comparatore d'Ingaggio",
+        "Salvataggio & Pergamena Torneo"
     ])
 
     with tab_diag:
@@ -776,17 +774,17 @@ def render_sala_di_guerra():
                 st.markdown("#### Avvertimenti dello Stratega e Sinergie")
                 consigli_speciali = []
                 if any("Knight of Shrouds" in u["chiave_db"] for u in unita_totali_schierate) and any("Guardian of Souls" in u["chiave_db"] for u in unita_totali_schierate):
-                    consigli_speciali.append("✨ **Sinergia Warlord & Supporto:** Il *Knight of Shrouds* attiva immediatamente una fanteria amica con *Infantry Overseer* e si cura con *Stolen Hours*, mentre il *Guardian of Souls* dà +1 Wound.")
+                    consigli_speciali.append("**Sinergia Warlord & Supporto:** Il *Knight of Shrouds* attiva immediatamente una fanteria amica con *Infantry Overseer* e si cura con *Stolen Hours*, mentre il *Guardian of Souls* dà +1 Wound.")
                 if any("Spirit Hosts" in u["chiave_db"] for u in unita_totali_schierate):
-                    consigli_speciali.append("🛡️ **Ancoraggio Difensivo (Spirit Hosts):** *Drawn to War* fornisce **Ward (4+)** agli eroi di fanteria Nighthaunt entro 3\".")
+                    consigli_speciali.append("**Ancoraggio Difensivo (Spirit Hosts):** *Drawn to War* fornisce **Ward (4+)** agli eroi di fanteria Nighthaunt entro 3\".")
                 if any("Scriptor Mortis" in u["chiave_db"] for u in unita_totali_schierate):
-                    consigli_speciali.append("⚖️ **Anti-Tank (Scriptor Mortis):** Condanna il bersaglio corazzato nemico per conferire *Crit (Mortal)* alle unità Nighthaunt.")
+                    consigli_speciali.append("**Anti-Tank (Scriptor Mortis):** Condanna il bersaglio corazzato nemico per conferire *Crit (Mortal)* alle unità Nighthaunt.")
                 if max_rend_armata < 2:
-                    consigli_speciali.append("⚠️ **Penetrazione Armatura Limitata:** Il Rend massimo nativo è basso. Sfrutta formazioni o debuff al Save contro bersagli con Save 2+/3+.")
+                    consigli_speciali.append("**Penetrazione Armatura Limitata:** Il Rend massimo nativo è basso. Sfrutta formazioni o debuff al Save contro bersagli con Save 2+/3+.")
                 if livello_magico_tot == 0 and livello_preti_tot == 0:
-                    consigli_speciali.append("⚠️ **Assenza di Supporto Arcano:** Nessun Mago o Prete in lista (nessun Unbind/Banish disponibile).")
+                    consigli_speciali.append("**Assenza di Supporto Arcano:** Nessun Mago o Prete in lista (nessun Unbind/Banish disponibile).")
                 if not consigli_speciali:
-                    consigli_speciali.append("✅ **Bilanciamento Solido:** La lista copre bene i ruoli offensivi e di controllo mappa.")
+                    consigli_speciali.append("**Bilanciamento Solido:** La lista copre bene i ruoli offensivi e di controllo mappa.")
                 for cs in consigli_speciali:
                     st.markdown(f"- {cs}")
 
@@ -906,19 +904,19 @@ def render_sala_di_guerra():
 
             # --- COMPARATORE DETTAGLIATO D'INGAGGIO 1v1 (VALE LA PENA INGAGGIARE?) ---
             st.markdown("---")
-            st.markdown('<div class="subsection-title">4. Simulatore di Duello & Convenienza d\'Ingaggio (Tua Unità B vs Nemico A)</div>', unsafe_allow_html=True)
-            st.caption("Analisi completa di scambio: calcola i modelli nemici uccisi nel primo impatto, il contrattacco dei modelli superstiti e il guadagno/perdita in Punti.")
+            st.markdown('<div class="subsection-title">4. Simulatore di Duello & Convenienza d\'Ingaggio</div>', unsafe_allow_html=True)
+            st.caption("Analisi completa di scambio: calcola i modelli nemici uccisi nel primo impatto, il contrattacco dei modelli superstiti e il rapporto tra punti neutralizzati e punti persi.")
 
             with st.container(border=True):
                 duel_c1, duel_c2 = st.columns(2)
                 scelta_mia_idx = duel_c1.selectbox(
-                    "Scegli la Tua Unità (Unità B):",
+                    "Scegli la Tua Unità Attaccante:",
                     range(len(unita_totali_schierate)),
                     format_func=lambda i: f"{unita_totali_schierate[i]['etichetta']} ({unita_totali_schierate[i]['punti']} pt | {unita_totali_schierate[i]['salute']} PF)",
                     key="duel_sel_mia"
                 )
                 scelta_nem_idx = duel_c2.selectbox(
-                    "Scegli il Bersaglio Nemico (Unità A):",
+                    "Scegli l'Unità Bersaglio Nemica:",
                     range(len(nemici_elaborati)),
                     format_func=lambda i: f"{nemici_elaborati[i]['etichetta']} ({nemici_elaborati[i]['profilo_difensivo']['punti']} pt | {nemici_elaborati[i]['profilo_difensivo']['salute']} PF)",
                     key="duel_sel_nem"
@@ -980,7 +978,12 @@ def render_sala_di_guerra():
                 k1.metric("Tuo Danno Inflitto", f"{danno_mio_inflitto:.1f} / {prof_dif_nem_duello['salute']} PF", f"{perc_nem_rimossa*100:.0f}% vita nemica")
                 k2.metric("Modelli Nemici Uccisi", f"{modelli_nem_uccisi} / {prof_dif_nem_duello['n_modelli']} mod.", f"{modelli_nem_superstiti} superstiti")
                 k3.metric("Danno Subito al Contrattacco", f"{danno_subito_contrattacco:.1f} / {mia_sel['salute']} PF", f"-{miei_modelli_persi} tuoi modelli")
-                k4.metric("Bilancio Scambio Punti", f"{bilancio_netto_pt:+.0f} pt", f"Guadagni {pt_nem_neutralizzati:.0f}pt | Perdi {pt_miei_persi:.0f}pt")
+                k4.metric(
+                    "Convenienza Scambio (Punti)", 
+                    f"{bilancio_netto_pt:+.0f} pt netti", 
+                    f"Neutralizzi {pt_nem_neutralizzati:.0f}pt | Perdi {pt_miei_persi:.0f}pt",
+                    help="Differenza tra il valore in punti di vita che togli al nemico e il valore in punti di vita che perdi tu nel suo contrattacco. Se è positivo (+), lo scambio è a tuo favore."
+                )
 
                 if modelli_nem_superstiti == 0:
                     st.success(f"🟢 **INGAGGIO PERFETTO (Wipeout al Primo Colpo):** Spazzi via completamente **{nem_sel['etichetta']}** prima che possa contrattaccare! Subisci **0 danni** di risposta e neutralizzi **{prof_dif_nem_duello['punti']} pt** nemici.")
@@ -1004,20 +1007,59 @@ def render_sala_di_guerra():
         st.caption("Salva l'armata nell'archivio JSON o copia il testo formattato per i tornei Path to Glory.")
 
         with st.container(border=True):
+            if "conferma_sovrascrittura_armata" not in st.session_state:
+                st.session_state["conferma_sovrascrittura_armata"] = False
+
+            nome_lista_pulito = st.session_state['sdg_nome_armata'].strip()
+            chiave_armata = f"{st.session_state['sdg_fazione_armata']}: {nome_lista_pulito}"
+            payload_armata = {
+                "nome": nome_lista_pulito,
+                "fazione": st.session_state["sdg_fazione_armata"],
+                "formazione": st.session_state["sdg_formazione_scelta"],
+                "limite_punti": limite_punti,
+                "punti_totali": punti_totali,
+                "reggimenti": st.session_state["sdg_reggimenti"],
+                "ausiliari": st.session_state["sdg_ausiliari"]
+            }
+
             if st.button("💾 Salva Armata nell'Archivio", type="primary"):
-                chiave_armata = f"{st.session_state['sdg_fazione_armata']}: {st.session_state['sdg_nome_armata']}"
-                st.session_state["archivio_armate"][chiave_armata] = {
-                    "nome": st.session_state["sdg_nome_armata"],
-                    "fazione": st.session_state["sdg_fazione_armata"],
-                    "formazione": st.session_state["sdg_formazione_scelta"],
-                    "limite_punti": limite_punti,
-                    "punti_totali": punti_totali,
-                    "reggimenti": st.session_state["sdg_reggimenti"],
-                    "ausiliari": st.session_state["sdg_ausiliari"]
-                }
-                salva_archivio_armate(st.session_state["archivio_armate"])
-                st.toast(f"Armata '{chiave_armata}' salvata con successo!", icon="✅")
-                st.rerun()
+                if chiave_armata in st.session_state["archivio_armate"]:
+                    st.session_state["conferma_sovrascrittura_armata"] = True
+                else:
+                    st.session_state["archivio_armate"][chiave_armata] = payload_armata
+                    salva_archivio_armate(st.session_state["archivio_armate"])
+                    st.session_state["conferma_sovrascrittura_armata"] = False
+                    st.toast(f"Armata '{chiave_armata}' salvata con successo!", icon="✅")
+                    st.rerun()
+
+            if st.session_state.get("conferma_sovrascrittura_armata", False):
+                st.warning(f"⚠️ Esiste già un'armata salvata con il nome **'{chiave_armata}'**. Vuoi sovrascriverla o salvarla come una nuova lista?")
+                col_ov1, col_ov2, col_ov3 = st.columns(3)
+                
+                if col_ov1.button("🔄 Sovrascrivi Esistente", type="primary", use_container_width=True):
+                    st.session_state["archivio_armate"][chiave_armata] = payload_armata
+                    salva_archivio_armate(st.session_state["archivio_armate"])
+                    st.session_state["conferma_sovrascrittura_armata"] = False
+                    st.toast(f"Armata '{chiave_armata}' sovrascritta con successo!", icon="✅")
+                    st.rerun()
+                    
+                if col_ov2.button("✨ Crea Copia con Nuovo Nome", use_container_width=True):
+                    contatore = 2
+                    while f"{chiave_armata} ({contatore})" in st.session_state["archivio_armate"]:
+                        contatore += 1
+                    nuovo_nome = f"{nome_lista_pulito} ({contatore})"
+                    nuova_chiave = f"{st.session_state['sdg_fazione_armata']}: {nuovo_nome}"
+                    payload_armata["nome"] = nuovo_nome
+                    st.session_state["sdg_nome_armata"] = nuovo_nome
+                    st.session_state["archivio_armate"][nuova_chiave] = payload_armata
+                    salva_archivio_armate(st.session_state["archivio_armate"])
+                    st.session_state["conferma_sovrascrittura_armata"] = False
+                    st.toast(f"Creata nuova lista '{nuova_chiave}'!", icon="✅")
+                    st.rerun()
+                    
+                if col_ov3.button("✖ Annulla", use_container_width=True):
+                    st.session_state["conferma_sovrascrittura_armata"] = False
+                    st.rerun()
 
             linee_export = [
                 f"=== {st.session_state['sdg_nome_armata'].upper()} ===",
