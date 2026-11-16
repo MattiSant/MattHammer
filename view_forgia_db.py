@@ -517,7 +517,7 @@ def render_forgia_db():
                 successo, messaggio = salva_nel_database(st.session_state["db_unita"])
 
                 if successo:
-                    st.toast(f"Warscroll '{chiave_db}' registrata con successo nel Grimorio!")
+                    st.toast(f"Warscroll '{chiave_db}' registrata con successo nel Grimorio!", icon="✅")
                 else:
                     st.error(f"Errore di scrittura sul file: {messaggio}")
 
@@ -613,14 +613,14 @@ def render_forgia_db():
                 }
                 _salva_json_ausiliario(FORMATIONS_FILE, formazioni_db)
                 st.session_state["archivio_formazioni"] = formazioni_db
-                st.toast(f"Formazione '{nome_form}' registrata con successo!")
+                st.toast(f"Formazione '{nome_form}' registrata con successo!", icon="✅")
                 st.rerun()
 
         if scelta_form != "--- Nuova Formazione ---" and col_s_f2.button("🗑️ Elimina Formazione", use_container_width=True):
             del formazioni_db[fazione_f][scelta_form]
             _salva_json_ausiliario(FORMATIONS_FILE, formazioni_db)
             st.session_state["archivio_formazioni"] = formazioni_db
-            st.toast(f"Formazione '{scelta_form}' rimossa!")
+            st.toast(f"Formazione '{scelta_form}' rimossa!", icon="🗑️")
             st.rerun()
 
     # ==========================================
@@ -724,13 +724,13 @@ def render_forgia_db():
                         "modificatori": modificatori_salvati_t
                     }
                     _salva_json_ausiliario(TRAITS_FILE, traits_db)
-                    st.toast(f"Tratto '{nome_t}' salvato!")
+                    st.toast(f"Tratto '{nome_t}' salvato con successo!", icon="✅")
                     st.rerun()
 
             if sel_t not in ["--- Nuovo Tratto ---", "Nessuno"] and bt2.button("🗑️ Elimina Tratto", use_container_width=True):
                 del traits_db[sel_t]
                 _salva_json_ausiliario(TRAITS_FILE, traits_db)
-                st.toast(f"Tratto '{sel_t}' eliminato!")
+                st.toast(f"Tratto '{sel_t}' eliminato!", icon="🗑️")
                 st.rerun()
 
         # ------------------------------------------
@@ -788,8 +788,14 @@ def render_forgia_db():
                         "modificatori": modificatori_salvati_a
                     }
                     _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
-                    st.toast(f"Artefatto '{nome_a}' salvato!")
+                    st.toast(f"Artefatto '{nome_a}' salvato con successo!", icon="✅")
                     st.rerun()
+
+            if sel_a not in ["--- Nuovo Artefatto ---", "Nessuno"] and ba2.button("🗑️ Elimina Artefatto", use_container_width=True):
+                del artefacts_db[sel_a]
+                _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
+                st.toast(f"Artefatto '{sel_a}' eliminato!", icon="🗑️")
+                st.rerun()
 
             if sel_a not in ["--- Nuovo Artefatto ---", "Nessuno"] and ba2.button("🗑️ Elimina Artefatto", use_container_width=True):
                 del artefacts_db[sel_a]
