@@ -732,7 +732,8 @@ def render_forgia_db():
         st.markdown('<div class="subsection-title">Eliminazione Protetta dal Database</div>', unsafe_allow_html=True)
         st.caption("Rimuovi in sicurezza profili obsoleti o non più necessari.")
         
-tutte_le_unita = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])        if tutte_le_unita:
+        tutte_le_unita = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])        
+        if tutte_le_unita:
             unita_target = st.selectbox("Seleziona Unità da eliminare:", tutte_le_unita, key="del_u_tab")
             st.warning(f"Attenzione: l'eliminazione di **{unita_target}** sarà permanente nel file JSON del database.")
             
