@@ -252,6 +252,25 @@ def render_sala_di_guerra():
     opzioni_db = [k for k in st.session_state["db_unita"].keys() if k != "--- Seleziona o Resetta ---"]
 
     # ==========================================
+    # CARICAMENTO ARMATA ESISTENTE
+    # ==========================================
+    armate_salvate = list(st.session_state["archivio_armate"].keys())
+    if armate_salvate:
+        with st.expander("📂 Carica un'Armata dal tuo Archivio", expanded=False):
+            c_load1, c_load2 = st.columns([3, 1])
+            armata_da_caricare = c_load1.selectbox("Seleziona Armata:", ["--- Scegli Armata ---"] + armate_salvate)
+            if c_load2.button("📥 Carica Armata", type="primary", use_container_width=True):
+                if armata_da_caricare != "--- Scegli Armata ---":
+                    dati_armata = st.session_state["archivio_armate"][armata_da_caricare]
+                    st.session_state["sdg_nome_armata"] = dati_armata.get("nome", "Armata Caricata")
+                    st.session_state["sdg_fazione_armata"] = dati_armata.get("fazione", "Nighthaunt")
+                    st.session_state["sdg_formazione_scelta"] = dati_armata.get("formazione", "Formazione Standard")
+                    st.session_state["sdg_reggimenti"] = dati_armata.get("reggimenti", [])
+                    st.session_state["sdg_ausiliari"] = dati_armata.get("ausiliari", [])
+                    st.session_state["sdg_roster_version"] += 1
+                    st.rerun()
+
+    # ==========================================
     # SEZIONE 1: GENERALITÀ DELL'ARMATA E FORMAZIONE
     # ==========================================
     st.markdown('<div class="section-header">Configurazione Schieramento e Formazione</div>', unsafe_allow_html=True)
@@ -493,7 +512,9 @@ def render_sala_di_guerra():
                     if len(reg["seguito"]) < max_seguito:
                         reg["seguito"].append({
                             "nome": unita_seg_sel,
-                            "rinforzata": False
+                            "rinforzata": False,
+                            "tratto_eroico": "Nessuno",
+                            "artefatto": "Nessuno"
                         })
                         st.rerun()
                     else:
@@ -517,7 +538,17 @@ def render_sala_di_guerra():
                 if fc3.button("✖", key=f"del_fol_{r_idx}_{f_idx}"):
                     seguito_da_rimuovere.append(f_idx)
 
-                stat_cf = d_fol_db.get("statistiche_cerchio", {})
+                # --- CONTROLLO KEYWORD HERO PER ASSEGNARE TRATTO/ARTEFATTO ---
+                is_hero_fol = any("HERO" in str(k).upper() for k in d_fol_db.get("keywords", []))
+                if is_hero_fol:
+                    tf_col1, tf_col2 = st.columns(2)
+                    idx_t_f = db_tratti_eroici.index(fol.get("tratto_eroico", "Nessuno")) if fol.get("tratto_eroico", "Nessuno") in db_tratti_eroici else 0
+                    fol["tratto_eroico"] = tf_col1.selectbox("Tratto Eroico", db_tratti_eroici, index=idx_t_f, key=f"fol_trait_{r_idx}_{f_idx}_v{st.session_state['sdg_roster_version']}")
+                    
+                    idx_a_f = db_artefatti.index(fol.get("artefatto", "Nessuno")) if fol.get("artefatto", "Nessuno") in db_artefatti else 0
+                    fol["artefatto"] = tf_col2.selectbox("Artefatto", db_artefatti, index=idx_a_f, key=f"fol_art_{r_idx}_{f_idx}_v{st.session_state['sdg_roster_version']}")
+
+                stat_cf = d_fol_db.get("statistiche_cerchio", {})             
                 dif_f = d_fol_db.get("difesa", {})
                 m_f = stat_cf.get("movimento", "6\"")
                 oc_f = stat_cf.get("controllo", 1)
@@ -612,7 +643,12 @@ def render_sala_di_guerra():
                 d_f = st.session_state["db_unita"][fol["nome"]]
                 rinf = bool(fol.get("rinforzata", False))
                 molt = 2 if rinf else 1
-                pt_f = estrai_intero_sicuro(d_f.get("punti", 0)) * molt
+                pt_f_base = estrai_intero_sicuro(d_f.get("punti", 0)) * molt
+                
+                pt_t_f = st.session_state["db_tratti_eroici_dict"].get(fol.get("tratto_eroico", "Nessuno"), {}).get("punti", 0)
+                pt_a_f = st.session_state["db_artefatti_dict"].get(fol.get("artefatto", "Nessuno"), {}).get("punti", 0)
+                pt_f = pt_f_base + pt_t_f + pt_a_f
+                
                 n_mod_f = max(1, estrai_intero_sicuro(d_f.get("n_modelli", 1), default=1)) * molt
                 dif_f = d_f.get("difesa", {})
                 sal_mod_f = max(1, estrai_intero_sicuro(d_f.get("statistiche_cerchio", {}).get("salute", dif_f.get("salute_per_modello", 1)), default=1))
@@ -854,7 +890,19 @@ def render_sala_di_guerra():
                     d_f = st.session_state["db_unita"].get(fol["nome"], {})
                     molt = 2 if fol.get("rinforzata", False) else 1
                     rinf_str = " [Rinforzata]" if fol.get("rinforzata", False) else ""
-                    linee_export.append(f"  • Seguito: {fol['nome']}{rinf_str} ({estrai_intero_sicuro(d_f.get('punti', 0))*molt} pt)")
+                    
+                    nome_t_f = fol.get("tratto_eroico", "Nessuno")
+                    nome_a_f = fol.get("artefatto", "Nessuno")
+                    pt_t_f = st.session_state["db_tratti_eroici_dict"].get(nome_t_f, {}).get("punti", 0)
+                    pt_a_f = st.session_state["db_artefatti_dict"].get(nome_a_f, {}).get("punti", 0)
+                    pt_f_base = estrai_intero_sicuro(d_f.get('punti', 0)) * molt
+                    pt_f_tot = pt_f_base + pt_t_f + pt_a_f
+                    
+                    linee_export.append(f"  • Seguito: {fol['nome']}{rinf_str} ({pt_f_tot} pt)")
+                    if nome_t_f != "Nessuno":
+                        linee_export.append(f"    - Tratto: {nome_t_f} ({pt_t_f} pt)")
+                    if nome_a_f != "Nessuno":
+                        linee_export.append(f"    - Artefatto: {nome_a_f} ({pt_a_f} pt)")
 
             testo_completo_export = "\n".join(linee_export)
             st.text_area("Pergamena dell'Esercito:", value=testo_completo_export, height=300)
