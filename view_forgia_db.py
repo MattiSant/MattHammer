@@ -1,5 +1,4 @@
 import streamlit as st
-import re
 import json
 import os
 from core_engine import (
@@ -7,6 +6,14 @@ from core_engine import (
     ordina_supporti_per_fazione_e_nome, 
     salva_nel_database,
     _push_su_github_file
+)
+from utils import (
+    estrai_intero_sicuro as estrai_intero_da_stringa,
+    analizza_testo_copiato_robusto,
+    OPZIONI_CRITICO,
+    OPZIONI_ANTI,
+    OPZIONI_DADI,
+    OPZIONI_HW
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -28,81 +35,6 @@ def _salva_json_ausiliario(filepath, dati):
     if not successo:
         st.error(messaggio)
     return successo
-
-def estrai_intero_da_stringa(testo, default=0):
-    match = re.search(r"\d+", str(testo))
-    return int(match.group(0)) if match else default
-
-def analizza_testo_copiato_robusto(testo):
-    armi_estratte = []
-    pattern_stat = r'(?:(\d+\")\s+)?((?:\d+|[1-9]?D\d+(?:\+\d+)?|D\d+))\s+(\d)\+\s+(\d)\+\s+(\d|---|0|-)\s+((?:\d+|[1-9]?D\d+(?:\+\d+)?|D\d+))$'
-    
-    # Set di parole chiave che compongono le intestazioni delle tabelle
-    header_words = {"ranged", "melee", "missile", "weapons", "weapon", "rng", "atk", "hit", "wnd", "rnd", "dmg", "damage", "attacks"}
-
-    linee = testo.split('\n')
-    nome_temporaneo = ""
-
-    for linea in linee:
-        linea_pulita = linea.strip().replace('\t', ' ')
-        linea_pulita = re.sub(r'\s+', ' ', linea_pulita)
-
-        if not linea_pulita:
-            continue
-
-        words_in_line = set(re.findall(r'[a-zA-Z]+', linea_pulita.lower()))
-        if words_in_line and words_in_line.issubset(header_words):
-            continue
-
-        match = re.search(pattern_stat, linea_pulita)
-        if match:
-            testo_prima = linea_pulita[:match.start()].strip()
-            
-            gittata = match.group(1)
-            atk = match.group(2)
-            hit = int(match.group(3))
-            wnd = int(match.group(4))
-            rend = 0 if match.group(5) in ["---", "-"] else int(match.group(5))
-            dmg = match.group(6)
-
-            testo_combinato = f"{nome_temporaneo} {testo_prima}".strip()
-
-            crit = "Nessuno"
-            if "Crit (Mortal)" in testo_combinato: crit = "Crit (Mortal)"
-            elif "Crit (Auto-wound)" in testo_combinato: crit = "Crit (Auto-wound)"
-            elif "Crit (2 Hits)" in testo_combinato: crit = "Crit (2 Hits)"
-
-            anti = "Nessuno"
-            if "Anti-HERO" in testo_combinato: anti = "HERO"
-            elif "Anti-INFANTRY" in testo_combinato: anti = "INFANTRY"
-            elif "Anti-MONSTER" in testo_combinato: anti = "MONSTER"
-            elif "Anti-CAVALRY" in testo_combinato: anti = "CAVALRY"
-
-            nome_pulito = nome_temporaneo if nome_temporaneo else testo_prima
-            
-            tags_da_rimuovere = ["Crit (Auto-wound)", "Crit (Mortal)", "Crit (2 Hits)", "Shoot in Combat", "Anti-HERO", "Anti-INFANTRY", "Anti-MONSTER", "Anti-CAVALRY"]
-            for tag in tags_da_rimuovere:
-                nome_pulito = re.sub(r',?\s*' + re.escape(tag), '', nome_pulito, flags=re.IGNORECASE)
-            
-            nome_pulito = nome_pulito.strip(" ,-")
-            if not nome_pulito:
-                nome_pulito = "Arma"
-
-            ranged = True if gittata else False
-            gittata_str = gittata if gittata else "Melee"
-
-            armi_estratte.append({
-                "nome": nome_pulito, "attiva": True, "ranged": ranged, "range": gittata_str,
-                "atk": str(atk), "hit": hit, "wnd": wnd, "rend": rend, "dmg": str(dmg),
-                "crit_type": crit, "anti_target": anti, "charge_dmg": False, "anti_charge": False, "companion": False
-            })
-
-            nome_temporaneo = ""
-        else:
-            nome_temporaneo = (nome_temporaneo + " " + linea_pulita).strip()
-
-    return armi_estratte
-
 def render_forgia_db():
     st.markdown("""
     <style>
@@ -321,40 +253,26 @@ def render_forgia_db():
                     rend = s4.number_input("Rend", 0, 5, value=int(arma.get("rend", 0)) if str(arma.get("rend", 0)) != "---" else 0, key=f"a_rnd_{idx}_{v_key}")
                     dmg = s5.selectbox("Damage", opzioni_dadi, index=opzioni_dadi.index(str(arma.get("dmg", "1"))) if str(arma.get("dmg", "1")) in opzioni_dadi else 1, key=f"a_dmg_{idx}_{v_key}")
 
-                    ab1, ab2, ab3, ab4, ab5 = st.columns(5)
+                    ab1, ab2, ab3, ab4, ab5, ab6 = st.columns([1.4, 1.4, 1, 1, 1, 1])
 
-                    opzioni_critico = ["Nessuno", "Crit (Mortal)", "Crit (Auto-wound)", "Crit (2 Hits)"]
                     tipo_critico_attuale = arma.get("crit_type", "Nessuno")
-                    idx_crit = opzioni_critico.index(tipo_critico_attuale) if tipo_critico_attuale in opzioni_critico else 0
+                    idx_crit = OPZIONI_CRITICO.index(tipo_critico_attuale) if tipo_critico_attuale in OPZIONI_CRITICO else 0
+                    crit = ab1.selectbox("Critico", OPZIONI_CRITICO, index=idx_crit, key=f"a_crt_{idx}_{v_key}")                   
 
-                    crit = ab1.selectbox(
-                        "Critico", 
-                        opzioni_critico, 
-                        index=idx_crit, 
-                        key=f"a_crt_{idx}_{v_key}"
-                    )                   
+                    tipo_anti_attuale = "CHARGE" if arma.get("anti_charge", False) and arma.get("anti_target", "Nessuno") == "Nessuno" else arma.get("anti_target", "Nessuno")
+                    idx_anti = OPZIONI_ANTI.index(tipo_anti_attuale) if tipo_anti_attuale in OPZIONI_ANTI else 0
+                    anti = ab2.selectbox("Anti-X (+1 Rend)", OPZIONI_ANTI, index=idx_anti, key=f"a_ant_{idx}_{v_key}")
 
-                    opzioni_anti = ["Nessuno", "HERO", "INFANTRY", "CAVALRY", "MONSTER", "WAR MACHINE", "CHARGE"]
-                    tipo_anti_attuale = arma.get("anti_target", "Nessuno")
-                    idx_anti = opzioni_anti.index(tipo_anti_attuale) if tipo_anti_attuale in opzioni_anti else 0
-
-                    anti = ab2.selectbox(
-                        "Anti-Keyword (+1 Rend)", 
-                        opzioni_anti, 
-                        index=idx_anti, 
-                        key=f"a_ant_{idx}_{v_key}"
-                    )
-
-                    ranged = ab3.checkbox("Arma da Tiro", value=arma.get("ranged", False), key=f"a_rng_{idx}_{v_key}")
+                    chg_dmg = ab3.checkbox("Charge (+1 Dmg)", value=arma.get("charge_dmg", False), key=f"a_chgd_{idx}_{v_key}")
+                    ranged = ab4.checkbox("Arma da Tiro", value=arma.get("ranged", False), key=f"a_rng_{idx}_{v_key}")
                     
                     valore_gittata = arma.get("range", "12\"" if arma.get("ranged", False) else "Melee")
-                    gittata = ab4.text_input("Gittata (Range)", value=valore_gittata, key=f"a_ran_{idx}_{v_key}")
-                    
-                    comp = ab5.checkbox("Companion", value=arma.get("companion", False), key=f"a_cmp_{idx}_{v_key}")
+                    gittata = ab5.text_input("Gittata", value=valore_gittata, key=f"a_ran_{idx}_{v_key}")
+                    comp = ab6.checkbox("Companion", value=arma.get("companion", False), key=f"a_cmp_{idx}_{v_key}")
 
                     armi_aggiornate.append({
                         "nome": nome_a, "attiva": True, "ranged": ranged, "range": gittata, "atk": atk, "hit": hit, "wnd": wnd, "rend": rend, "dmg": dmg,
-                        "crit_type": crit, "anti_target": anti, "charge_dmg": arma.get("charge_dmg", False), "anti_charge": arma.get("anti_charge", False), "companion": comp
+                        "crit_type": crit, "anti_target": anti, "charge_dmg": chg_dmg, "anti_charge": (anti == "CHARGE"), "companion": comp
                     })
             st.session_state["forgia_armi"] = armi_aggiornate
 
@@ -814,8 +732,7 @@ def render_forgia_db():
         st.markdown('<div class="subsection-title">Eliminazione Protetta dal Database</div>', unsafe_allow_html=True)
         st.caption("Rimuovi in sicurezza profili obsoleti o non più necessari.")
         
-        tutte_le_unita = [u for u in st.session_state["db_unita"].keys() if u != "--- Seleziona o Resetta ---"]
-        if tutte_le_unita:
+tutte_le_unita = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])        if tutte_le_unita:
             unita_target = st.selectbox("Seleziona Unità da eliminare:", tutte_le_unita, key="del_u_tab")
             st.warning(f"Attenzione: l'eliminazione di **{unita_target}** sarà permanente nel file JSON del database.")
             

@@ -7,88 +7,14 @@ from core_engine import (
     simula_monte_carlo,
     ordina_unita_per_fazione_e_nome
 )
-
-# Funzione helper per estrarre in sicurezza numeri interi da stringhe/dizionari
-def estrai_intero_sicuro(valore, default=0):
-    if isinstance(valore, (int, float)):
-        return int(valore)
-    if isinstance(valore, str):
-        match = re.search(r"\d+", valore)
-        if match:
-            return int(match.group(0))
-    return default
-
-# PARSER AVANZATO PER ARMI AoS 4e
-def analizza_testo_copiato_robusto(testo):
-    armi_estratte = []
-    pattern_stat = r'(?:(\d+\")\s+)?((?:\d+|[1-9]?D\d+(?:\+\d+)?|D\d+))\s+(\d)\+\s+(\d)\+\s+(\d|---|0|-)\s+((?:\d+|[1-9]?D\d+(?:\+\d+)?|D\d+))$'
-    
-    # Set di parole chiave che compongono le intestazioni delle tabelle (vengono ignorate)
-    header_words = {"ranged", "melee", "missile", "weapons", "weapon", "rng", "atk", "hit", "wnd", "rnd", "dmg", "damage", "attacks"}
-
-    linee = testo.split('\n')
-    nome_temporaneo = ""
-
-    for linea in linee:
-        linea_pulita = linea.strip().replace('\t', ' ')
-        linea_pulita = re.sub(r'\s+', ' ', linea_pulita)
-
-        if not linea_pulita:
-            continue
-
-        # Filtro anti-intestazione
-        words_in_line = set(re.findall(r'[a-zA-Z]+', linea_pulita.lower()))
-        if words_in_line and words_in_line.issubset(header_words):
-            continue
-
-        match = re.search(pattern_stat, linea_pulita)
-        if match:
-            testo_prima = linea_pulita[:match.start()].strip()
-            
-            gittata = match.group(1)
-            atk = match.group(2)
-            hit = int(match.group(3))
-            wnd = int(match.group(4))
-            rend = 0 if match.group(5) in ["---", "-"] else int(match.group(5))
-            dmg = match.group(6)
-
-            testo_combinato = f"{nome_temporaneo} {testo_prima}".strip()
-
-            crit = "Nessuno"
-            if "Crit (Mortal)" in testo_combinato: crit = "Crit (Mortal)"
-            elif "Crit (Auto-wound)" in testo_combinato: crit = "Crit (Auto-wound)"
-            elif "Crit (2 Hits)" in testo_combinato: crit = "Crit (2 Hits)"
-
-            anti = "Nessuno"
-            if "Anti-HERO" in testo_combinato: anti = "HERO"
-            elif "Anti-INFANTRY" in testo_combinato: anti = "INFANTRY"
-            elif "Anti-MONSTER" in testo_combinato: anti = "MONSTER"
-            elif "Anti-CAVALRY" in testo_combinato: anti = "CAVALRY"
-
-            nome_pulito = nome_temporaneo if nome_temporaneo else testo_prima
-            
-            tags_da_rimuovere = ["Crit (Auto-wound)", "Crit (Mortal)", "Crit (2 Hits)", "Shoot in Combat", "Anti-HERO", "Anti-INFANTRY", "Anti-MONSTER", "Anti-CAVALRY"]
-            for tag in tags_da_rimuovere:
-                nome_pulito = re.sub(r',?\s*' + re.escape(tag), '', nome_pulito, flags=re.IGNORECASE)
-            
-            nome_pulito = nome_pulito.strip(" ,-")
-            if not nome_pulito:
-                nome_pulito = "Arma"
-
-            ranged = True if gittata else False
-            gittata_str = gittata if gittata else "Melee"
-
-            armi_estratte.append({
-                "nome": nome_pulito, "attiva": True, "ranged": ranged, "range": gittata_str,
-                "atk": str(atk), "hit": hit, "wnd": wnd, "rend": rend, "dmg": str(dmg),
-                "crit_type": crit, "anti_target": anti, "charge_dmg": False, "anti_charge": False, "companion": False
-            })
-
-            nome_temporaneo = ""
-        else:
-            nome_temporaneo = (nome_temporaneo + " " + linea_pulita).strip()
-
-    return armi_estratte
+from utils import (
+    estrai_intero_sicuro,
+    analizza_testo_copiato_robusto,
+    OPZIONI_CRITICO,
+    OPZIONI_ANTI,
+    OPZIONI_DADI,
+    OPZIONI_HW
+)
 
 def render_testa_a_testa():
     st.markdown("""
@@ -201,11 +127,16 @@ def render_testa_a_testa():
                     rend = s4.number_input("Rend", 0, 5, value=int(p_arma.get("rend", 0)) if str(p_arma.get("rend", 0)) != "---" else 0, key=f"rnd_{idx}_{v_key}")
                     dmg = s5.selectbox("Dmg", opzioni_dadi, index=opzioni_dadi.index(str(p_arma.get("dmg", "1"))) if str(p_arma.get("dmg", "1")) in opzioni_dadi else 1, key=f"dmg_{idx}_{v_key}")
 
-                    ab1, ab2, ab3, ab4 = st.columns(4)
-                    crit = ab1.selectbox("Critico", ["Nessuno", "Crit (Mortal)", "Crit (Auto-wound)"], index=["Nessuno", "Crit (Mortal)", "Crit (Auto-wound)"].index(p_arma.get("crit_type", "Nessuno")), key=f"crt_{idx}_{v_key}")
-                    anti = ab2.selectbox("Anti-X", ["Nessuno", "HERO", "INFANTRY", "CAVALRY", "MONSTER"], index=["Nessuno", "HERO", "INFANTRY", "CAVALRY", "MONSTER"].index(p_arma.get("anti_target", "Nessuno")), key=f"ant_{idx}_{v_key}")
-                    ranged = ab3.checkbox("Da Tiro", value=p_arma.get("ranged", False), key=f"rng_{idx}_{v_key}")
-                    gittata = ab4.text_input("Gittata", value=p_arma.get("range", "12\"" if p_arma.get("ranged") else "Melee"), key=f"ran_{idx}_{v_key}")
+                    ab1, ab2, ab3, ab4, ab5 = st.columns([1.4, 1.4, 1, 1, 1])
+                    c_att = p_arma.get("crit_type", "Nessuno")
+                    crit = ab1.selectbox("Critico", OPZIONI_CRITICO, index=OPZIONI_CRITICO.index(c_att) if c_att in OPZIONI_CRITICO else 0, key=f"crt_{idx}_{v_key}")
+                    
+                    a_att = "CHARGE" if p_arma.get("anti_charge", False) and p_arma.get("anti_target", "Nessuno") == "Nessuno" else p_arma.get("anti_target", "Nessuno")
+                    anti = ab2.selectbox("Anti-X", OPZIONI_ANTI, index=OPZIONI_ANTI.index(a_att) if a_att in OPZIONI_ANTI else 0, key=f"ant_{idx}_{v_key}")
+                    
+                    chg_d = ab3.checkbox("Charge (+1 Dmg)", value=p_arma.get("charge_dmg", False), key=f"chgd_{idx}_{v_key}")
+                    ranged = ab4.checkbox("Da Tiro", value=p_arma.get("ranged", False), key=f"rng_{idx}_{v_key}")
+                    gittata = ab5.text_input("Gittata", value=p_arma.get("range", "12\"" if p_arma.get("ranged") else "Melee"), key=f"ran_{idx}_{v_key}")
                     
                     if st.button("🗑️ Rimuovi", key=f"del_{idx}_{v_key}"):
                         st.session_state["corrente_armi"].pop(idx)
@@ -214,7 +145,7 @@ def render_testa_a_testa():
 
                     armi_aggiornate.append({
                         "nome": nome_a, "attiva": attiva_a, "ranged": ranged, "range": gittata, "atk": atk, "hit": hit, "wnd": wnd, "rend": rend, "dmg": dmg,
-                        "crit_type": crit, "anti_target": anti, "charge_dmg": p_arma.get("charge_dmg", False), "anti_charge": p_arma.get("anti_charge", False), "companion": comp_a
+                        "crit_type": crit, "anti_target": anti, "charge_dmg": chg_d, "anti_charge": (anti == "CHARGE"), "companion": comp_a
                     })
             st.session_state["corrente_armi"] = armi_aggiornate
 
