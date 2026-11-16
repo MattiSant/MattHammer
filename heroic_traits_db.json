@@ -40,6 +40,7 @@
     },
     "Shadowy Aura": {
         "fazione": "Nighthaunt",
+        "punti": 0,
         "descrizione": "Passive\nEffect: While they are wholly within 6\" of this unit, friendly NIGHTHAUNT INFANTRY and CAVALRY units are not visible to enemy units more than 9\" from them.",
         "modificatori": {}
     }
