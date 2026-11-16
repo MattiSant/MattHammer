@@ -321,23 +321,20 @@ def render_sala_di_guerra():
         idx_faz = lista_fazioni_disp.index(st.session_state["sdg_fazione_armata"]) if st.session_state["sdg_fazione_armata"] in lista_fazioni_disp else 0
         st.session_state["sdg_fazione_armata"] = col_f2.selectbox("Fazione", lista_fazioni_disp, index=idx_faz)
 
-        formato_scelto = col_f3.selectbox(
-            "Formato Battaglia",
-            ["Vanguard (1000 pt)", "Strike Force (1500 pt)", "Battlehost (2000 pt)", "Personalizzato (Custom)"],
-            index=0
-        )
+        opzioni_formato = ["Vanguard (1000 pt)", "Strike Force (1500 pt)", "Personalizzato (Custom)"]
+        fmt_default = st.session_state.get("sdg_formato_scelto", "Vanguard (1000 pt)")
+        idx_fmt = opzioni_formato.index(fmt_default) if fmt_default in opzioni_formato else 0
+        formato_scelto = col_f3.selectbox("Formato Battaglia", opzioni_formato, index=idx_fmt)
+        st.session_state["sdg_formato_scelto"] = formato_scelto
 
         if "1000" in formato_scelto:
             limite_punti = 1000
         elif "1500" in formato_scelto:
             limite_punti = 1500
-        elif "2000" in formato_scelto:
-            limite_punti = 2000
         else:
             val_custom = int(st.session_state.get("sdg_limite_custom", 720))
             limite_punti = col_f4.number_input("Punti Custom", min_value=100, max_value=5000, value=val_custom, step=10)
             st.session_state["sdg_limite_custom"] = limite_punti
-
         st.markdown("---")
         st.markdown('<div class="subsection-title">Formazione di Battaglia (Battle Formation)</div>', unsafe_allow_html=True)
         st.caption("Formazione ufficiale associata all'armata. Regole, fasi d'attivazione e modificatori numerici sono pre-impostati da database.")
