@@ -26,13 +26,6 @@
             "ward_nativo": 5
         }
     },
-    "Ombra Inafferrabile": {
-        "fazione": "Nighthaunt",
-        "descrizione": "Il portatore sottrae 1 ai tiri per colpire nemici che lo bersagliano.",
-        "modificatori": {
-            "mod_hit_subito": -1
-        }
-    },
     "Ruler of the spectral Hosts": {
         "fazione": "Nighthaunt",
         "descrizione": "Once Per Turn (Army), Your Hero Phase\nDeclare: Pick up to 3 friendly non-HERO NIGHTHAUNT units wholly within 12\" of this unit to be the targets.\n\nEffect: Roll a D3 for each target. On a 2+:\nIf the target is damaged, Heal (X) the target, where X is an amount equal to the roll.\nIf the target is not damaged, return a number of slain models to it with a combined Health characteristic of up to X, where X is an amount equal to the roll.",
