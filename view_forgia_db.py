@@ -684,8 +684,12 @@ def render_forgia_db():
             dati_t = traits_db.get(sel_t, {"fazione": "Generale", "descrizione": "", "modificatori": {}})
 
             nome_t = st.text_input("Nome Tratto:", value="" if sel_t == "--- Nuovo Tratto ---" else sel_t, key=f"in_nome_t_{sel_t}")
+            
+            c_ft1, c_ft2 = st.columns([1.5, 1])
             idx_faz_t = opzioni_fazione_supporto.index(dati_t.get("fazione", "Generale")) if dati_t.get("fazione", "Generale") in opzioni_fazione_supporto else 0
-            faz_t = st.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_t, key=f"in_faz_t_{sel_t}")
+            faz_t = c_ft1.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_t, key=f"in_faz_t_{sel_t}")
+            punti_t = c_ft2.number_input("Costo in Punti:", min_value=0, max_value=500, value=int(dati_t.get("punti", 0)), step=10, key=f"in_pt_t_{sel_t}")
+            
             desc_t = st.text_area("Descrizione Regola:", value=dati_t.get("descrizione", ""), height=70, key=f"in_desc_t_{sel_t}")
 
             mod_esistenti_t = dati_t.get("modificatori", {})
@@ -720,6 +724,7 @@ def render_forgia_db():
                 if nome_t.strip() and nome_t != "--- Nuovo Tratto ---":
                     traits_db[nome_t.strip()] = {
                         "fazione": faz_t,
+                        "punti": punti_t,
                         "descrizione": desc_t.strip(),
                         "modificatori": modificatori_salvati_t
                     }
@@ -748,8 +753,12 @@ def render_forgia_db():
             dati_a = artefacts_db.get(sel_a, {"fazione": "Generale", "descrizione": "", "modificatori": {}})
 
             nome_a = st.text_input("Nome Artefatto:", value="" if sel_a == "--- Nuovo Artefatto ---" else sel_a, key=f"in_nome_a_{sel_a}")
+            
+            c_fa1, c_fa2 = st.columns([1.5, 1])
             idx_faz_a = opzioni_fazione_supporto.index(dati_a.get("fazione", "Generale")) if dati_a.get("fazione", "Generale") in opzioni_fazione_supporto else 0
-            faz_a = st.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_a, key=f"in_faz_a_{sel_a}")
+            faz_a = c_fa1.selectbox("Fazione:", opzioni_fazione_supporto, index=idx_faz_a, key=f"in_faz_a_{sel_a}")
+            punti_a = c_fa2.number_input("Costo in Punti:", min_value=0, max_value=500, value=int(dati_a.get("punti", 0)), step=10, key=f"in_pt_a_{sel_a}")
+            
             desc_a = st.text_area("Descrizione Regola:", value=dati_a.get("descrizione", ""), height=70, key=f"in_desc_a_{sel_a}")
 
             mod_esistenti_a = dati_a.get("modificatori", {})
@@ -784,6 +793,7 @@ def render_forgia_db():
                 if nome_a.strip() and nome_a != "--- Nuovo Artefatto ---":
                     artefacts_db[nome_a.strip()] = {
                         "fazione": faz_a,
+                        "punti": punti_a,
                         "descrizione": desc_a.strip(),
                         "modificatori": modificatori_salvati_a
                     }

@@ -40,24 +40,16 @@ def carica_formazioni_db():
             return {}
     return {}
 
-def carica_db_supporto(file_path):
+def carica_db_supporto_dict(file_path):
     if os.path.exists(file_path):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 dati = json.load(f)
-                if isinstance(dati, dict):
-                    # Se è già il nuovo formato (chiavi = nomi), restituisce le chiavi
-                    if "Generali" not in dati:
-                        return list(dati.keys())
-                    # Se è il vecchio formato a liste
-                    return dati.get("Generali", ["Nessuno"])
-                return ["Nessuno"]
+                if isinstance(dati, dict) and "Generali" not in dati:
+                    return dati
         except Exception:
-            return ["Nessuno"]
-    return ["Nessuno"]
-
-db_tratti_eroici = carica_db_supporto(TRAITS_DB_FILE)
-db_artefatti = carica_db_supporto(ARTEFACTS_DB_FILE)
+            pass
+    return {"Nessuno": {"punti": 0}}
 
 ARMATE_NEMICHE_NOTE = {
     "Khorne: Eroi d'Assalto (720pt)": [
@@ -239,13 +231,13 @@ def render_sala_di_guerra():
     if "sdg_nemici_matchup" not in st.session_state:
         st.session_state["sdg_nemici_matchup"] = []
     
-    if "db_tratti_eroici" not in st.session_state:
-        risultato_tratti = carica_db_supporto(TRAITS_DB_FILE)
-        st.session_state["db_tratti_eroici"] = risultato_tratti.get("Generali", ["Nessuno"]) if isinstance(risultato_tratti, dict) else risultato_tratti
+    if "db_tratti_eroici_dict" not in st.session_state:
+        st.session_state["db_tratti_eroici_dict"] = carica_db_supporto_dict(TRAITS_DB_FILE)
+        st.session_state["db_tratti_eroici"] = list(st.session_state["db_tratti_eroici_dict"].keys())
 
-    if "db_artefatti" not in st.session_state:
-        risultato_art = carica_db_supporto(ARTEFACTS_DB_FILE)
-        st.session_state["db_artefatti"] = risultato_art.get("Generali", ["Nessuno"]) if isinstance(risultato_art, dict) else risultato_art
+    if "db_artefatti_dict" not in st.session_state:
+        st.session_state["db_artefatti_dict"] = carica_db_supporto_dict(ARTEFACTS_DB_FILE)
+        st.session_state["db_artefatti"] = list(st.session_state["db_artefatti_dict"].keys())
 
     db_tratti_eroici = st.session_state["db_tratti_eroici"]
     db_artefatti = st.session_state["db_artefatti"]
@@ -455,10 +447,19 @@ def render_sala_di_guerra():
                 hp_val = stat_c.get("salute", dif_lead.get("salute_per_modello", 5))
                 wd_val = stat_c.get("ward", f"{dif_lead.get('ward', 5)}+")
 
+                pt_lead_base = d_lead.get('punti', 0)
+                pt_tratto = st.session_state["db_tratti_eroici_dict"].get(reg.get("tratto_eroico", "Nessuno"), {}).get("punti", 0)
+                pt_artefatto = st.session_state["db_artefatti_dict"].get(reg.get("artefatto", "Nessuno"), {}).get("punti", 0)
+                pt_lead_totale = pt_lead_base + pt_tratto + pt_artefatto
+                
+                str_punti = f"{pt_lead_totale} pt"
+                if pt_tratto > 0 or pt_artefatto > 0:
+                    str_punti += f" <small style='color:#a8977a;'>(Base {pt_lead_base} + Equip {pt_tratto + pt_artefatto})</small>"
+
                 st.markdown(f"""
                 <div class="warscroll-box">
                     <strong style="color: #f5d680;">📜 Sunto Warscroll — {reg['leader']}</strong><br>
-                    <b>Punti:</b> {d_lead.get('punti', 0)} pt | <b>Basetta:</b> {d_lead.get('dimensione_basetta', 'Standard')} | <b>Movimento:</b> {mov_val} | <b>Controllo (OC):</b> {oc_val} | <b>Save:</b> {sv_val} | <b>Salute:</b> {hp_val} | <b>Ward:</b> {wd_val}
+                    <b>Punti:</b> {str_punti} | <b>Basetta:</b> {d_lead.get('dimensione_basetta', 'Standard')} | <b>Movimento:</b> {mov_val} | <b>Controllo (OC):</b> {oc_val} | <b>Save:</b> {sv_val} | <b>Salute:</b> {hp_val} | <b>Ward:</b> {wd_val}
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -570,7 +571,12 @@ def render_sala_di_guerra():
         if reg["leader"] in st.session_state["db_unita"]:
             n_eroi += 1
             d_u = st.session_state["db_unita"][reg["leader"]]
-            pt_u = estrai_intero_sicuro(d_u.get("punti", 0))
+            pt_u_base = estrai_intero_sicuro(d_u.get("punti", 0))
+            
+            pt_tratto = st.session_state["db_tratti_eroici_dict"].get(reg.get("tratto_eroico", "Nessuno"), {}).get("punti", 0)
+            pt_artefatto = st.session_state["db_artefatti_dict"].get(reg.get("artefatto", "Nessuno"), {}).get("punti", 0)
+            pt_u = pt_u_base + pt_tratto + pt_artefatto
+            
             n_mod_u = max(1, estrai_intero_sicuro(d_u.get("n_modelli", 1), default=1))
             dif_u = d_u.get("difesa", {})
             sal_mod_u = max(1, estrai_intero_sicuro(d_u.get("statistiche_cerchio", {}).get("salute", dif_u.get("salute_per_modello", 5)), default=5))
@@ -830,12 +836,20 @@ def render_sala_di_guerra():
             for r_i, reg in enumerate(st.session_state["sdg_reggimenti"]):
                 gen_tag = " [GENERALE]" if reg.get("is_generale", False) else ""
                 d_l = st.session_state["db_unita"].get(reg["leader"], {})
+                
+                nome_t = reg.get("tratto_eroico", "Nessuno")
+                nome_a = reg.get("artefatto", "Nessuno")
+                pt_t = st.session_state["db_tratti_eroici_dict"].get(nome_t, {}).get("punti", 0)
+                pt_a = st.session_state["db_artefatti_dict"].get(nome_a, {}).get("punti", 0)
+                pt_l_tot = estrai_intero_sicuro(d_l.get('punti', 0)) + pt_t + pt_a
+                
                 linee_export.append(f"\nREGGIMENTO {r_i+1}:")
-                linee_export.append(f"  • Leader: {reg['leader']}{gen_tag} ({estrai_intero_sicuro(d_l.get('punti', 0))} pt)")
-                if reg.get("tratto_eroico", "Nessuno") != "Nessuno":
-                    linee_export.append(f"    - Tratto: {reg['tratto_eroico']}")
-                if reg.get("artefatto", "Nessuno") != "Nessuno":
-                    linee_export.append(f"    - Artefatto: {reg['artefatto']}")
+                linee_export.append(f"  • Leader: {reg['leader']}{gen_tag} ({pt_l_tot} pt)")
+                if nome_t != "Nessuno":
+                    linee_export.append(f"    - Tratto: {nome_t} ({pt_t} pt)")
+                if nome_a != "Nessuno":
+                    linee_export.append(f"    - Artefatto: {nome_a} ({pt_a} pt)")
+                
                 for fol in reg["seguito"]:
                     d_f = st.session_state["db_unita"].get(fol["nome"], {})
                     molt = 2 if fol.get("rinforzata", False) else 1
