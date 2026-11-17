@@ -1,1 +1,56 @@
-{}
+{
+    "Nighthaunt: Vanishing Nightmare": {
+        "nome": "Vanishing Nightmare",
+        "fazione": "Nighthaunt",
+        "formazione": "Death Stalkers",
+        "limite_punti": 1000,
+        "punti_totali": 980,
+        "reggimenti": [
+            {
+                "leader": "Nighthaunt: Guardian of Souls",
+                "is_generale": true,
+                "rinforzato": false,
+                "tratto_eroico": "Ruler of the spectral Hosts",
+                "artefatto": "Lightshard of the Harvest Moon",
+                "seguito": [
+                    {
+                        "nome": "Nighthaunt: Dreadscythe Harridans",
+                        "rinforzata": false,
+                        "tratto_eroico": "Nessuno",
+                        "artefatto": "Nessuno"
+                    },
+                    {
+                        "nome": "Nighthaunt: Bladegheist Revenants",
+                        "rinforzata": false,
+                        "tratto_eroico": "Nessuno",
+                        "artefatto": "Nessuno"
+                    }
+                ]
+            },
+            {
+                "leader": "Nighthaunt: Scriptor Mortis",
+                "is_generale": false,
+                "rinforzato": false,
+                "tratto_eroico": "Nessuno",
+                "artefatto": "Nessuno",
+                "seguito": []
+            },
+            {
+                "leader": "Nighthaunt: Lord Executioner",
+                "is_generale": false,
+                "rinforzato": false,
+                "tratto_eroico": "Nessuno",
+                "artefatto": "Nessuno",
+                "seguito": [
+                    {
+                        "nome": "Nighthaunt: Black Coach",
+                        "rinforzata": false,
+                        "tratto_eroico": "Nessuno",
+                        "artefatto": "Nessuno"
+                    }
+                ]
+            }
+        ],
+        "ausiliari": []
+    }
+}
