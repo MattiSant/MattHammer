@@ -27,7 +27,9 @@ from wahapedia_scraper import (
     scarica_warscroll_da_wahapedia,
     costruisci_url_wahapedia,
     sincronizza_fazione_da_wahapedia,
-    estrai_fazione_da_url_o_testo
+    estrai_fazione_da_url_o_testo,
+    sincronizza_regole_fazione_da_wahapedia,
+    sincronizza_tutte_le_regole_globale
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -245,6 +247,54 @@ def render_forgia_db():
                             st.rerun()
                         else:
                             st.warning(msg_sync)
+                if st.button(f"✨ Sincronizza Formazioni, Tratti & Artefatti ({faz_sync})", use_container_width=True, key=f"btn_sync_rules_{v_key}"):
+                    with st.spinner(f"Estrazione Formazioni, Tratti e Artefatti di {faz_sync} da Wahapedia..."):
+                        form_db_curr = _carica_json_ausiliario(FORMATIONS_FILE, {})
+                        traits_db_curr = _carica_json_ausiliario(TRAITS_FILE, {})
+                        art_db_curr = _carica_json_ausiliario(ARTEFACTS_FILE, {})
+
+                        testo_reg_opt = inp_waha if len(inp_waha.strip()) > 300 else ""
+                        nf, nt, na, msg_r, ok_r = sincronizza_regole_fazione_da_wahapedia(
+                            faz_sync, form_db_curr, traits_db_curr, art_db_curr, url_o_testo_opzionale=testo_reg_opt
+                        )
+                        if ok_r:
+                            if nf > 0:
+                                _salva_json_ausiliario(FORMATIONS_FILE, form_db_curr)
+                                st.session_state["archivio_formazioni"] = form_db_curr
+                            if nt > 0:
+                                _salva_json_ausiliario(TRAITS_FILE, traits_db_curr)
+                            if na > 0:
+                                _salva_json_ausiliario(ARTEFACTS_FILE, art_db_curr)
+                            st.session_state["forgia_fazione"] = faz_sync
+                            st.session_state["forgia_version"] += 1
+                            mostra_toast_rapido(msg_r, "✅")
+                            st.rerun()
+                        else:
+                            st.warning(msg_r)
+                if st.button("🌍 Popola TUTTI gli Artefatti, Tratti e Formazioni (Tutte le Fazioni)", use_container_width=True, key=f"btn_sync_all_rules_{v_key}"):
+                    form_db_curr = _carica_json_ausiliario(FORMATIONS_FILE, {})
+                    traits_db_curr = _carica_json_ausiliario(TRAITS_FILE, {})
+                    art_db_curr = _carica_json_ausiliario(ARTEFACTS_FILE, {})
+
+                    barra_prog = st.progress(0.0, text="Inizializzazione download globale da Wahapedia...")
+                    nf, nt, na, msg_all, ok_all = sincronizza_tutte_le_regole_globale(
+                        form_db_curr,
+                        traits_db_curr,
+                        art_db_curr,
+                        callback_progresso=lambda p, t: barra_prog.progress(p, text=t)
+                    )
+                    barra_prog.empty()
+
+                    if ok_all:
+                        _salva_json_ausiliario(FORMATIONS_FILE, form_db_curr)
+                        _salva_json_ausiliario(TRAITS_FILE, traits_db_curr)
+                        _salva_json_ausiliario(ARTEFACTS_FILE, art_db_curr)
+                        st.session_state["archivio_formazioni"] = form_db_curr
+                        st.session_state["forgia_version"] += 1
+                        mostra_toast_rapido(msg_all, "✅")
+                        st.rerun()
+                    else:
+                        st.warning(msg_all)
 
                 
         # ==========================================

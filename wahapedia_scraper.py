@@ -784,3 +784,242 @@ def sincronizza_fazione_da_wahapedia(fazione, db_unita_attuale, testo_collated_o
         return len(unita_aggiornate), unita_aggiornate, f"Sincronizzate e aggiornate {len(unita_aggiornate)} unità per la fazione {fazione}!", True
     return 0, [], f"Nessuna Warscroll trovata per {fazione}. Verifica la connessione o incolla il testo di {url_warscrolls_fazione}.", False
 
+# ========================================================================
+# FUNZIONI PER SCRAPING ARTEFATTI, TRATTI EROICI E FORMAZIONI DI BATTAGLIA
+# ========================================================================
+
+def _mappa_fase_formazione(fasi_ab, tipo_ab):
+    """Converte la fase estratta da ability_parser nel formato del menu Formazioni."""
+    f_str = " ".join(fasi_ab).lower()
+    if tipo_ab == "Passive" or "passiv" in f_str:
+        return "Passiva / Permanente"
+    if "deployment" in f_str:
+        return "Deployment"
+    if "hero" in f_str:
+        return "Hero Phase (Fase Eroi Amica o Nemica)"
+    if "movement" in f_str:
+        return "Movement Phase (Fase di Movimento)"
+    if "shooting" in f_str:
+        return "Shooting Phase (Fase di Tiro)"
+    if "charge" in f_str:
+        return "Charge Phase (Fase di Carica)"
+    if "combat" in f_str:
+        return "Combat Phase (Fase di Combattimento)"
+    if "end of" in f_str or "fine turno" in f_str:
+        return "Fine Turno"
+    return "Passiva / Permanente"
+
+
+def _estrai_blocchi_regole_sezione(testo_sezione):
+    """
+    Estrae tutte le abilità (Formazioni, Tratti o Artefatti) presenti in una sezione
+    della pagina Fazione di Wahapedia AoS 4e, inclusi eventuali costi in punti (es. '20 pts').
+    """
+    risultati = []
+    nomi_visti = set()
+    linee = [l.strip() for l in testo_sezione.split("\n") if l.strip()]
+
+    pattern_header_fase = re.compile(
+        r"^(?:Passive|Once Per (?:Turn|Battle).*|Any .* Phase|Your .* Phase|Enemy .* Phase|Deployment Phase|Start of .*|End of .*|Reaction:.*)$",
+        re.IGNORECASE
+    )
+
+    indici_inizio = [i for i, l in enumerate(linee) if pattern_header_fase.match(l)]
+    for idx_pos, start_i in enumerate(indici_inizio):
+        end_i = indici_inizio[idx_pos + 1] if idx_pos + 1 < len(indici_inizio) else min(len(linee), start_i + 12)
+        blocco_linee = []
+        punti_trovati = 0
+
+        # Controlla se nella riga appena sopra l'header o nel blocco c'è un costo in punti (es. "20 pts")
+        finestra_pts = "\n".join(linee[max(0, start_i - 1):min(len(linee), start_i + 3)])
+        m_pts = re.search(r"\b(\d{1,3})\s*pts?\b", finestra_pts, re.IGNORECASE)
+        if m_pts:
+            val_p = int(m_pts.group(1))
+            if val_p <= 100:
+                punti_trovati = val_p
+
+        for l_sub in linee[start_i:end_i]:
+            if l_sub.upper().startswith(("KEYWORDS", "SPELL LORE", "PRAYER LORE", "MANIFESTATION LORE")):
+                break
+            if "keyword is used in the following" in l_sub.lower():
+                break
+            # Rimuove eventuale scritta "20 pts" attaccata al nome
+            l_pulita = re.sub(r"\b\d{1,3}\s*pts?\b", "", l_sub, flags=re.IGNORECASE).strip()
+            if l_pulita:
+                blocco_linee.append(l_pulita)
+
+        blocco_txt = "\n".join(blocco_linee)
+        if "effect:" in blocco_txt.lower() or "effetto:" in blocco_txt.lower():
+            ab_parsed = analizza_abilita_warscroll(blocco_txt)
+            if ab_parsed:
+                nome_ab = ab_parsed["nome"].strip()
+                nome_low = nome_ab.lower()
+                if nome_low in ABILITA_CORE_DA_IGNORARE or len(nome_ab) < 3 or len(nome_ab) > 55:
+                    continue
+                if nome_low not in nomi_visti:
+                    nomi_visti.add(nome_low)
+                    ab_parsed["punti"] = punti_trovati
+                    risultati.append(ab_parsed)
+
+    return risultati
+
+
+def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, artefacts_db, url_o_testo_opzionale=""):
+    """
+    Scarica la pagina regole della fazione da Wahapedia (https://wahapedia.ru/aos4/factions/<slug>)
+    oppure analizza il testo incollato, ed estrae automaticamente:
+    1) Battle Formations -> salvate in formazioni_db[fazione]
+    2) Heroic Traits     -> salvati in traits_db
+    3) Artefacts of Power -> salvati in artefacts_db
+    Restituisce: (n_form, n_traits, n_art, messaggio_stato, successo_bool)
+    """
+    if url_o_testo_opzionale:
+        fazione = estrai_fazione_da_url_o_testo(url_o_testo_opzionale, default_fazione=fazione)
+
+    slug_fazione = FAZIONI_SLUG_WAHAPEDIA.get(fazione, fazione.lower().replace(" ", "-"))
+    url_fazione = f"https://wahapedia.ru/aos4/factions/{slug_fazione}"
+
+    inp = (url_o_testo_opzionale or "").strip()
+    testo_pagina = ""
+
+    if not inp or inp.startswith("http"):
+        url_target = inp if (inp.startswith("http") and "warscrolls" not in inp) else url_fazione
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        }
+        try:
+            resp = requests.get(url_target, headers=headers, timeout=15)
+            if resp.status_code == 200:
+                parser = _WahapediaHTMLParser()
+                parser.feed(resp.text)
+                testo_pagina = parser.get_clean_text()
+            elif resp.status_code in [403, 503]:
+                return 0, 0, 0, f"Cloudflare (403) ha protetto {url_target}. Apri {url_fazione} nel browser, premi CTRL+A / CTRL+C e incolla il testo nel box!", False
+            else:
+                return 0, 0, 0, f"Pagina regole fazione non trovata (HTTP {resp.status_code}): {url_target}", False
+        except Exception as e:
+            return 0, 0, 0, f"Errore di rete durante il download delle regole di {fazione}: {e}", False
+    else:
+        testo_pagina = _normalizza_trattini(inp)
+
+    # Isoliamo le 3 sezioni principali su Wahapedia: BATTLE FORMATIONS, HEROIC TRAITS, ARTEFACTS OF POWER
+    idx_bf = re.search(r"\bBATTLE\s+FORMATIONS\b", testo_pagina, re.IGNORECASE)
+    idx_ht = re.search(r"\bHEROIC\s+TRAITS\b", testo_pagina, re.IGNORECASE)
+    idx_ap = re.search(r"\bARTEFACTS\s+OF\s+POWER\b", testo_pagina, re.IGNORECASE)
+    idx_end = re.search(r"\b(?:SPELL\s+LORE|PRAYER\s+LORE|MANIFESTATION\s+LORE|SPEARHEAD)\b", testo_pagina[idx_ap.end():] if idx_ap else testo_pagina, re.IGNORECASE)
+
+    n_form, n_traits, n_art = 0, 0, 0
+
+    # 1. Estrazione Formazioni di Battaglia
+    if idx_bf:
+        fine_bf = idx_ht.start() if (idx_ht and idx_ht.start() > idx_bf.end()) else (
+            idx_ap.start() if (idx_ap and idx_ap.start() > idx_bf.end()) else idx_bf.end() + 4500
+        )
+        testo_bf = testo_pagina[idx_bf.end():fine_bf]
+        lista_bf = _estrai_blocchi_regole_sezione(testo_bf)
+        if fazione not in formazioni_db or not isinstance(formazioni_db[fazione], dict):
+            formazioni_db[fazione] = {}
+        for ab_f in lista_bf:
+            # Filtra i modificatori numerici supportati dalle Formazioni
+            mods_Puliti = {
+                k: v for k, v in ab_f["modificatori"].items()
+                if k in ["bonus_rend", "bonus_atk", "bonus_dmg", "mod_hit", "mod_wnd", "bonus_save", "ward_nativo", "bonus_movimento", "bonus_controllo", "crit_on"]
+            }
+            formazioni_db[fazione][ab_f["nome"]] = {
+                "fase_attivazione": _mappa_fase_formazione(ab_f["fasi"], ab_f["tipo"]),
+                "monouso": ab_f["once_per_battle"],
+                "modificatori": mods_Puliti,
+                "descrizione": ab_f["descrizione"]
+            }
+            n_form += 1
+
+    # 2. Estrazione Tratti Eroici (Heroic Traits)
+    if idx_ht:
+        fine_ht = idx_ap.start() if (idx_ap and idx_ap.start() > idx_ht.end()) else idx_ht.end() + 3500
+        testo_ht = testo_pagina[idx_ht.end():fine_ht]
+        lista_ht = _estrai_blocchi_regole_sezione(testo_ht)
+        for ab_t in lista_ht:
+            mods_t = {
+                k: v for k, v in ab_t["modificatori"].items()
+                if k in ["bonus_save", "mod_hit", "mod_wnd", "bonus_atk", "bonus_rend", "bonus_dmg", "ward_nativo", "bonus_movimento", "bonus_salute", "bonus_controllo", "crit_on", "mod_hit_subito"]
+            }
+            traits_db[ab_t["nome"]] = {
+                "fazione": fazione,
+                "punti": ab_t.get("punti", 0),
+                "descrizione": ab_t["descrizione"],
+                "modificatori": mods_t
+            }
+            n_traits += 1
+
+    # 3. Estrazione Artefatti di Potere (Artefacts of Power)
+    if idx_ap:
+        fine_ap = (idx_ap.end() + idx_end.start()) if idx_end else (idx_ap.end() + 3500)
+        testo_ap = testo_pagina[idx_ap.end():fine_ap]
+        lista_ap = _estrai_blocchi_regole_sezione(testo_ap)
+        for ab_a in lista_ap:
+            mods_a = {
+                k: v for k, v in ab_a["modificatori"].items()
+                if k in ["bonus_save", "mod_hit", "mod_wnd", "bonus_atk", "bonus_rend", "bonus_dmg", "ward_nativo", "bonus_movimento", "bonus_salute", "bonus_controllo", "crit_on", "mod_hit_subito"]
+            }
+            artefacts_db[ab_a["nome"]] = {
+                "fazione": fazione,
+                "punti": ab_a.get("punti", 0),
+                "descrizione": ab_a["descrizione"],
+                "modificatori": mods_a
+            }
+            n_art += 1
+
+    tot = n_form + n_traits + n_art
+    if tot > 0:
+        return n_form, n_traits, n_art, f"{fazione}: importati {n_form} Formazioni, {n_traits} Tratti Eroici e {n_art} Artefatti!", True
+    return 0, 0, 0, f"Nessuna regola trovata per {fazione}. Assicurati di usare l'URL della fazione ({url_fazione}) o incollane il testo.", False
+
+# =================================================================================
+# POPOLAMENTO AUTOMATICO DI TUTTI I DB REGOLE
+# =================================================================================
+
+import time
+
+def sincronizza_tutte_le_regole_globale(formazioni_db, traits_db, artefacts_db, callback_progresso=None):
+    """
+    Scansiona tutte le fazioni di AoS 4e su Wahapedia e popola in automatico
+    formazioni_db, traits_db e artefacts_db con tutte le Formazioni, i Tratti e gli Artefatti del gioco.
+    """
+    # Evita duplicati di slug (es. Orruk Kruleboyz e Orruk Warclans puntano allo stesso URL)
+    fazioni_da_scaricare = []
+    slug_visti = set()
+    for nome_faz, slug in FAZIONI_SLUG_WAHAPEDIA.items():
+        if slug not in slug_visti:
+            slug_visti.add(slug)
+            fazioni_da_scaricare.append(nome_faz)
+
+    tot_f, tot_t, tot_a = 0, 0, 0
+    fazioni_ok = 0
+    errori = []
+
+    for idx, faz in enumerate(fazioni_da_scaricare):
+        if callback_progresso:
+            callback_progresso(idx / len(fazioni_da_scaricare), f"Scaricamento regole: {faz} ({idx+1}/{len(fazioni_da_scaricare)})...")
+
+        nf, nt, na, msg, ok = sincronizza_regole_fazione_da_wahapedia(
+            faz, formazioni_db, traits_db, artefacts_db
+        )
+        if ok:
+            tot_f += nf
+            tot_t += nt
+            tot_a += na
+            fazioni_ok += 1
+        else:
+            errori.append(faz)
+
+        # Pausa di 0.8 secondi tra una richiesta e l'altra per non far scattare il blocco anti-bot di Wahapedia
+        time.sleep(0.8)
+
+    if callback_progresso:
+        callback_progresso(1.0, "Completato!")
+
+    if fazioni_ok > 0:
+        msg_finale = f"Popolamento completato ({fazioni_ok}/{len(fazioni_da_scaricare)} fazioni): {tot_f} Formazioni, {tot_t} Tratti e {tot_a} Artefatti salvati!"
+        return tot_f, tot_t, tot_a, msg_finale, True
+    return 0, 0, 0, f"Impossibile scaricare in blocco (probabile blocco Cloudflare). Fazioni fallite: {', '.join(errori[:5])}...", False
