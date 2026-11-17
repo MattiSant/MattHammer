@@ -1929,5 +1929,144 @@
             "SYLVANETH",
             "KURNOTHI"
         ]
+    },
+    "Skaven: Krittok Foulblade": {
+        "fazione": "Skaven",
+        "n_modelli": 1,
+        "dimensione_basetta": "40mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 140,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 2,
+            "save": "4+",
+            "salute": 6,
+            "ward": "7+"
+        },
+        "difesa": {
+            "salute_per_modello": 6,
+            "save": 4,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Warplock Pistol",
+                "attiva": true,
+                "ranged": true,
+                "range": "10\"",
+                "atk": "2",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 2,
+                "dmg": "D3",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Doomfang",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "5",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 2,
+                "dmg": "2",
+                "crit_type": "Crit (Mortal)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "Doomfang",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Combat Phase (Qualsiasi)"
+                ],
+                "descrizione": "Though Doomfang offers the ageing Krittok martial power, he must constantly haggle with its daemonic occupant, a fact that can sometimes prove distracting.\nEffect: This unit has STRIKE-FIRST for the rest of the turn but it cannot use commands this phase.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            },
+            {
+                "nome": "A Reputation For Cunning",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Hero Phase (Nemica)"
+                ],
+                "descrizione": "Krittok's laboriously crafted reputation for deviousness sees his thralls obey him without question.\nEffect: You can pick 2 different eligible units to use the ’ Always Three Clawsteps Ahead’ ability this phase instead of 1, but at least 1 of those units must have the VERMINUS keyword.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            },
+            {
+                "nome": "Foster Competition",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "Krittok has created a system in which his armoured swarms are so desperate to earn his favour that they spend only some of their time plotting his overthrow.\nEffect: Add 1 to wound rolls for friendly Stormvermin units while they are wholly within 13\"of this unit.",
+                "modificatori": {
+                    "mod_wnd": 1
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            }
+        ],
+        "keywords": [
+            "WARMASTER",
+            "UNIQUE",
+            "HERO",
+            "INFANTRY",
+            "CHAOS",
+            "SKAVEN",
+            "VERMINUS"
+        ]
     }
 }
