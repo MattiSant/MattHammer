@@ -37,12 +37,6 @@
                 "bonus_rend": 1
             },
             "descrizione": "Death Stalkers are spectral killers that relentlessly hunt down a chosen enemy.\nDeclare: If there is not a condemned enemy unit on the battlefield, pick an enemy unit to be condemned.\nEffect: For the rest of the battle, add 1 to the Rend characteristic of melee weapons used for attacks made by friendly NIGHTHAUNT units that target the condemned enemy unit.\nErrata\nRoyal Procession"
-        },
-        "Lethal Rancour": {
-            "fase_attivazione": "Hero Phase (Fase Eroi Amica o Nemica)",
-            "monouso": false,
-            "modificatori": {},
-            "descrizione": "The gheists of this horde are drawn from haughty nobles and obsequious courtiers who refused to admit fault even at the very end. They rail constantly at their kingdom's doom, and their undying bitterness renders their spectral touch even more deadly against those they perceive as interlopers.\nDeclare: Pick up to 2 friendly NIGHTHAUNT units to be the targets.\nEffect: The targets’ melee weapons have Anti-charge (+1 Rend) for the rest of the turn."
         }
     },
     "Blades of Khorne": {
