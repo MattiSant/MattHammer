@@ -103,6 +103,16 @@ def costruisci_bersaglio_da_db(nome_unita, dati_u_db, rinforzata=False, bonus_ex
 
     sv = estrai_intero_sicuro(stat.get("save", dif.get("save", 4)), default=4)
     wd = estrai_intero_sicuro(stat.get("ward", dif.get("ward", 7)), default=7)
+    
+    # Estrae eventuali bonus difensivi passivi dalle abilità della Warscroll stessa
+    bonus_ab_dif = {}
+    for ab_u in dati_u_db.get("abilita", []):
+        for k_m, v_m in ab_u.get("modificatori", {}).items():
+            if k_m == "ward_nativo" and isinstance(v_m, (int, float)):
+                wd = min(wd, int(v_m))
+            elif k_m in ["bonus_save", "mod_hit_subito", "mod_wnd_nerf"] and isinstance(v_m, (int, float)):
+                bonus_ab_dif[k_m] = bonus_ab_dif.get(k_m, 0) + int(v_m)
+
     if "ward_nativo" in bonus_extra:
         wd = min(wd, int(bonus_extra["ward_nativo"]))
 
@@ -122,10 +132,10 @@ def costruisci_bersaglio_da_db(nome_unita, dati_u_db, rinforzata=False, bonus_ex
         "nome": nome_unita,
         "save": sv, "ward": wd, "salute": hp_tot, "salute_per_modello": sal_mod,
         "n_modelli": n_mod, "punti": pt_tot, "keywords": kw,
-        "cover": False, "aod": False, "bonus_save_extra": int(bonus_extra.get("bonus_save", 0)),
+        "cover": False, "aod": False, "bonus_save_extra": int(bonus_extra.get("bonus_save", 0)) + int(bonus_ab_dif.get("bonus_save", 0)),
         "obscuring": False, "bersaglio_ha_caricato": False,
-        "mod_ward_penalita": 0, "blocca_ward": False, "mod_wnd_nerf": 0,
-        "mod_hit_subito": int(bonus_extra.get("mod_hit_subito", 0)),
+        "mod_ward_penalita": 0, "blocca_ward": False, "mod_wnd_nerf": int(bonus_ab_dif.get("mod_wnd_nerf", 0)),
+        "mod_hit_subito": int(bonus_extra.get("mod_hit_subito", 0)) + int(bonus_ab_dif.get("mod_hit_subito", 0)),
         "immune_rend": is_etereo
     }
 
@@ -144,7 +154,7 @@ def calcola_output_unita_su_bersaglio(dati_unita_db, rinforzata, bersaglio_test,
         "campione": campione,
         "ha_caricato": ha_caricato,
         "all_out_attack": False,
-        "mod_hit": int(bonus_attaccante.get("mod_hit", 0)) + int(bersaglio_test.get("mod_hit_subito", 0)),
+        "mod_hit": int(bonus_attaccante.get("mod_hit", 0)),
         "mod_wnd": int(bonus_attaccante.get("mod_wnd", 0)),
         "bonus_atk": int(bonus_attaccante.get("bonus_atk", 0)),
         "bonus_rend": int(bonus_attaccante.get("bonus_rend", 0)),
@@ -172,14 +182,17 @@ def calcola_output_unita_su_bersaglio(dati_unita_db, rinforzata, bersaglio_test,
             else:
                 danno_melee += ris["danno_netto"]
             attacchi_tot += ris["attacchi"]
-            r_val = estrai_intero_sicuro(a.get("rend", 0), default=0) + int(mod_glob.get("bonus_rend", 0))
+            b_rnd_arma = 0 if a.get("companion", False) else (
+                int(mod_glob.get("bonus_rend", 0)) + (int(mod_glob.get("bonus_rend_ranged", 0)) if a.get("ranged", False) else int(mod_glob.get("bonus_rend_melee", 0)))
+            )
+            r_val = estrai_intero_sicuro(a.get("rend", 0), default=0) + b_rnd_arma
             if r_val > max_rend:
                 max_rend = r_val
 
     # Aggiunge eventuali Danni Mortali Extra generati da abilità (es. impatto in carica) ridotti dal Ward bersaglio
     ward_b = bersaglio_test.get("ward", 7)
     molt_ward = 0.0 if bersaglio_test.get("blocca_ward", False) else (1.0 if ward_b >= 7 else 1.0 - ((7 - max(2, ward_b)) / 6.0))
-    mortali_ab = float(mod_glob.get("mortal_extra_fisso", 0.0))
+    mortali_ab = float(mod_glob.get("mortal_extra_fisso", 0.0)) + float(mod_glob.get("mortal_ab_analitico", 0.0))
     n_d_ab = int(mod_glob.get("mortal_extra_dadi", 0))
     if n_d_ab > 0:
         t_d_ab = int(mod_glob.get("mortal_extra_tipo", 6))
@@ -610,8 +623,12 @@ def render_sala_di_guerra():
                 puo_rinf = d_fol_db.get("può_essere_rinforzata", True)
                 molt = 2 if fol.get("rinforzata", False) else 1
                 
+                pt_t_fol = st.session_state["tratti_disp_lead_dict"].get(fol.get("tratto_eroico", "Nessuno"), {}).get("punti", 0)
+                pt_a_fol = st.session_state["art_disp_lead_dict"].get(fol.get("artefatto", "Nessuno"), {}).get("punti", 0)
+                pt_fol_visivo = estrai_intero_sicuro(d_fol_db.get('punti', 0)) * molt + pt_t_fol + pt_a_fol
+
                 fc1, fc2, fc3 = st.columns([3, 1.5, 0.6])
-                fc1.markdown(f"• **{fol['nome']}** ({estrai_intero_sicuro(d_fol_db.get('n_modelli', 1))*molt} mod. — `{estrai_intero_sicuro(d_fol_db.get('punti', 0))*molt} pt`)")
+                fc1.markdown(f"• **{fol['nome']}** ({estrai_intero_sicuro(d_fol_db.get('n_modelli', 1))*molt} mod. — `{pt_fol_visivo} pt`)")
                 
                 if puo_rinf:
                     fol["rinforzata"] = fc2.checkbox("Rinforzata (x2)", value=fol.get("rinforzata", False), key=f"fol_rinf_{r_idx}_{f_idx}")
@@ -624,14 +641,25 @@ def render_sala_di_guerra():
 
                 kw_fol = [str(k).upper() for k in d_fol_db.get("keywords", [])]
                 if "HERO" in kw_fol:
-                    st.markdown("<div style='margin-top:-5px; margin-bottom:10px; padding-left:15px;'><small style='color:#d4af37;'>✨ <i>Eroe (Può equipaggiare Tratti e Artefatti)</i></small></div>", unsafe_allow_html=True)
+                    st.markdown("<div style='margin-top:-5px; margin-bottom:10px; padding-left:15px;'><small style='color:#d4af37;'>✨ <i>Eroe nel Seguito (Può equipaggiare Tratti e Artefatti)</i></small></div>", unsafe_allow_html=True)
                     tf_col1, tf_col2 = st.columns(2)
                     
-                    idx_t_f = tratti_disp_lead.index(fol.get("tratto_eroico", "Nessuno")) if fol.get("tratto_eroico", "Nessuno") in tratti_disp_lead else 0
-                    fol["tratto_eroico"] = tf_col1.selectbox("Tratto Eroico", tratti_disp_lead, index=idx_t_f, key=f"fol_trait_{r_idx}_{f_idx}_v{st.session_state['sdg_roster_version']}")
+                    opz_t_fol = list(tratti_disp_lead)
+                    if fol.get("tratto_eroico", "Nessuno") not in opz_t_fol:
+                        opz_t_fol.append(fol["tratto_eroico"])
+                    idx_t_f = opz_t_fol.index(fol.get("tratto_eroico", "Nessuno"))
+                    fol["tratto_eroico"] = tf_col1.selectbox("Tratto Eroico", opz_t_fol, index=idx_t_f, key=f"fol_trait_{r_idx}_{f_idx}_v{st.session_state['sdg_roster_version']}")
                     
-                    idx_a_f = art_disp_lead.index(fol.get("artefatto", "Nessuno")) if fol.get("artefatto", "Nessuno") in art_disp_lead else 0
-                    fol["artefatto"] = tf_col2.selectbox("Artefatto", art_disp_lead, index=idx_a_f, key=f"fol_art_{r_idx}_{f_idx}_v{st.session_state['sdg_roster_version']}")
+                    opz_a_fol = list(art_disp_lead)
+                    if fol.get("artefatto", "Nessuno") not in opz_a_fol:
+                        opz_a_fol.append(fol["artefatto"])
+                    idx_a_f = opz_a_fol.index(fol.get("artefatto", "Nessuno"))
+                    fol["artefatto"] = tf_col2.selectbox("Artefatto", opz_a_fol, index=idx_a_f, key=f"fol_art_{r_idx}_{f_idx}_v{st.session_state['sdg_roster_version']}")
+
+                    if fol.get("tratto_eroico", "Nessuno") != "Nessuno":
+                        st.caption(f"✨ **{fol['tratto_eroico']}:** {st.session_state['tratti_disp_lead_dict'].get(fol['tratto_eroico'], {}).get('descrizione', '')}")
+                    if fol.get("artefatto", "Nessuno") != "Nessuno":
+                        st.caption(f"🏺 **{fol['artefatto']}:** {st.session_state['art_disp_lead_dict'].get(fol['artefatto'], {}).get('descrizione', '')}")
 
                 stat_cf = d_fol_db.get("statistiche_cerchio", {})             
                 dif_f = d_fol_db.get("difesa", {})
@@ -711,7 +739,7 @@ def render_sala_di_guerra():
             pt_u = profilo_dif_lead["punti"]
             n_mod_u = profilo_dif_lead["n_modelli"]
             hp_u = profilo_dif_lead["salute"]
-            oc_u = estrai_intero_sicuro(d_u.get("statistiche_cerchio", {}).get("controllo", 2), default=2) + int(bonus_lead.get("bonus_controllo", 0))
+            oc_u = (estrai_intero_sicuro(d_u.get("statistiche_cerchio", {}).get("controllo", 2), default=2) + int(bonus_lead.get("bonus_controllo", 0))) * n_mod_u
 
             kw_u = d_u.get("keywords", [])
             livello_magico_tot += estrai_livello_potere(kw_u, "Wizard")
@@ -1125,7 +1153,6 @@ def render_sala_di_guerra():
                 mia_aoa = opt_c2.checkbox("Tu usi All-out Attack (+1 Hit)", value=False, key="duel_mia_aoa")
                 nem_aod = opt_c3.checkbox("Nemico usa All-out Defence (+1 Save)", value=False, key="duel_nem_aod")
                 mia_aod = opt_c4.checkbox("Tu usi All-out Defence (+1 Save)", value=False, key="duel_mia_aod")
-                prof_dif_nem_duello["bersaglio_ha_caricato"] = (not mia_carica)
                 
                 mia_sel = unita_totali_schierate[scelta_mia_idx]
                 nem_sel = nemici_elaborati[scelta_nem_idx]
@@ -1138,6 +1165,7 @@ def render_sala_di_guerra():
 
                 prof_dif_nem_duello = dict(nem_sel["profilo_difensivo"])
                 prof_dif_nem_duello["aod"] = nem_aod
+                prof_dif_nem_duello["bersaglio_ha_caricato"] = (not mia_carica)
 
                 prof_dif_mio_duello = dict(mia_sel["profilo_difensivo"])
                 prof_dif_mio_duello["aod"] = mia_aod

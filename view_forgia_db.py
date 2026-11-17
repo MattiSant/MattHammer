@@ -178,7 +178,9 @@ def render_forgia_db():
         
         with st.container(border=True):
             g1, g2, g3 = st.columns([1.5, 2, 1])
-            fazione = g1.selectbox("Fazione", ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Altro"], index=["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Altro"].index(st.session_state.get("forgia_fazione", "Nighthaunt")), key=f"f_faz_{v_key}")
+            opz_faz_fg = ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Altro"]
+            faz_corr_fg = st.session_state.get("forgia_fazione", "Nighthaunt")
+            fazione = g1.selectbox("Fazione", opz_faz_fg, index=opz_faz_fg.index(faz_corr_fg) if faz_corr_fg in opz_faz_fg else 4, key=f"f_faz_{v_key}")
             st.session_state["forgia_fazione"] = fazione
             
             nome = g2.text_input("Nome Unità", value=st.session_state.get("forgia_nome", ""), key=f"f_nome_{v_key}")
@@ -209,7 +211,9 @@ def render_forgia_db():
             oc = c2.number_input("Controllo (OC)", min_value=0, max_value=20, value=st.session_state.get("forgia_controllo", 1), key=f"f_oc_{v_key}")
             st.session_state["forgia_controllo"] = oc
             
-            save = c3.selectbox("Save (Armatura)", ["2+", "3+", "4+", "5+", "6+", "-"], index=["2+", "3+", "4+", "5+", "6+", "-"].index(st.session_state.get("forgia_save", "4+")), key=f"f_sv_{v_key}")
+            opz_sv_fg = ["2+", "3+", "4+", "5+", "6+", "7+", "-"]
+            sv_corr_fg = st.session_state.get("forgia_save", "4+")
+            save = c3.selectbox("Save (Armatura)", opz_sv_fg, index=opz_sv_fg.index(sv_corr_fg) if sv_corr_fg in opz_sv_fg else 2, key=f"f_sv_{v_key}")
             st.session_state["forgia_save"] = save
             
             salute = c4.number_input("Salute (Ferite)", min_value=1, max_value=50, value=st.session_state.get("forgia_salute", 2), key=f"f_hp_{v_key}")
@@ -261,7 +265,7 @@ def render_forgia_db():
                     hit = s2.selectbox("Hit (X+)", opzioni_hw, index=opzioni_hw.index(arma.get("hit", 4)) if arma.get("hit", 4) in opzioni_hw else 3, key=f"a_hit_{idx}_{v_key}")
                     wnd = s3.selectbox("Wound (X+)", opzioni_hw, index=opzioni_hw.index(arma.get("wnd", 4)) if arma.get("wnd", 4) in opzioni_hw else 3, key=f"a_wnd_{idx}_{v_key}")
                     rend = s4.number_input("Rend", 0, 5, value=int(arma.get("rend", 0)) if str(arma.get("rend", 0)) != "---" else 0, key=f"a_rnd_{idx}_{v_key}")
-                    dmg = s5.selectbox("Damage", opzioni_dadi, index=opzioni_dadi.index(str(arma.get("dmg", "1"))) if str(arma.get("dmg", "1")) in opzioni_dadi else 1, key=f"a_dmg_{idx}_{v_key}")
+                    dmg = s5.text_input("Damage", value=str(arma.get("dmg", "1")), key=f"a_dmg_{idx}_{v_key}").strip().upper() or "1"
 
                     ab1, ab2, ab3, ab4, ab5, ab6 = st.columns([1.4, 1.4, 1, 1, 1, 1])
 
@@ -327,7 +331,10 @@ def render_forgia_db():
                 "Ward Fisso / Aura (es. 4+, 5+)": "ward_nativo",
                 "Movimento Extra (+Move)": "bonus_movimento",
                 "Controllo Extra (+OC)": "bonus_controllo",
-                "Critico al 5+": "crit_on"
+                "Critico al 5+": "crit_on",
+                "Malus Hit Nemico (-Hit subito)": "mod_hit_subito",
+                "Malus Wound Nemico (-Wound subito)": "mod_wnd_nerf",
+                "Danni Mortali Medi/Fissi": "mortal_extra_fisso"
             }
             KEY_TO_LABEL_AB = {v: k for k, v in LABEL_TO_KEY_AB.items()}
 
@@ -359,10 +366,17 @@ def render_forgia_db():
                         
                     fasi_valide = [f for f in ab.get("fasi", ["Qualsiasi Fase"]) if f in fasi_gioco] or ["Qualsiasi Fase"]
                     fasi_sel = r3.multiselect("Fasi di Attivazione", fasi_gioco, default=fasi_valide, key=f"ab_fasi_{a_idx}_{v_key}")
-                    descrizione = st.text_area("Descrizione dell'Effetto", value=ab.get("descrizione", ""), key=f"ab_desc_{a_idx}_{v_key}")
+                    
+                    desc_precedente = ab.get("descrizione", "")
+                    descrizione = st.text_area("Descrizione dell'Effetto", value=desc_precedente, key=f"ab_desc_{a_idx}_{v_key}")
 
-                    # Multi-Modificatori Meccanici per Abilità
-                    mod_ab_esistenti = ab.get("modificatori", {})
+                    mod_estr, cond_estr = estrai_effetti_da_testo(descrizione)
+                    if descrizione.strip() != desc_precedente.strip():
+                        mod_ab_esistenti = {**ab.get("modificatori", {}), **mod_estr}
+                        st.session_state[f"ms_mod_ab_{a_idx}_{v_key}"] = [KEY_TO_LABEL_AB[k] for k in mod_ab_esistenti.keys() if k in KEY_TO_LABEL_AB]
+                    else:
+                        mod_ab_esistenti = ab.get("modificatori", {})
+
                     default_mod_ab = [KEY_TO_LABEL_AB[k] for k in mod_ab_esistenti.keys() if k in KEY_TO_LABEL_AB]
 
                     scelte_mod_ab = st.multiselect(
@@ -372,7 +386,6 @@ def render_forgia_db():
                         key=f"ms_mod_ab_{a_idx}_{v_key}"
                     )
 
-                    # Preserva i valori estratti automaticamente dal parser (es. mortali e condizioni)
                     mod_salvati_ab = {
                         k: v for k, v in mod_ab_esistenti.items()
                         if k not in KEY_TO_LABEL_AB
@@ -382,19 +395,24 @@ def render_forgia_db():
                         for mod_lbl in scelte_mod_ab:
                             k_ab = LABEL_TO_KEY_AB[mod_lbl]
                             val_prec = mod_ab_esistenti.get(k_ab, 1 if k_ab != "ward_nativo" else 5)
-                            
+
                             if k_ab == "crit_on":
                                 st.caption("• **Critico al 5+**: Attivo con questa abilità")
                                 mod_salvati_ab["crit_on"] = 5
                             elif k_ab == "ward_nativo":
-                                w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(val_prec) if val_prec in [4, 5, 6] else 1, key=f"inp_ab_wd_{a_idx}_{v_key}")
+                                w_val = st.selectbox("Valore Ward:", [4, 5, 6], index=[4, 5, 6].index(int(val_prec)) if int(val_prec) in [4, 5, 6] else 1, key=f"inp_ab_wd_{a_idx}_{v_key}")
                                 mod_salvati_ab["ward_nativo"] = w_val
+                            elif k_ab == "mortal_extra_fisso":
+                                m_val = st.number_input(f"Valore per {mod_lbl}:", min_value=0.0, max_value=30.0, value=float(val_prec), step=0.25, key=f"inp_ab_{k_ab}_{a_idx}_{v_key}")
+                                mod_salvati_ab[k_ab] = round(m_val, 2)
                             else:
                                 c_val = st.number_input(f"Valore per {mod_lbl}:", min_value=-5, max_value=15, value=int(val_prec), key=f"inp_ab_{k_ab}_{a_idx}_{v_key}")
                                 mod_salvati_ab[k_ab] = c_val
 
-                    _, cond_estr = estrai_effetti_da_testo(descrizione)
-                    cond_finali = {**cond_estr, **ab.get("condizioni", {})}
+                    cond_finali = {**ab.get("condizioni", {}), **cond_estr}
+                    if "mortal_extra_fisso" not in mod_salvati_ab:
+                        cond_finali["mortal_extra_fisso"] = 0.0
+                        cond_finali["mortal_dmg_expr"] = "0"
 
                     abilita_aggiornate.append({
                         "nome": nome_ab,
@@ -407,7 +425,7 @@ def render_forgia_db():
                         "modificatori": mod_salvati_ab,
                         "condizioni": cond_finali
                     })
-                    
+
             st.session_state["forgia_abilita"] = abilita_aggiornate
 
             st.markdown("---")

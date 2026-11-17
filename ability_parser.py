@@ -106,42 +106,58 @@ def estrai_effetti_da_testo(testo_completo):
     ]):
         condizioni["richiede_carica"] = True
 
-    if re.search(r'(\d+)\s+or\s+more\s+models|(\d+)\s+o\s+più\s+modelli', full_low):
+    m_orda = re.search(r'(\d+)\s+or\s+more\s+models|(\d+)\s+o\s+più\s+modelli', full_low)
+    if m_orda:
         condizioni["richiede_5_modelli"] = True
+        condizioni["min_modelli_bersaglio"] = int(m_orda.group(1) or m_orda.group(2))
 
     if "melee weapons" in testo_effetto or "armi da mischia" in testo_effetto:
         condizioni["solo_melee"] = True
     if "ranged weapons" in testo_effetto or "missile weapons" in testo_effetto or "armi da tiro" in testo_effetto:
         condizioni["solo_ranged"] = True
 
-    # 2. Modificatori alle Statistiche (Supporta cifre e parole: "add 1", "aggiungi 2", ecc.)
+    # 2. Modificatori alle Statistiche (Supporta cifre, parole e frasi combinate "hit and wound rolls")
     m_atk = re.search(r'(?:add|aggiungi)\s+(\d+|one|two|three)\s+(?:to\s+the\s+|alla\s+caratteristica\s+)?attacks?', testo_effetto)
     if m_atk:
         modificatori["bonus_atk"] = _converti_numero(m_atk.group(1))
 
-    m_hit = re.search(r'(?:add|aggiungi)\s+(\d+|one|two)\s+(?:to\s+|ai\s+)?(?:the\s+)?hit\s+rolls?', testo_effetto)
-    if m_hit:
-        modificatori["mod_hit"] = _converti_numero(m_hit.group(1))
+    # Hit & Wound combinati o singoli (positivi)
+    m_hw_comb = re.search(r'(?:add|aggiungi)\s+(\d+|one|two)\s+(?:to\s+|ai\s+)?(?:the\s+)?hit\s+(?:rolls?\s+)?and\s+wound\s+rolls?', testo_effetto)
+    if m_hw_comb:
+        val_hw = _converti_numero(m_hw_comb.group(1))
+        modificatori["mod_hit"] = val_hw
+        modificatori["mod_wnd"] = val_hw
+    else:
+        m_hit = re.search(r'(?:add|aggiungi)\s+(\d+|one|two)\s+(?:to\s+|ai\s+)?(?:the\s+)?hit\s+rolls?', testo_effetto)
+        if m_hit:
+            modificatori["mod_hit"] = _converti_numero(m_hit.group(1))
+        m_wnd = re.search(r'(?:add|aggiungi)\s+(\d+|one|two)\s+(?:to\s+|ai\s+)?(?:the\s+)?wound\s+rolls?', testo_effetto)
+        if m_wnd:
+            modificatori["mod_wnd"] = _converti_numero(m_wnd.group(1))
 
-    m_hit_sub = re.search(r'(?:subtract|sottrai)\s+(\d+|one|two)\s+(?:from\s+|dai\s+)?(?:the\s+)?hit\s+rolls?', testo_effetto)
-    if m_hit_sub:
-        modificatori["mod_hit_subito"] = -_converti_numero(m_hit_sub.group(1))
+    # Hit & Wound combinati o singoli (negativi / debuff)
+    m_hw_sub_comb = re.search(r'(?:subtract|sottrai)\s+(\d+|one|two)\s+(?:from\s+|dai\s+)?(?:the\s+)?hit\s+(?:rolls?\s+)?and\s+wound\s+rolls?', testo_effetto)
+    if m_hw_sub_comb:
+        val_sub_hw = -_converti_numero(m_hw_sub_comb.group(1))
+        modificatori["mod_hit_subito"] = val_sub_hw
+        modificatori["mod_wnd_nerf"] = val_sub_hw
+    else:
+        m_hit_sub = re.search(r'(?:subtract|sottrai)\s+(\d+|one|two)\s+(?:from\s+|dai\s+)?(?:the\s+)?hit\s+rolls?', testo_effetto)
+        if m_hit_sub:
+            modificatori["mod_hit_subito"] = -_converti_numero(m_hit_sub.group(1))
+        m_wnd_sub = re.search(r'(?:subtract|sottrai)\s+(\d+|one|two)\s+(?:from\s+|dai\s+)?(?:the\s+)?wound\s+rolls?', testo_effetto)
+        if m_wnd_sub:
+            modificatori["mod_wnd_nerf"] = -_converti_numero(m_wnd_sub.group(1))
 
-    m_wnd = re.search(r'(?:add|aggiungi)\s+(\d+|one|two)\s+(?:to\s+|ai\s+)?(?:the\s+)?wound\s+rolls?', testo_effetto)
-    if m_wnd:
-        modificatori["mod_wnd"] = _converti_numero(m_wnd.group(1))
-
-    m_wnd_sub = re.search(r'(?:subtract|sottrai)\s+(\d+|one|two)\s+(?:from\s+|dai\s+)?(?:the\s+)?wound\s+rolls?', testo_effetto)
-    if m_wnd_sub:
-        modificatori["mod_wnd_nerf"] = -_converti_numero(m_wnd_sub.group(1))
-
-    m_rend = re.search(r'(?:add|aggiungi)\s+(\d+|one|two)\s+(?:to\s+the\s+|alla\s+caratteristica\s+)?rend', testo_effetto)
+    m_rend = re.search(r'(?:add|aggiungi)\s+(\d+|one|two)\s+(?:to\s+the\s+|alla\s+caratteristica\s+)?rend|improve\s+the\s+rend\s+characteristic.*?\s+by\s+(\d+|one|two)', testo_effetto)
     if m_rend:
-        modificatori["bonus_rend"] = _converti_numero(m_rend.group(1))
+        modificatori["bonus_rend"] = _converti_numero(m_rend.group(1) or m_rend.group(2))
 
-    m_dmg = re.search(r'(?:add|aggiungi)\s+(\d+|one|two)\s+(?:to\s+the\s+|alla\s+caratteristica\s+)?damage', testo_effetto)
+    m_dmg = re.search(r'(?:add|aggiungi)\s+(\d+|one|two)\s+(?:to\s+the\s+|alla\s+caratteristica\s+)?damage|charge\s*\(\+(\d+)\s*damage\)', testo_effetto)
     if m_dmg:
-        modificatori["bonus_dmg"] = _converti_numero(m_dmg.group(1))
+        modificatori["bonus_dmg"] = _converti_numero(m_dmg.group(1) or m_dmg.group(2))
+        if m_dmg.group(2):
+            condizioni["richiede_carica"] = True
 
     m_save = re.search(r'(?:add|aggiungi)\s+(\d+|one|two)\s+(?:to\s+|ai\s+)?(?:the\s+)?save\s+rolls?', testo_effetto)
     if m_save:
@@ -155,9 +171,10 @@ def estrai_effetti_da_testo(testo_completo):
     if m_oc:
         modificatori["bonus_controllo"] = _converti_numero(m_oc.group(1))
 
-    m_ward = re.search(r'ward\s*\(?([456])\+\)?', testo_effetto)
-    if m_ward:
-        modificatori["ward_nativo"] = int(m_ward.group(1))
+    # Riconosce sia "WARD (5+)" sia "5+ Ward", ignorando le aure riservate ai soli Eroi se l'unità non è un Eroe
+    m_ward = re.search(r'(?:ward\s*\(?([456])\+\)?|([456])\+\s*ward)', testo_effetto)
+    if m_ward and "heroes have ward" not in testo_effetto:
+        modificatori["ward_nativo"] = int(m_ward.group(1) or m_ward.group(2))
 
     if re.search(r'critical\s+hits?\s+on\s+(?:unmodified\s+)?5\+|critico\s+al\s+5\+', testo_effetto):
         modificatori["crit_on"] = 5
@@ -171,16 +188,13 @@ def estrai_effetti_da_testo(testo_completo):
         modificatori["crit_override"] = "Crit (2 Hits)"
 
     # 3. Danni Mortali (Mortal Damage / Mortal Wounds)
-    # Evita falsi positivi quando l'abilità dice solo "Crit (Mortal)"
     testo_senza_crit = testo_effetto.replace("crit (mortal)", "")
-    if any(k in testo_senza_crit for k in ["mortal damage", "mortal wound", "danni mortali", "ferite mortali", "mortali"]):
-        # Soglia (es. "on a 2+", "al 3+")
-        m_soglia = re.search(r'(?:on\s+a|on\s+an|al|con\s+un|for\s+each)\s+([2-6])\+', testo_senza_crit)
+    if any(k in testo_senza_crit for k in ["mortal damage", "mortal wound", "danni mortali", "ferite mortali", "mortali"]) and "fails to cast" not in testo_senza_crit:
+        m_soglia = re.search(r'(?:on\s+a|on\s+an|al|con\s+un|for\s+each)(?:\s+(?:d[36]\s+)?(?:roll|risultato)\s+(?:of|di))?\s+([2-6])\+', testo_senza_crit)
         soglia_val = int(m_soglia.group(1)) if m_soglia else 1
 
-        # Caso 1: "Roll a D3. On a 2+, inflict an amount of mortal damage equal to the roll" (Slaughterpriest / simili)
+        # Caso 1: "Roll a D3. On a 2+, inflict an amount of mortal damage equal to the roll"
         if re.search(r'roll\s+a\s+d3.*equal\s+to\s+the\s+roll', testo_senza_crit, flags=re.DOTALL):
-            # Su un D3, tirando 2 o 3 infliggi 2 o 3 danni -> Media esatta = (0 + 2 + 3)/3 = 1.67 danni
             condizioni["mortal_extra_dadi"] = 1
             condizioni["mortal_extra_tipo"] = 3
             condizioni["mortal_extra_soglia"] = f"{max(2, soglia_val)}+"
@@ -201,27 +215,26 @@ def estrai_effetti_da_testo(testo_completo):
 
         # Caso 3: "Roll a dice / Roll a D3. On a 2+, inflict D3 / D6 / N mortal damage" (es. Black Coach)
         else:
-            # Determina su che dado si fa il test di attivazione (default D6, o D3 se specificato prima della soglia)
             testo_prima_soglia = testo_senza_crit[:m_soglia.start()] if m_soglia else testo_senza_crit
             dado_test = 3 if ("roll a d3" in testo_prima_soglia or "tira un d3" in testo_prima_soglia) else 6
             prob_attivazione = 1.0 if soglia_val <= 1 else max(0.0, (dado_test - soglia_val + 1) / float(dado_test))
 
-            # Quanto danno infligge se ha successo? (es. "inflict D3 mortal", "inflict 2D6 mortal", "inflict 3 mortal")
             m_dmg_expr = re.search(r'(?:inflict|infliggi)\s+(\d*d[36](?:\+\d+)?|\d+)\s+(?:mortal|danni\s+mortali|ferite\s+mortali)', testo_senza_crit)
             expr_danno = m_dmg_expr.group(1).upper() if m_dmg_expr else "D3"
 
             condizioni["mortal_prob"] = prob_attivazione
             condizioni["mortal_dmg_expr"] = expr_danno
 
-            # Calcolo media analitica esatta per i riassunti rapidi
             if expr_danno.isdigit():
                 media_dmg = float(expr_danno)
             elif "D3" in expr_danno:
                 molt_d = int(expr_danno.split("D")[0]) if expr_danno.split("D")[0].isdigit() else 1
-                media_dmg = molt_d * 2.0
+                bonus_d = int(expr_danno.split("+")[1]) if "+" in expr_danno else 0
+                media_dmg = molt_d * 2.0 + bonus_d
             elif "D6" in expr_danno:
                 molt_d = int(expr_danno.split("D")[0]) if expr_danno.split("D")[0].isdigit() else 1
-                media_dmg = molt_d * 3.5
+                bonus_d = int(expr_danno.split("+")[1]) if "+" in expr_danno else 0
+                media_dmg = molt_d * 3.5 + bonus_d
             else:
                 media_dmg = 2.0
 
@@ -230,7 +243,6 @@ def estrai_effetti_da_testo(testo_completo):
             modificatori["mortal_extra_fisso"] = danno_medio_atteso_mortali
 
     return modificatori, condizioni
-
 
 def analizza_abilita_warscroll(testo_grezzo):
     """
@@ -268,7 +280,15 @@ def analizza_abilita_warscroll(testo_grezzo):
     nome_abilita = "Abilità Importata"
     if len(linee) > 1:
         seconda_riga = linee[1]
-        if ":" in seconda_riga and not seconda_riga.lower().startswith(("declare:", "effect:", "reaction:")):
+        if seconda_riga.lower().startswith(("declare:", "effect:", "reaction:", "effetto:", "dichiarazione:")):
+            if ":" in prima_riga and not prima_riga.lower().startswith(("once", "any", "your", "enemy", "passive", "reaction")):
+                parti = prima_riga.split(":", 1)
+                nome_abilita = parti[0].strip().title()
+                descrizione = "\n".join(([parti[1].strip()] if parti[1].strip() else []) + linee[1:]).strip()
+            else:
+                nome_abilita = prima_riga.strip().title()
+                descrizione = "\n".join(linee[1:]).strip()
+        elif ":" in seconda_riga:
             parti = seconda_riga.split(":", 1)
             nome_abilita = parti[0].strip().title()
             resto = parti[1].strip()
@@ -317,28 +337,40 @@ def applica_abilita_attive_a_mod_globali(abilita_lista, mod_globali_base, bersag
         if attive_flags is not None and not attive_flags.get(idx, True):
             continue
 
-        # Se l'abilità proviene da un vecchio salvataggio senza 'condizioni', le estrae al volo dalla descrizione
         mods_salvati = ab.get("modificatori", {})
         cond_salvate = ab.get("condizioni", {})
         mods_auto, cond_auto = estrai_effetti_da_testo(ab.get("descrizione", ""))
 
         cond = {**cond_auto, **cond_salvate}
-        mods = {**mods_auto, **mods_salvati}
+        mods = dict(mods_salvati) if ("condizioni" in ab or mods_salvati) else dict(mods_auto)
+        if "crit_override" in mods_auto and "crit_override" not in mods:
+            mods["crit_override"] = mods_auto["crit_override"]
+            
 
         # 1. Verifica condizione CARICA (es. Black Coach, Bladegheist Revenants)
         if cond.get("richiede_carica", False) and not ha_caricato:
             continue
 
         # 2. Verifica condizione ORDA (es. Grimghast Reapers: 5+ modelli nel bersaglio)
-        if cond.get("richiede_5_modelli", False) and n_mod_bersaglio < 5:
+        if cond.get("richiede_5_modelli", False) and n_mod_bersaglio < int(cond.get("min_modelli_bersaglio", 5)):
             continue
 
-        # 3. Applica bonus alle caratteristiche
-        mod["bonus_atk"] = mod.get("bonus_atk", 0) + int(mods.get("bonus_atk", 0))
+        # 3. Applica bonus alle caratteristiche (distinguendo eventuali vincoli solo_melee / solo_ranged)
+        if cond.get("solo_melee", False):
+            mod["bonus_atk_melee"] = mod.get("bonus_atk_melee", 0) + int(mods.get("bonus_atk", 0))
+            mod["bonus_rend_melee"] = mod.get("bonus_rend_melee", 0) + int(mods.get("bonus_rend", 0))
+            mod["bonus_dmg_melee"] = mod.get("bonus_dmg_melee", 0) + int(mods.get("bonus_dmg", 0))
+        elif cond.get("solo_ranged", False):
+            mod["bonus_atk_ranged"] = mod.get("bonus_atk_ranged", 0) + int(mods.get("bonus_atk", 0))
+            mod["bonus_rend_ranged"] = mod.get("bonus_rend_ranged", 0) + int(mods.get("bonus_rend", 0))
+            mod["bonus_dmg_ranged"] = mod.get("bonus_dmg_ranged", 0) + int(mods.get("bonus_dmg", 0))
+        else:
+            mod["bonus_atk"] = mod.get("bonus_atk", 0) + int(mods.get("bonus_atk", 0))
+            mod["bonus_rend"] = mod.get("bonus_rend", 0) + int(mods.get("bonus_rend", 0))
+            mod["bonus_dmg"] = mod.get("bonus_dmg", 0) + int(mods.get("bonus_dmg", 0))
+
         mod["mod_hit"] = mod.get("mod_hit", 0) + int(mods.get("mod_hit", 0))
         mod["mod_wnd"] = mod.get("mod_wnd", 0) + int(mods.get("mod_wnd", 0))
-        mod["bonus_rend"] = mod.get("bonus_rend", 0) + int(mods.get("bonus_rend", 0))
-        mod["bonus_dmg"] = mod.get("bonus_dmg", 0) + int(mods.get("bonus_dmg", 0))
         if mods.get("crit_on") == 5:
             mod["crit_on"] = 5
         if "crit_override" in mods:
@@ -354,10 +386,12 @@ def applica_abilita_attive_a_mod_globali(abilita_lista, mod_globali_base, bersag
                 if str(mod.get("mortal_extra_soglia", "Nessuna (Somma)")).startswith("Nessuna"):
                     mod["mortal_extra_soglia"] = mods.get("mortal_extra_soglia", cond.get("mortal_extra_soglia", "Nessuna (Somma)"))
             elif m_fisso > 0:
-                mod["mortal_extra_fisso"] = mod.get("mortal_extra_fisso", 0.0) + m_fisso
                 if cond.get("mortal_dmg_expr", "0") != "0":
+                    mod["mortal_ab_analitico"] = mod.get("mortal_ab_analitico", 0.0) + m_fisso
                     lista_mc = list(mod.get("mortal_mc_list", []))
                     lista_mc.append((float(cond.get("mortal_prob", 1.0)), str(cond.get("mortal_dmg_expr", "D3"))))
                     mod["mortal_mc_list"] = lista_mc
-                    
+                else:
+                    mod["mortal_extra_fisso"] = mod.get("mortal_extra_fisso", 0.0) + m_fisso
+
     return mod

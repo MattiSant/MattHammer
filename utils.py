@@ -257,8 +257,9 @@ def render_card_abilita_wahapedia(ab):
             <span>{tipo_ab.upper()} — {fasi_txt.upper()}</span>
             <span>{badges_extra}</span>
         </div>
-        <div style="padding:8px 12px; color:#f4ecd8; font-size:0.93rem; line-height:1.45;">
-            <b style="color:#f7d57f; font-family:'Cinzel', serif;">{ab.get('nome', 'Abilità')}:</b> {ab.get('descrizione', '')}
+        <div style="padding:8px 12px; color:#f4ecd8; font-size:0.95rem; line-height:1.5;">
+            <b style="color:#f7d57f; font-family:'Cinzel', serif;">{ab.get('nome', 'Abilità')}:</b>
+            {ab.get('descrizione', '').replace('\n', '<br>').replace('Declare:', '<b style="color:#e6c665;">Declare:</b>').replace('Effect:', '<b style="color:#e6c665;">Effect:</b>').replace('Reaction:', '<b style="color:#ff8a80;">Reaction:</b>')}
         </div>
     </div>
     """

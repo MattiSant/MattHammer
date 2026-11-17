@@ -18,11 +18,12 @@ from utils import (
     render_card_abilita_wahapedia
 )
 from ability_parser import(
-    applica_abilita_attive_a_mod_globali
+    applica_abilita_attive_a_mod_globali,
+    estrai_effetti_da_testo
 ) 
 
 def _calcola_mortali_da_mod(m_dict):
-        d_base = float(m_dict.get("mortal_extra_fisso", 0.0))
+        d_base = float(m_dict.get("mortal_extra_fisso", 0.0)) + float(m_dict.get("mortal_ab_analitico", 0.0))
         n_d = int(m_dict.get("mortal_extra_dadi", 0))
         t_d = int(m_dict.get("mortal_extra_tipo", 6))
         soglia_s = str(m_dict.get("mortal_extra_soglia", "Nessuna (Somma)"))
@@ -146,7 +147,7 @@ def render_testa_a_testa():
                     hit = s2.selectbox("Hit", opzioni_hw, index=opzioni_hw.index(p_arma.get("hit", 4)) if p_arma.get("hit", 4) in opzioni_hw else 3, key=f"hit_{idx}_{v_key}")
                     wnd = s3.selectbox("Wnd", opzioni_hw, index=opzioni_hw.index(p_arma.get("wnd", 4)) if p_arma.get("wnd", 4) in opzioni_hw else 3, key=f"wnd_{idx}_{v_key}")
                     rend = s4.number_input("Rend", 0, 5, value=int(p_arma.get("rend", 0)) if str(p_arma.get("rend", 0)) != "---" else 0, key=f"rnd_{idx}_{v_key}")
-                    dmg = s5.selectbox("Dmg", opzioni_dadi, index=opzioni_dadi.index(str(p_arma.get("dmg", "1"))) if str(p_arma.get("dmg", "1")) in opzioni_dadi else 1, key=f"dmg_{idx}_{v_key}")
+                    dmg = s5.text_input("Dmg", value=str(p_arma.get("dmg", "1")), key=f"dmg_{idx}_{v_key}").strip().upper() or "1"
 
                     ab1, ab2, ab3, ab4, ab5 = st.columns([1.4, 1.4, 1, 1, 1])
                     c_att = p_arma.get("crit_type", "Nessuno")
@@ -279,7 +280,14 @@ def render_testa_a_testa():
                 for idx_ab, ab in enumerate(abilita_att):
                     ca_chk, ca_txt = st.columns([0.4, 3.6])
                     flags_abilita_att[idx_ab] = ca_chk.checkbox("Usa", value=True, key=f"use_ab_att_{attaccante_sel}_{idx_ab}")
-                    ca_txt.markdown(render_card_abilita_wahapedia(ab), unsafe_allow_html=True)
+                    with ca_txt:
+                        st.markdown(render_card_abilita_wahapedia(ab), unsafe_allow_html=True)
+                        _, c_ab_info = estrai_effetti_da_testo(ab.get("descrizione", ""))
+                        c_ab_tot = {**c_ab_info, **ab.get("condizioni", {})}
+                        if flags_abilita_att[idx_ab] and c_ab_tot.get("richiede_carica", False):
+                            st.caption("⚡ *Nota: Questo bonus si attiva solo quando spunti **'L'unità ha Caricato'** qui sotto.*")
+                        elif flags_abilita_att[idx_ab] and c_ab_tot.get("richiede_5_modelli", False):
+                            st.caption(f"⚡ *Nota: Questo bonus si attiva solo contro bersagli con almeno {c_ab_tot.get('min_modelli_bersaglio', 5)} modelli.*")
 
 
     # ==========================================
@@ -439,6 +447,7 @@ def render_testa_a_testa():
     punti_b = 100
     n_modelli_b = 5
     keywords_b = ["INFANTRY"]
+    bonus_dif_ab_bers = {"bonus_save": 0, "mod_hit_subito": 0, "mod_wnd_nerf": 0}
 
     if bersaglio_sel == "--- Inserimento Manuale ---":
         with st.container(border=True):
@@ -483,10 +492,20 @@ def render_testa_a_testa():
             
             cw2.markdown(f"**Salute Totale:** `{salute_b} PF`\n\n**Valore:** `{punti_b} pt`")
             abilita_bers = d_bers_db.get("abilita", [])
+            bonus_dif_ab_bers = {"bonus_save": 0, "mod_hit_subito": 0, "mod_wnd_nerf": 0}
             if abilita_bers:
                 with st.expander(f"🛡️ Abilità della Warscroll Bersaglio ({len(abilita_bers)})", expanded=False):
-                    for ab_b in abilita_bers:
-                        st.markdown(render_card_abilita_wahapedia(ab_b), unsafe_allow_html=True)
+                    for idx_b_ab, ab_b in enumerate(abilita_bers):
+                        cb_chk, cb_txt = st.columns([0.4, 3.6])
+                        usa_ab_b = cb_chk.checkbox("Usa", value=True, key=f"use_ab_bers_{bersaglio_sel}_{idx_b_ab}")
+                        cb_txt.markdown(render_card_abilita_wahapedia(ab_b), unsafe_allow_html=True)
+                        if usa_ab_b:
+                            m_b_auto, _ = estrai_effetti_da_testo(ab_b.get("descrizione", ""))
+                            m_b_tot = {**m_b_auto, **ab_b.get("modificatori", {})}
+                            if "ward_nativo" in m_b_tot:
+                                ward_b = min(ward_b, int(m_b_tot["ward_nativo"]))
+                            for k_dif in ["bonus_save", "mod_hit_subito", "mod_wnd_nerf"]:
+                                bonus_dif_ab_bers[k_dif] += int(m_b_tot.get(k_dif, 0))
 
     with st.container(border=True):
         st.markdown("**Buff Difensivi e Terreno del Bersaglio (Modificabili)**")
@@ -519,9 +538,10 @@ def render_testa_a_testa():
 
     bersaglio_dict = {
         "save": save_b, "ward": ward_b, "salute": salute_b, "n_modelli": n_modelli_b, "keywords": keywords_b,
-        "cover": cover_b, "aod": aod_b, "bonus_save_extra": 1 if extra_save_b else 0,
+        "cover": cover_b, "aod": aod_b, "bonus_save_extra": (1 if extra_save_b else 0) + bonus_dif_ab_bers["bonus_save"],
         "obscuring": obscuring_b, "bersaglio_ha_caricato": bersaglio_carica,
-        "mod_ward_penalita": 0, "blocca_ward": blocca_ward_b, "mod_wnd_nerf": 0,
+        "mod_ward_penalita": 0, "blocca_ward": blocca_ward_b, "mod_wnd_nerf": bonus_dif_ab_bers["mod_wnd_nerf"],
+        "mod_hit_subito": bonus_dif_ab_bers["mod_hit_subito"],
         "immune_rend": immune_rend_b
     }
 
@@ -577,7 +597,8 @@ def render_testa_a_testa():
 
     attacchi_totali = sum(r['attacchi'] for r in risultati_armi)
     tutte_armi_attive = [item["arma"] for item in dettaglio_armi_combinate if item["arma"]["attiva"] and str(item["arma"]["hit"]) != "---"]
-    max_rend = max([int(a['rend']) for a in tutte_armi_attive if str(a['rend']) != "---"] + [0])
+    b_rend_glob = int(mod_globali_att.get("bonus_rend", 0)) + int(mod_globali_att.get("bonus_rend_melee", 0))
+    max_rend = max([int(a['rend']) + (0 if a.get("companion", False) else b_rend_glob) for a in tutte_armi_attive if str(a['rend']) != "---"] + [0])
     ha_crit_mortal = any(a.get('crit_type', 'Nessuno') == 'Crit (Mortal)' for a in tutte_armi_attive) or (mod_globali_att.get("crit_override") == "Crit (Mortal)")
     anti_targets = list(set([a['anti_target'] for a in tutte_armi_attive if a.get('anti_target', 'Nessuno') != 'Nessuno']))
 
@@ -639,6 +660,12 @@ def render_testa_a_testa():
                     "Arma": f"{item['arma']['nome']} ({item['fonte']})" if config_supporti else item['arma']["nome"], 
                     "Attacchi": round(item['risultato']["attacchi"], 1), "Hits": round(item['risultato']["hits"], 2), 
                     "Wounds": round(item['risultato']["wounds"], 2), "Danno Netto": round(item['risultato']["danno_netto"], 2)
+                })
+            if danno_extra_base > 0:
+                righe_armi.append({
+                    "Arma": "⚡ Abilità / Danni Mortali Extra",
+                    "Attacchi": "0.0", "Hits": "0.0", "Wounds": "0.0",
+                    "Danno Netto": round(danno_extra_base * moltiplicatore_ward, 2)
                 })
             if righe_armi:
                 st.dataframe(pd.DataFrame(righe_armi), use_container_width=True, hide_index=True)

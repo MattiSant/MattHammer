@@ -284,7 +284,9 @@ if st.session_state["pagina_selezionata"] == "Laboratorio Tattico (Testa a Testa
             st.session_state["corrente_campione"] = dati_sel["campione"]
             st.session_state["corrente_punti"] = dati_sel["punti"]
             st.session_state["corrente_difesa"] = dati_sel.get("difesa", {"salute_per_modello": 0, "save": "---", "ward": "---"})
+            st.session_state["sel_attaccante_principale"] = "--- Inserimento Manuale ---"
             st.session_state["form_version"] += 1
+            mostra_toast_rapido(f"Profilo '{scelta_rapida}' copiato nell'Editor Manuale!", "✅")
             st.rerun()
 
         if st.sidebar.button("Reset Parametri", use_container_width=True):

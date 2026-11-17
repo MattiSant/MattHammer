@@ -360,6 +360,7 @@ def _push_su_github_file(filepath, json_dati, messaggio_commit="Aggiornamento Da
         if put_resp.status_code in [200, 201]:
             ok_msg = f"✅ {nome_file} sincronizzato su GitHub ({repo})!"
             st.session_state["last_sync_status"] = ("success", ok_msg)
+            st.session_state["cloud_sincronizzato"] = True
             return True, ok_msg
         else:
             err_msg = f"❌ Errore Scrittura GitHub ({put_resp.status_code}): {put_resp.text}"
@@ -397,21 +398,55 @@ def tira_dado_mc(val_str, size):
         return np.sum(lanci, axis=0) + bonus
     return np.zeros(size, dtype=int)
 
+def somma_danni_indipendenti_mc(val_str, counts_array, bonus_per_colpo=0):
+    """
+    Per ogni simulazione i, somma 'counts_array[i]' lanci indipendenti dell'espressione dado 'val_str'
+    più 'bonus_per_colpo' per ciascun colpo andato a segno. Cattura la vera varianza di AoS 4e.
+    """
+    n_sim = len(counts_array)
+    counts = np.maximum(0, counts_array.astype(int))
+    max_c = int(np.max(counts))
+    if max_c <= 0:
+        return np.zeros(n_sim, dtype=float)
+
+    val_str = str(val_str).upper().replace(" ", "")
+    if val_str.isdigit():
+        return counts * float(int(val_str) + bonus_per_colpo)
+
+    match = re.match(r"^(\d*)D([36])(?:\+(\d+))?$", val_str)
+    if match:
+        n_dadi_per_colpo = int(match.group(1)) if match.group(1) else 1
+        tipo = int(match.group(2))
+        bonus_dado = int(match.group(3)) if match.group(3) else 0
+        tot_dadi_array = counts * n_dadi_per_colpo
+        max_dadi = int(np.max(tot_dadi_array))
+        lanci = np.random.randint(1, tipo + 1, size=(n_sim, max_dadi))
+        mask = np.arange(max_dadi)[None, :] < tot_dadi_array[:, None]
+        somma_dadi = np.sum(np.where(mask, lanci, 0), axis=1)
+        return somma_dadi + counts * float(bonus_dado + bonus_per_colpo)
+    return np.zeros(n_sim, dtype=float)
+
 def calcola_arma_analitico(arma, mod_globali, bersaglio):
     if not arma.get("attiva", False) or str(arma.get("hit")) == "---" or str(arma.get("wnd")) == "---" or str(arma.get("atk")) == "---" or str(arma.get("dmg")) == "---": 
         return {"attacchi": 0, "hits": 0, "wounds": 0, "unsaved": 0, "mortal": 0, "danno_netto": 0}
 
     is_comp = arma.get("companion", False)
+    is_rng = arma.get("ranged", False)
+    b_atk_spec = mod_globali.get("bonus_atk_ranged", 0) if is_rng else mod_globali.get("bonus_atk_melee", 0)
+    b_rnd_spec = mod_globali.get("bonus_rend_ranged", 0) if is_rng else mod_globali.get("bonus_rend_melee", 0)
+    b_dmg_spec = mod_globali.get("bonus_dmg_ranged", 0) if is_rng else mod_globali.get("bonus_dmg_melee", 0)
+
     atk_per_modello = media_dado(arma["atk"])
-    if not is_comp: atk_per_modello += mod_globali.get("bonus_atk", 0)
+    if not is_comp: atk_per_modello += (mod_globali.get("bonus_atk", 0) + b_atk_spec)
     
-    atk_totali = atk_per_modello * mod_globali["n_modelli"]
-    if mod_globali.get("campione", False) and not is_comp: atk_totali += 1
+    atk_totali = max(0.0, atk_per_modello * mod_globali["n_modelli"])
+    if mod_globali.get("campione", False) and not is_comp and mod_globali["n_modelli"] > 0: atk_totali += 1
 
     # Hit Roll (Cap AoS 4e: -1 / +1)
     mod_hit_netto = mod_globali.get("mod_hit", 0)
     if is_comp and mod_hit_netto > 0 and not mod_globali.get("all_out_attack", False): mod_hit_netto = 0
-    if bersaglio.get("obscuring", False) and arma.get("ranged", False): mod_hit_netto -= 1
+    mod_hit_netto += int(bersaglio.get("mod_hit_subito", 0))
+    if bersaglio.get("obscuring", False) and is_rng: mod_hit_netto -= 1
     hit_target = np.clip(int(arma["hit"]) - np.clip(mod_hit_netto, -1, 1), 2, 6)
 
     soglia_crit = mod_globali.get("crit_on", 6)
@@ -421,7 +456,7 @@ def calcola_arma_analitico(arma, mod_globali, bersaglio):
 
     danno_per_colpo = media_dado(arma["dmg"])
     if arma.get("charge_dmg", False) and mod_globali.get("ha_caricato", False): danno_per_colpo += 1
-    if not is_comp: danno_per_colpo += mod_globali.get("bonus_dmg", 0)
+    if not is_comp: danno_per_colpo += (mod_globali.get("bonus_dmg", 0) + b_dmg_spec)
 
     mortal_da_crit = 0.0
     auto_wounds = 0.0
@@ -443,11 +478,11 @@ def calcola_arma_analitico(arma, mod_globali, bersaglio):
     wounds_totali = (hits_che_devono_ferire * prob_wnd) + auto_wounds
 
     # Rend & Anti-X
-    rend_effettivo = (0 if str(arma.get("rend", 0)) == "---" else int(arma.get("rend", 0))) + (mod_globali.get("bonus_rend", 0) if not is_comp else 0)
+    rend_effettivo = (0 if str(arma.get("rend", 0)) == "---" else int(arma.get("rend", 0))) + ((mod_globali.get("bonus_rend", 0) + b_rnd_spec) if not is_comp else 0)
     anti_t = arma.get("anti_target", "Nessuno")
     kw_bers = [str(k).upper() for k in bersaglio.get("keywords", [])]
     
-    if anti_t != "Nessuno" and anti_t != "CHARGE" and anti_t in kw_bers:
+    if anti_t != "Nessuno" and anti_t != "CHARGE" and any(anti_t in k for k in kw_bers):
         rend_effettivo += 1
     if (arma.get("anti_charge", False) or anti_t == "CHARGE") and mod_globali.get("bersaglio_ha_caricato", False):
         rend_effettivo += 1
@@ -482,14 +517,18 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
     for arma in armi:
         if not arma.get("attiva", False) or str(arma.get("hit")) == "---" or str(arma.get("wnd")) == "---" or str(arma.get("atk")) == "---" or str(arma.get("dmg")) == "---": continue
         is_comp = arma.get("companion", False)
+        is_rng = arma.get("ranged", False)
+        b_atk_spec = mod_globali.get("bonus_atk_ranged", 0) if is_rng else mod_globali.get("bonus_atk_melee", 0)
+        b_rnd_spec = mod_globali.get("bonus_rend_ranged", 0) if is_rng else mod_globali.get("bonus_rend_melee", 0)
+        b_dmg_spec = mod_globali.get("bonus_dmg_ranged", 0) if is_rng else mod_globali.get("bonus_dmg_melee", 0)
+
         atk_base = tira_dado_mc(arma["atk"], n_sim)
-        if not is_comp: atk_base = atk_base + mod_globali.get("bonus_atk", 0)
-        atk_tot_array = np.maximum(0, atk_base * mod_globali["n_modelli"] + (1 if (mod_globali.get("campione", False) and not is_comp) else 0))
+        if not is_comp: atk_base = atk_base + mod_globali.get("bonus_atk", 0) + b_atk_spec
+        atk_tot_array = np.maximum(0, atk_base * mod_globali["n_modelli"] + (1 if (mod_globali.get("campione", False) and not is_comp and mod_globali["n_modelli"] > 0) else 0))
 
         max_atk = int(np.max(atk_tot_array))
         if max_atk <= 0: continue
 
-        # Vettorizzazione con maschera per attacchi variabili (D6, 2D6, ecc.)
         tiri_hit = np.random.randint(1, 7, size=(n_sim, max_atk))
         if np.min(atk_tot_array) != max_atk:
             mask_validi = np.arange(max_atk)[None, :] < atk_tot_array[:, None]
@@ -497,7 +536,8 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
 
         mod_hit_netto = mod_globali.get("mod_hit", 0)
         if is_comp and mod_hit_netto > 0 and not mod_globali.get("all_out_attack", False): mod_hit_netto = 0
-        if bersaglio.get("obscuring", False) and arma.get("ranged", False): mod_hit_netto -= 1
+        mod_hit_netto += int(bersaglio.get("mod_hit_subito", 0))
+        if bersaglio.get("obscuring", False) and is_rng: mod_hit_netto -= 1
         hit_target = np.clip(int(arma["hit"]) - np.clip(mod_hit_netto, -1, 1), 2, 6)
 
         is_crit = tiri_hit >= mod_globali.get("crit_on", 6)
@@ -505,13 +545,14 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
         n_crits = np.sum(is_crit, axis=1)
         n_norm_hits = np.sum(is_normal_hit, axis=1)
 
-        mortal_wounds_sim = np.zeros(n_sim)
-        auto_wounds_sim = np.zeros(n_sim)
+        mortal_wounds_sim = np.zeros(n_sim, dtype=float)
+        auto_wounds_sim = np.zeros(n_sim, dtype=int)
         hits_to_wound = n_norm_hits.copy()
-        bonus_dmg_fisso = (1 if (arma.get("charge_dmg", False) and mod_globali.get("ha_caricato", False)) else 0) + (mod_globali.get("bonus_dmg", 0) if not is_comp else 0)
+        bonus_dmg_fisso = (1 if (arma.get("charge_dmg", False) and mod_globali.get("ha_caricato", False)) else 0) + ((mod_globali.get("bonus_dmg", 0) + b_dmg_spec) if not is_comp else 0)
 
         crit_t = mod_globali.get("crit_override", arma.get("crit_type", "Nessuno")) if not is_comp else arma.get("crit_type", "Nessuno")
-        if crit_t == "Crit (Mortal)": mortal_wounds_sim = n_crits * (tira_dado_mc(arma["dmg"], n_sim) + bonus_dmg_fisso)
+        if crit_t == "Crit (Mortal)":
+            mortal_wounds_sim = somma_danni_indipendenti_mc(arma["dmg"], n_crits, bonus_dmg_fisso)
         elif crit_t == "Crit (Auto-wound)": auto_wounds_sim = n_crits
         elif crit_t == "Crit (2 Hits)": hits_to_wound += n_crits * 2
         else: hits_to_wound += n_crits
@@ -521,9 +562,9 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
         wnd_target = np.clip(int(arma["wnd"]) - np.clip(mod_wnd_netto, -1, 1), 2, 6)
         wounds_sim = np.random.binomial(hits_to_wound.astype(int), (7 - wnd_target) / 6.0) + auto_wounds_sim
 
-        rend_eff = (0 if str(arma.get("rend", 0)) == "---" else int(arma.get("rend", 0))) + (mod_globali.get("bonus_rend", 0) if not is_comp else 0)
+        rend_eff = (0 if str(arma.get("rend", 0)) == "---" else int(arma.get("rend", 0))) + ((mod_globali.get("bonus_rend", 0) + b_rnd_spec) if not is_comp else 0)
         anti_t = arma.get("anti_target", "Nessuno")
-        if anti_t != "Nessuno" and anti_t != "CHARGE" and anti_t in kw_bers: rend_eff += 1
+        if anti_t != "Nessuno" and anti_t != "CHARGE" and any(anti_t in k for k in kw_bers): rend_eff += 1
         if (arma.get("anti_charge", False) or anti_t == "CHARGE") and mod_globali.get("bersaglio_ha_caricato", False): rend_eff += 1
         if bersaglio.get("immune_rend", False): rend_eff = 0
         
@@ -533,7 +574,8 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
             save_t = bersaglio["save"] - bonus_save + rend_eff
             prob_fail_save = 1.0 if save_t > 6 else 1.0 - ((7 - max(2, save_t)) / 6.0)
 
-        danni_totali_sim += (np.random.binomial(wounds_sim.astype(int), prob_fail_save) * (tira_dado_mc(arma["dmg"], n_sim) + bonus_dmg_fisso)) + mortal_wounds_sim
+        unsaved_sim = np.random.binomial(wounds_sim.astype(int), prob_fail_save)
+        danni_totali_sim += somma_danni_indipendenti_mc(arma["dmg"], unsaved_sim, bonus_dmg_fisso) + mortal_wounds_sim
 
     mortal_extra_dadi = mod_globali.get("mortal_extra_dadi", 0)
     mortal_extra_tipo = mod_globali.get("mortal_extra_tipo", 6)
@@ -541,16 +583,15 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
     mortal_extra_fisso = float(mod_globali.get("mortal_extra_fisso", 0.0))
     mortal_mc_list = mod_globali.get("mortal_mc_list", [])
 
-    if mortal_mc_list:
-        for prob_m, expr_m in mortal_mc_list:
-            if expr_m == "D3_EQUAL":
-                tiri_d3 = np.random.randint(1, 4, size=n_sim)
-                danni_totali_sim += np.where(tiri_d3 >= 2, tiri_d3, 0)
-            else:
-                attiva_mask = np.random.random(n_sim) < prob_m
-                danni_totali_sim += np.where(attiva_mask, tira_dado_mc(expr_m, n_sim), 0)
-    else:
-        danni_totali_sim += mortal_extra_fisso
+    # Somma SEMPRE sia i mortali fissi sia i tiri mortali stocastici delle abilità
+    danni_totali_sim += mortal_extra_fisso
+    for prob_m, expr_m in mortal_mc_list:
+        if expr_m == "D3_EQUAL":
+            tiri_d3 = np.random.randint(1, 4, size=n_sim)
+            danni_totali_sim += np.where(tiri_d3 >= 2, tiri_d3, 0)
+        else:
+            attiva_mask = np.random.random(n_sim) < prob_m
+            danni_totali_sim += np.where(attiva_mask, tira_dado_mc(expr_m, n_sim), 0)
         
     if mortal_extra_dadi > 0:
         if mortal_extra_soglia.startswith("Nessuna"):
