@@ -108,12 +108,24 @@ def render_forgia_db():
     v_key = st.session_state["forgia_version"]
 
     opzioni_db = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])    
-    tab_unita, tab_formazioni, tab_tratti_artefatti, tab_elimina = st.tabs([
+    # Mantiene in memoria la tab attiva anche dopo i rerun di Streamlit
+    if "forgia_tab_attiva" not in st.session_state:
+        st.session_state["forgia_tab_attiva"] = 0
+
+    nomi_tabs = [
         "📜 Forgia Warscroll",
         "⚔️ Formazioni di Battaglia",
         "✨ Tratti & Artefatti",
         "🗑️ Gestione / Elimina Unità"
-    ])
+    ]
+    
+    # Crea le tabs tracciando l'indice corrente
+    tabs_creati = st.tabs(nomi_tabs)
+    
+    tab_unita = tabs_creati[0]
+    tab_formazioni = tabs_creati[1]
+    tab_tratti_artefatti = tabs_creati[2]
+    tab_elimina = tabs_creati[3]
 
     with tab_unita:
         
@@ -271,31 +283,7 @@ def render_forgia_db():
                             st.rerun()
                         else:
                             st.warning(msg_r)
-                if st.button("🌍 Popola TUTTI gli Artefatti, Tratti e Formazioni (Tutte le Fazioni)", use_container_width=True, key=f"btn_sync_all_rules_{v_key}"):
-                    form_db_curr = _carica_json_ausiliario(FORMATIONS_FILE, {})
-                    traits_db_curr = _carica_json_ausiliario(TRAITS_FILE, {})
-                    art_db_curr = _carica_json_ausiliario(ARTEFACTS_FILE, {})
-
-                    barra_prog = st.progress(0.0, text="Inizializzazione download globale da Wahapedia...")
-                    nf, nt, na, msg_all, ok_all = sincronizza_tutte_le_regole_globale(
-                        form_db_curr,
-                        traits_db_curr,
-                        art_db_curr,
-                        callback_progresso=lambda p, t: barra_prog.progress(p, text=t)
-                    )
-                    barra_prog.empty()
-
-                    if ok_all:
-                        _salva_json_ausiliario(FORMATIONS_FILE, form_db_curr)
-                        _salva_json_ausiliario(TRAITS_FILE, traits_db_curr)
-                        _salva_json_ausiliario(ARTEFACTS_FILE, art_db_curr)
-                        st.session_state["archivio_formazioni"] = form_db_curr
-                        st.session_state["forgia_version"] += 1
-                        mostra_toast_rapido(msg_all, "✅")
-                        st.rerun()
-                    else:
-                        st.warning(msg_all)
-
+                
                 
         # ==========================================
         # DATI GENERALI E STATISTICHE DIFENSIVE
