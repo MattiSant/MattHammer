@@ -8,6 +8,7 @@ FAZIONI_SLUG_WAHAPEDIA = {
     "Nighthaunt": "nighthaunt",
     "Blades of Khorne": "blades-of-khorne",
     "Orruk Kruleboyz": "orruk-warclans",
+    "Orruk Warclans": "orruk-warclans",
     "Sylvaneth": "sylvaneth",
     "Stormcast Eternals": "stormcast-eternals",
     "Skaven": "skaven",

@@ -250,9 +250,40 @@ def render_forgia_db():
         
         with st.container(border=True):
             g1, g2, g3 = st.columns([1.5, 2, 1])
-            opz_faz_fg = ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Flesh Eater Courts"]
+            opz_faz_fg = [
+                "Blades of Khorne",
+                "Cities of Sigmar",
+                "Daughters of Khaine",
+                "Disciples of Tzeentch",
+                "Flesh-eater Courts",
+                "Fyreslayers",
+                "Gloomspite Gitz",
+                "Hedonites of Slaanesh",
+                "Idoneth Deepkin",
+                "Kharadron Overlords",
+                "Lumineth Realm-lords",
+                "Maggotkin of Nurgle",
+                "Nighthaunt",
+                "Ogor Mawtribes",
+                "Orruk Kruleboyz",
+                "Orruk Warclans",
+                "Ossiarch Bonereapers",
+                "Seraphon",
+                "Skaven",
+                "Slaves to Darkness",
+                "Sons of Behemat",
+                "Soulblight Gravelords",
+                "Stormcast Eternals",
+                "Sylvaneth",
+                "Altro"
+            ]
             faz_corr_fg = st.session_state.get("forgia_fazione", "Nighthaunt")
-            fazione = g1.selectbox("Fazione", opz_faz_fg, index=opz_faz_fg.index(faz_corr_fg) if faz_corr_fg in opz_faz_fg else 4, key=f"f_faz_{v_key}")
+            fazione = g1.selectbox(
+                "Fazione",
+                opz_faz_fg,
+                index=opz_faz_fg.index(faz_corr_fg) if faz_corr_fg in opz_faz_fg else len(opz_faz_fg) - 1,
+                key=f"f_faz_{v_key}"
+            )
             st.session_state["forgia_fazione"] = fazione
             
             nome = g2.text_input("Nome Unità", value=st.session_state.get("forgia_nome", ""), key=f"f_nome_{v_key}")
