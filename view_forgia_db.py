@@ -250,7 +250,7 @@ def render_forgia_db():
         
         with st.container(border=True):
             g1, g2, g3 = st.columns([1.5, 2, 1])
-            opz_faz_fg = ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Altro"]
+            opz_faz_fg = ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Flesh Eater Courts"]
             faz_corr_fg = st.session_state.get("forgia_fazione", "Nighthaunt")
             fazione = g1.selectbox("Fazione", opz_faz_fg, index=opz_faz_fg.index(faz_corr_fg) if faz_corr_fg in opz_faz_fg else 4, key=f"f_faz_{v_key}")
             st.session_state["forgia_fazione"] = fazione
