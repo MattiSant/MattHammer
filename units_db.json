@@ -89,7 +89,7 @@
         "n_modelli": 10,
         "dimensione_basetta": "32mm",
         "può_essere_rinforzata": true,
-        "campione": true,
+        "campione": false,
         "punti": 200,
         "statistiche_cerchio": {
             "movimento": "8\"",
@@ -148,11 +148,11 @@
             }
         ],
         "keywords": [
-            "Infantry",
-            "Fly",
-            "Ward (5+)",
-            "Death",
-            "Nighthaunt"
+            "INFANTRY",
+            "FLY",
+            "WARD ( 5+ )",
+            "DEATH",
+            "NIGHTHAUNT"
         ]
     },
     "Nighthaunt: Guardian of Souls": {
@@ -163,7 +163,7 @@
         "campione": false,
         "punti": 100,
         "statistiche_cerchio": {
-            "movimento": "6\"",
+            "movimento": "8\"",
             "controllo": 2,
             "save": "5+",
             "salute": 5,
@@ -179,6 +179,7 @@
                 "nome": "Chill Blade",
                 "attiva": true,
                 "ranged": false,
+                "range": "Melee",
                 "atk": "3",
                 "hit": 4,
                 "wnd": 3,
@@ -193,27 +194,40 @@
         ],
         "abilita": [
             {
-                "nome": "NIGHTMARE LANTERN",
+                "nome": "Nightmare Lantern",
                 "tipo": "Ability",
                 "reazione": false,
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Hero Phase (Fase Eroi Amica)"
+                    "Combat Phase (Qualsiasi)"
                 ],
-                "descrizione": "Effect: Add 1 to wound rolls for attacks made by friendly Nighthaunt units while they are wholly within 12\" of this unit.",
+                "descrizione": "The cursed light of Nagashizzar bound within a nightmare lantern invigorates the dark souls of any Nighthaunt it illuminates.\nDeclare: Pick a visible friendly NIGHTHAUNT unit wholly within 12\" of this unit to be the target.\nEffect: Roll a dice. On a 3+, add 1 to wound rolls for the target’s attacks for the rest of the turn.",
                 "modificatori": {
                     "mod_wnd": 1
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
                 }
             }
         ],
         "keywords": [
-            "Hero",
-            "Infantry",
-            "Wizard (1)",
-            "Ward (5+)",
-            "Death",
-            "Nighthaunt"
+            "HERO",
+            "WIZARD ( 1 )",
+            "INFANTRY",
+            "FLY",
+            "WARD ( 5+ )",
+            "DEATH",
+            "NIGHTHAUNT"
         ]
     },
     "Nighthaunt: Grimghast Reapers": {
@@ -237,7 +251,7 @@
         },
         "armi": [
             {
-                "nome": "Tomb Greatblade",
+                "nome": "Slasher Scythe",
                 "attiva": true,
                 "ranged": false,
                 "range": "Melee",
@@ -277,16 +291,18 @@
                     "mortal_extra_dadi": 0,
                     "mortal_extra_tipo": 6,
                     "mortal_extra_soglia": "Nessuna (Somma)",
-                    "mortal_extra_fisso": 0.33
+                    "mortal_extra_fisso": 0.33,
+                    "min_modelli_bersaglio": 5
                 }
             }
         ],
         "keywords": [
-            "Infantry",
-            "Fly",
-            "Ward (5+)",
-            "Death",
-            "Nighthaunt"
+            "INFANTRY",
+            "CHAMPION",
+            "FLY",
+            "WARD ( 5+ )",
+            "DEATH",
+            "NIGHTHAUNT"
         ]
     },
     "Nighthaunt: Knight of Shrouds": {
@@ -313,6 +329,7 @@
                 "nome": "Sword of Stolen Hours",
                 "attiva": true,
                 "ranged": false,
+                "range": "Melee",
                 "atk": "5",
                 "hit": 4,
                 "wnd": 3,
@@ -327,48 +344,74 @@
         ],
         "abilita": [
             {
-                "nome": "STOLEN HOURS",
+                "nome": "Stolen Hours",
                 "tipo": "Passive",
                 "reazione": false,
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Fine della Fase di Combattimento"
+                    "Qualsiasi Fase"
                 ],
-                "descrizione": "The bearer of a Sword of Stolen Hours can steal vital energy from a foe and use it to increase their own power. Effect: Each time this unit uses a FIGHT ability, after that FIGHT ability has been resolved, Heal (X) this unit, where X is the number of damage points allocated to enemy units by combat attacks made as part of that FIGHT ability.",
-                "modificatori": {}
+                "descrizione": "The bearer of a Sword of Stolen Hours can steal vital energy from a foe and use it to increase their own power.\nEffect: Each time this unit uses a FIGHT ability, after that FIGHT ability has been resolved, Heal (X) this unit, where X is the number of damage points allocated to enemy units by combat attacks made as part of that FIGHT ability.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
             },
             {
-                "nome": "INFANTRY OVERSEER",
+                "nome": "Infantry Overseer",
                 "tipo": "Ability",
                 "reazione": true,
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Fase di Combattimento"
+                    "Qualsiasi Fase"
                 ],
-                "descrizione": "Reaction: You declared a FIGHT ability for this unit. Effect: Pick a friendly non-HERO Nighthaunt INFANTRY unit that has not used a FIGHT ability this turn and is within this unit's combat range to be the target. The target can be picked to use a FIGHT ability immediately after the FIGHT ability used by this unit has been resolved.",
-                "modificatori": {}
+                "descrizione": "Each Knight of Shrouds was a mighty general in mortal life and still retains the ability to spur their soldiery to great feats of arms.\nEffect: Pick a friendly non- HERO NIGHTHAUNT INFANTRY unit that has not used a FIGHT ability this turn and is within this unit’s combat range to be the target. The target can be picked to use a FIGHT ability immediately after the FIGHT ability used by this unit has been resolved. If it is picked to do so, add 1 to hit rolls for the target’s attacks for the rest of the turn.",
+                "modificatori": {
+                    "mod_hit": 1
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
             }
         ],
         "keywords": [
-            "Hero",
-            "Infantry",
-            "Fly",
-            "Ward (5+)",
-            "Death",
-            "Nighthaunt"
+            "HERO",
+            "INFANTRY",
+            "FLY",
+            "WARD ( 5+ )",
+            "DEATH",
+            "NIGHTHAUNT"
         ]
     },
     "Nighthaunt: Scriptor Mortis": {
         "fazione": "Nighthaunt",
         "n_modelli": 1,
-        "dimensione_basetta": "32mm",
+        "dimensione_basetta": "40mm",
         "può_essere_rinforzata": false,
         "campione": false,
         "punti": 90,
         "statistiche_cerchio": {
-            "movimento": "6\"",
+            "movimento": "8\"",
             "controllo": 2,
             "save": "5+",
             "salute": 5,
@@ -384,10 +427,11 @@
                 "nome": "Malicious Quill",
                 "attiva": true,
                 "ranged": false,
+                "range": "Melee",
                 "atk": "3",
                 "hit": 4,
                 "wnd": 4,
-                "rend": 1,
+                "rend": 0,
                 "dmg": "1",
                 "crit_type": "Crit (Auto-wound)",
                 "anti_target": "Nessuno",
@@ -398,24 +442,66 @@
         ],
         "abilita": [
             {
-                "nome": "JUDGE, JURY AND EXECUTIONER",
+                "nome": "Sentenced To Eternal Torment",
                 "tipo": "Ability",
                 "reazione": false,
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Hero Phase (Fase Eroi Amica)"
+                    "Hero Phase (Amica)"
                 ],
-                "descrizione": "Effect: Pick an enemy unit to be 'Sentenced'. Friendly Nighthaunt units gain Crit (Mortal) against that unit.",
-                "modificatori": {}
+                "descrizione": "Once the true name of a judged enemy is recorded, their unending punishment is all but inescapable.\nDeclare: Pick a visible enemy unit within 18\" of this unit to be the target.\nEffect: Roll a dice. On a 3+, inflict 1 mortal damage on the target and the target has the SENTENCED keyword for the rest of the battle.",
+                "modificatori": {
+                    "mortal_extra_fisso": 0.67
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 0.6666666666666666,
+                    "mortal_dmg_expr": "1",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.67
+                }
+            },
+            {
+                "nome": "Judge, Jury And Executioner",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "With a mere flick of a quill, sentenced souls are doomed to be dragged to the underworlds by gheists hungry for vengeance.\nEffect: Each time a friendly NIGHTHAUNT INFANTRY unit uses a FIGHT ability, if all of its attacks target the same SENTENCED enemy unit, that friendly unit’s melee weapons have Crit (Mortal) for that FIGHT ability.",
+                "modificatori": {
+                    "crit_override": "Crit (Mortal)"
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": true,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
             }
         ],
         "keywords": [
-            "Hero",
-            "Infantry",
-            "Ward (5+)",
-            "Death",
-            "Nighthaunt"
+            "HERO",
+            "INFANTRY",
+            "FLY",
+            "WARD ( 5+ )",
+            "DEATH",
+            "NIGHTHAUNT",
+            "Errata"
         ]
     },
     "Nighthaunt: Spirit Hosts": {
@@ -426,7 +512,7 @@
         "campione": false,
         "punti": 110,
         "statistiche_cerchio": {
-            "movimento": "6\"",
+            "movimento": "8\"",
             "controllo": 1,
             "save": "6+",
             "salute": 3,
@@ -457,7 +543,7 @@
         ],
         "abilita": [
             {
-                "nome": "DRAWN TO WAR",
+                "nome": "Drawn To War",
                 "tipo": "Passive",
                 "reazione": false,
                 "once_per_battle": false,
@@ -465,14 +551,27 @@
                 "fasi": [
                     "Qualsiasi Fase"
                 ],
-                "descrizione": "Effect: Friendly NIGHTHAUNT INFANTRY HEROES have WARD (4+) while they are wholly within this unit’s combat range.",
-                "modificatori": {}
+                "descrizione": "When the champions of the Nighthaunt muster their processions for battle, Spirit Hosts flock to join their cause, serving as useful fodder for the enemy.\nEffect: Friendly NIGHTHAUNT INFANTRY HEROES have WARD ( 4+ ) while they are wholly within this unit’s combat range.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
             }
         ],
         "keywords": [
             "INFANTRY",
             "FLY",
-            "WARD (5+) DEATH",
+            "WARD ( 5+ )",
+            "DEATH",
             "NIGHTHAUNT"
         ]
     },
@@ -1301,7 +1400,7 @@
         ],
         "abilita": [
             {
-                "nome": "HARROWING SHRIEKS",
+                "nome": "Harrowing Shrieks",
                 "tipo": "Passive",
                 "reazione": false,
                 "once_per_battle": false,
@@ -1309,15 +1408,27 @@
                 "fasi": [
                     "Qualsiasi Fase"
                 ],
-                "descrizione": "Effect: Enemy units cannot be healed or have slain models returned to them while they are in combat with this unit.",
-                "modificatori": {}
+                "descrizione": "The chilling cries of the Dreadscythe Harridans drive all hope from the hearts of their foes.\nEffect: Enemy units cannot be healed or have slain models returned to them while they are in combat with this unit.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
             }
         ],
         "keywords": [
             "INFANTRY",
             "CHAMPION",
             "FLY",
-            "WARD (5+)",
+            "WARD ( 5+ )",
             "DEATH",
             "NIGHTHAUNT"
         ]
@@ -1327,7 +1438,7 @@
         "n_modelli": 1,
         "dimensione_basetta": "170x105mm",
         "può_essere_rinforzata": false,
-        "campione": false,
+        "campione": true,
         "punti": 200,
         "statistiche_cerchio": {
             "movimento": "10\"",
@@ -1393,32 +1504,6 @@
         ],
         "abilita": [
             {
-                "nome": "NIMBUS OF POWER",
-                "tipo": "Ability",
-                "reazione": false,
-                "once_per_battle": false,
-                "valore_lancio": 0,
-                "fasi": [
-                    "Movement Phase (Amica)"
-                ],
-                "descrizione": "Effect: If this unit is not in combat, remove it from the battlefield and set it up again on the battlefield more than 9\" from all enemy units.\n\nCORE",
-                "modificatori": {},
-                "condizioni": {}
-            },
-            {
-                "nome": "EVOCATION OF DEATH",
-                "tipo": "Ability",
-                "reazione": false,
-                "once_per_battle": false,
-                "valore_lancio": 0,
-                "fasi": [
-                    "Qualsiasi Fase"
-                ],
-                "descrizione": "Declare: If any damage points were allocated to an enemy unit by this unit’s combat attacks this turn and that enemy unit was destroyed this turn, pick a friendly non-UNIQUE NIGHTHAUNT HERO that has been destroyed.\n\nEffect: Set up a replacement unit wholly within 12\" of this unit. The replacement unit can only be set up in combat with enemy units that are in combat with this unit.",
-                "modificatori": {},
-                "condizioni": {}
-            },
-            {
                 "nome": "Runaway Coach",
                 "tipo": "Ability",
                 "reazione": false,
@@ -1427,7 +1512,7 @@
                 "fasi": [
                     "Charge Phase (Qualsiasi)"
                 ],
-                "descrizione": "This nightmare‑drawn carriage crushes any who attempt to withstand its momentum.\nDeclare: If this unit charged this phase, pick an enemy unit within 1\" of it to be the target.\nEffect: Roll a D3. On a 2+, inflict an amount of mortal damage equal on the target equal to the roll.",
+                "descrizione": "This nightmare-drawn carriage crushes any who attempt to withstand its momentum.\nDeclare: If this unit charged this phase, pick an enemy unit within 1\" of it to be the target.\nEffect: Roll a D3. On a 2+, inflict an amount of mortal damage equal on the target equal to the roll.",
                 "modificatori": {
                     "mortal_extra_fisso": 1.67
                 },
@@ -1443,14 +1528,36 @@
                     "mortal_extra_soglia": "2+",
                     "mortal_extra_fisso": 0.0
                 }
+            },
+            {
+                "nome": "Nimbus Of Power",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Movement Phase (Amica)"
+                ],
+                "descrizione": "Dark magic lends the vehicle blurring speed that allows it to disappear, only to reappear in a more advantageous position.\nEffect: If this unit is not in combat, remove it from the battlefield and set it up again on the battlefield more than 9\" from all enemy units.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
             }
         ],
         "keywords": [
-            "WAR MACHINE",
-            "FLY",
-            "WARD (5+)",
-            "DEATH",
-            "NIGHTHAUNT"
+            "CORE",
+            "End of Any Turn",
+            "EVOCATION OF DEATH : The dormant occupant feeds upon the energies of death and uses them to bring spectral champions back from the underworlds"
         ]
     },
     "Nighthaunt: Lord Executioner": {
@@ -1492,35 +1599,59 @@
         ],
         "abilita": [
             {
-                "nome": "STARING DEATH IN THE FACE",
+                "nome": "Staring Death In The Face",
                 "tipo": "Ability",
                 "reazione": false,
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Combat Phase"
+                    "Combat Phase (Qualsiasi)"
                 ],
-                "descrizione": "Declare: Pick an enemy unit in combat with this unit to be the target.\n\nEffect: Roll a dice. On a 2+, subtract 1 from the Attacks characteristic of the target’s melee weapons for the rest of the turn. In addition, if the target is a HERO, subtract 5 from the target’s control score for the rest of the turn.",
-                "modificatori": {}
+                "descrizione": "The unwavering stare of a Lord Executioner seems to penetrate the victim's very soul.\nDeclare: Pick an enemy unit in combat with this unit to be the target.\nEffect: Roll a dice. On a 2+, subtract 1 from the Attacks characteristic of the target’s melee weapons for the rest of the turn. In addition, if the target is a HERO, subtract 5 from the target’s control score for the rest of the turn.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": true,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
             },
             {
-                "nome": "GHASTLY DESCENT:",
+                "nome": "Ghastly Descent",
                 "tipo": "Ability",
                 "reazione": false,
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Fine Turno"
+                    "Fine Turno (End of Turn)"
                 ],
-                "descrizione": "Declare: Pick an enemy INFANTRY or CAVALRY HERO that had any damage points allocated to it this turn by this unit’s attacks to be the target.\n\nEffect: Roll a dice. Add 1 to the roll if the target is a SENTENCED unit. On a 5+, the target is automatically destroyed.",
-                "modificatori": {}
+                "descrizione": "The axe of a Lord Executioner descends pitilessly on all foolish enough to commit the crime of standing against Nagash's dark justice.\nDeclare: Pick an enemy INFANTRY or CAVALRY HERO that had any damage points allocated to it this turn by this unit’s attacks to be the target.\nEffect: Roll a dice. Add 1 to the roll if the target is a SENTENCED unit. On a 5+, the target is automatically destroyed.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
             }
         ],
         "keywords": [
             "HERO",
             "INFANTRY",
             "FLY",
-            "WARD (5+)",
+            "WARD ( 5+ )",
             "DEATH",
             "NIGHTHAUNT"
         ]
