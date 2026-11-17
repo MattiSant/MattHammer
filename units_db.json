@@ -2068,5 +2068,141 @@
             "SKAVEN",
             "VERMINUS"
         ]
+    },
+    "Skaven: Lord Skreech Verminking": {
+        "fazione": "Skaven",
+        "n_modelli": 1,
+        "dimensione_basetta": "120x92mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 350,
+        "statistiche_cerchio": {
+            "movimento": "10\"",
+            "controllo": 5,
+            "save": "4+",
+            "salute": 13,
+            "ward": "5+"
+        },
+        "difesa": {
+            "salute_per_modello": 13,
+            "save": 4,
+            "ward": 5
+        },
+        "armi": [
+            {
+                "nome": "Glaive of the Rat King",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "7",
+                "hit": 3,
+                "wnd": 2,
+                "rend": 2,
+                "dmg": "3",
+                "crit_type": "Crit (2 Hits)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "The Thirteen-Headed One",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Hero Phase (Amica)"
+                ],
+                "descrizione": "Lord Verminking can call upon his extensive knowledge of the Skaven clans.\nEffect: Pick 1 of the following effects to apply until the start of your next turn. You cannot pick the same effect more than once per battle.\nMaster of Dire Sorcery: Add 1 to casting rolls for friendly MASTERCLAN WIZARDS while they are wholly within 13\" of this unit.\nCommander of Vermin: Add 1 to charge rolls for friendly VERMINUS units while they are wholly within 13\" of this unit.\nKnower of Warp-tech: Add 1 to hit rolls for shooting attacks made by friendly SKRYRE units while they are wholly within 13\" of this unit.\nDeliverer of Weeping Blades: Add 1 to the Rend characteristic of melee weapons used by friendly ESHIN units while they are wholly within 13\" of this unit.\nBringer of Plagues: Add 1 to chanting rolls for friendly PESTILENS PRIESTS while they are wholly within 13\" of this unit.\nShaper of Fleshcraft: Heal (D3) each friendly MOULDER unit wholly within 13\" of this unit.",
+                "modificatori": {
+                    "mod_hit": 1,
+                    "bonus_rend": 1
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": true,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            },
+            {
+                "nome": "7",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Hero Phase (Amica)"
+                ],
+                "descrizione": "THE DREADED THIRTEENTH SPELL : The twisting power of the Great Horned Rat transforms men into rat-mutants that swiftly join the evil throng.\nDeclare: Pick a visible enemy unit within 13\" to be the target, then make a casting roll of 2D6.\nEffect: Roll 13 dice. For each 5+:\nInflict 1 mortal damage on the target.\nYou can return 1 slain model to a friendly Clanrats unit wholly within 13\" of this unit.",
+                "modificatori": {
+                    "mortal_extra_dadi": 13,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "5+"
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 13,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "5+",
+                    "mortal_extra_fisso": 0.0
+                }
+            },
+            {
+                "nome": "Terrifying Monstrosity",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Combat Phase (Qualsiasi)"
+                ],
+                "descrizione": "Lord Skreech has a malevolent and horrific visage that can shatter the enemy’s resolve.\nDeclare: Pick an enemy INFANTRY unit in combat with this unit to be the target.\nEffect: Roll a dice. On a 3+:\nThe target cannot use commands for the rest of the turn.\nSubtract an amount equal to the roll from the target’s control score until the start of your next turn.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            }
+        ],
+        "keywords": [
+            "WARMASTER",
+            "UNIQUE",
+            "HERO",
+            "MONSTER",
+            "WIZARD ( 2 )",
+            "WARD ( 5+ )",
+            "CHAOS",
+            "SKAVEN",
+            "DAEMON",
+            "MASTERCLAN",
+            "VERMINUS",
+            "PESTILENS",
+            "ESHIN",
+            "SKRYRE",
+            "MOULDER"
+        ]
     }
 }
