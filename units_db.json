@@ -1929,5 +1929,159 @@
             "SYLVANETH",
             "KURNOTHI"
         ]
+    },
+    "Stormcast Eternals: Yndrasta, the Celestial Spear": {
+        "fazione": "Stormcast Eternals",
+        "n_modelli": 1,
+        "dimensione_basetta": "60mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 270,
+        "statistiche_cerchio": {
+            "movimento": "12\"",
+            "controllo": 2,
+            "save": "3+",
+            "salute": 8,
+            "ward": "5+"
+        },
+        "difesa": {
+            "salute_per_modello": 8,
+            "save": 3,
+            "ward": 5
+        },
+        "armi": [
+            {
+                "nome": "Thengavar",
+                "attiva": true,
+                "ranged": true,
+                "range": "12\"",
+                "atk": "1",
+                "hit": 3,
+                "wnd": 2,
+                "rend": 2,
+                "dmg": "4",
+                "crit_type": "Nessuno",
+                "anti_target": "MONSTER",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Thengavar",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "2",
+                "hit": 2,
+                "wnd": 2,
+                "rend": 2,
+                "dmg": "3",
+                "crit_type": "Nessuno",
+                "anti_target": "MONSTER",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Blade of the High Heavens",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "5",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 2,
+                "dmg": "3",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "The Prime Huntress",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "Celestial strength, lifetimes of experience and the power of the spear Thengavar see even the most behemothic of terrors swiftly fall before Yndrasta’s fury.\nEffect: Double the Damage characteristic of this unit’s Thengavar for attacks that target MONSTERS.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            },
+            {
+                "nome": "Dazzling Radiance",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "Yndrasta’s god-touched brilliance casts a protective aura of light around nearby Stormcasts.\nEffect: Ignore negative modifiers to the control scores of friendly STORMCAST ETERNALS units while they are wholly within 12\" of this unit.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            },
+            {
+                "nome": "On Wings Of Brilliance",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "Yndrasta soars across the battlefield to strike at the heart of Sigmar’s enemies.\nEffect: Add 1 to the number of dice rolled when making charge rolls for this unit, to a maximum of 3.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            }
+        ],
+        "keywords": [
+            "WARMASTER",
+            "UNIQUE",
+            "HERO",
+            "INFANTRY",
+            "FLY",
+            "WARD ( 5+ )",
+            "ORDER",
+            "STORMCAST ETERNALS"
+        ]
     }
 }
