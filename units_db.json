@@ -213,7 +213,7 @@
         "campione": true,
         "punti": 190,
         "statistiche_cerchio": {
-            "movimento": "6\"",
+            "movimento": "8\"",
             "controllo": 1,
             "save": "6+",
             "salute": 2,
@@ -229,6 +229,7 @@
                 "nome": "Tomb Greatblade",
                 "attiva": true,
                 "ranged": false,
+                "range": "Melee",
                 "atk": "2",
                 "hit": 4,
                 "wnd": 3,
@@ -243,17 +244,29 @@
         ],
         "abilita": [
             {
-                "nome": "REAPED LIKE CORN",
-                "tipo": "Passive",
+                "nome": "Reaped Like Corn",
+                "tipo": "Ability",
                 "reazione": false,
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Combat Phase (Fase di Combattimento)"
+                    "Combat Phase (Qualsiasi)"
                 ],
-                "descrizione": "Effect: Add 1 to the Attacks characteristic of this unit's weapons if the target unit has 5 or more models.",
+                "descrizione": "The scythes wielded by these ghostly warriors can be swung in great sweeping arcs, cutting down whole enemy ranks.\nDeclare: Pick an enemy unit that is within the combat ranges of 5 or more models in this unit to be the target.\nEffect: Roll a number of dice equal to the number of models in the target unit. For each 6, inflict 1 mortal damage on the target. If the target unit has 20 or more models, inflict 1 mortal damage on the target for each 5+ instead.",
                 "modificatori": {
-                    "bonus_atk": 1
+                    "mortal_extra_fisso": 0.33
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": true,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 0.3333333333333333,
+                    "mortal_dmg_expr": "1",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.33
                 }
             }
         ],
