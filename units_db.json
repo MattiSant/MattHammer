@@ -1655,5 +1655,77 @@
             "DEATH",
             "NIGHTHAUNT"
         ]
+    },
+    "Nighthaunt: Chainrasps": {
+        "fazione": "Nighthaunt",
+        "n_modelli": 10,
+        "dimensione_basetta": "25mm",
+        "può_essere_rinforzata": true,
+        "campione": true,
+        "punti": 100,
+        "statistiche_cerchio": {
+            "movimento": "8\"",
+            "controllo": 1,
+            "save": "6+",
+            "salute": 1,
+            "ward": "5+"
+        },
+        "difesa": {
+            "salute_per_modello": 1,
+            "save": 6,
+            "ward": 5
+        },
+        "armi": [
+            {
+                "nome": "Malignant Weapon",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "2",
+                "hit": 4,
+                "wnd": 5,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "Chilling Horde",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": true,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Deployment"
+                ],
+                "descrizione": "Surging forward in a shrieking, wailing mass, Chainrasps are often the first wave of Nighthaunt to assail the foe.\nDeclare: Pick up to 3 friendly Chainrasps units to be the targets.\nEffect: Each target can move 6\" but cannot end that move in combat.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            }
+        ],
+        "keywords": [
+            "INFANTRY",
+            "CHAMPION",
+            "FLY",
+            "WARD ( 5+ )",
+            "DEATH",
+            "NIGHTHAUNT"
+        ]
     }
 }
