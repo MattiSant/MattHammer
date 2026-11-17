@@ -8,14 +8,6 @@
             },
             "descrizione": "Death Stalkers are spectral killers that relentlessly hunt down a chosen enemy.\nDeclare: If there is not a condemned enemy unit on the battlefield, pick an enemy unit to be condemned.\nEffect: For the rest of the battle, add 1 to the Rend characteristic of melee weapons used for attacks made by friendly NIGHTHAUNT units that target the condemned enemy unit.\nErrata\nRoyal Procession"
         },
-        "Vanishing Phantasms": {
-            "fase_attivazione": "Movement Phase (Fase di Movimento)",
-            "monouso": false,
-            "modificatori": {
-                "bonus_movimento": 2
-            },
-            "descrizione": "Fino a 3 unità amiche possono essere riposizionate sul campo di battaglia a più di 9\" dai nemici, oppure ottengono maggiore agilità di manovra."
-        },
         "Procession of Death": {
             "fase_attivazione": "Passiva / Permanente",
             "monouso": false,
