@@ -198,7 +198,7 @@ def render_forgia_db():
                 value=url_suggerito,
                 height=85,
                 key=f"waha_inp_{v_key}"
-            )
+            )  
             with w_col2:
                 if st.button("⚡ Scarica Singola Unità", type="primary", use_container_width=True, key=f"btn_waha_{v_key}"):
                     dati_w, msg_w, ok_w = scarica_warscroll_da_wahapedia(
