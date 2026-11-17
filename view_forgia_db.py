@@ -194,7 +194,7 @@ def render_forgia_db():
             st.markdown("---")
             st.markdown("**Statistiche Difensive (Warscroll)**")
             c1, c2, c3, c4, c5 = st.columns(5)
-            move = c1.text_input("Movimento (es. 8\" Fly)", value=st.session_state.get("forgia_movimento", "6\""), key=f"f_mov_{v_key}")
+            move = c1.text_input("Movimento (es. 8\")", value=st.session_state.get("forgia_movimento", "6\""), key=f"f_mov_{v_key}")
             st.session_state["forgia_movimento"] = move
             
             oc = c2.number_input("Controllo (OC)", min_value=0, max_value=20, value=st.session_state.get("forgia_controllo", 1), key=f"f_oc_{v_key}")
