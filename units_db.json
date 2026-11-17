@@ -1369,18 +1369,6 @@
         ],
         "abilita": [
             {
-                "nome": "RUNAWAY COACH",
-                "tipo": "Ability",
-                "reazione": false,
-                "once_per_battle": false,
-                "valore_lancio": 0,
-                "fasi": [
-                    "Charge Phase"
-                ],
-                "descrizione": "Declare: If this unit charged this phase, pick an enemy unit within 1\" of it to be the target.\n\nEffect: Roll a D3. On a 2+, inflict an amount of mortal damage equal on the target equal to the roll.",
-                "modificatori": {}
-            },
-            {
                 "nome": "NIMBUS OF POWER",
                 "tipo": "Ability",
                 "reazione": false,
@@ -1390,7 +1378,8 @@
                     "Movement Phase (Amica)"
                 ],
                 "descrizione": "Effect: If this unit is not in combat, remove it from the battlefield and set it up again on the battlefield more than 9\" from all enemy units.\n\nCORE",
-                "modificatori": {}
+                "modificatori": {},
+                "condizioni": {}
             },
             {
                 "nome": "EVOCATION OF DEATH",
@@ -1399,10 +1388,37 @@
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Fine Turno"
+                    "Qualsiasi Fase"
                 ],
                 "descrizione": "Declare: If any damage points were allocated to an enemy unit by this unit’s combat attacks this turn and that enemy unit was destroyed this turn, pick a friendly non-UNIQUE NIGHTHAUNT HERO that has been destroyed.\n\nEffect: Set up a replacement unit wholly within 12\" of this unit. The replacement unit can only be set up in combat with enemy units that are in combat with this unit.",
-                "modificatori": {}
+                "modificatori": {},
+                "condizioni": {}
+            },
+            {
+                "nome": "Runaway Coach",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Charge Phase (Qualsiasi)"
+                ],
+                "descrizione": "This nightmare‑drawn carriage crushes any who attempt to withstand its momentum.\nDeclare: If this unit charged this phase, pick an enemy unit within 1\" of it to be the target.\nEffect: Roll a D3. On a 2+, inflict an amount of mortal damage equal on the target equal to the roll.",
+                "modificatori": {
+                    "mortal_extra_fisso": 1.67
+                },
+                "condizioni": {
+                    "richiede_carica": true,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "D3_EQUAL",
+                    "mortal_extra_dadi": 1,
+                    "mortal_extra_tipo": 3,
+                    "mortal_extra_soglia": "2+",
+                    "mortal_extra_fisso": 0.0
+                }
             }
         ],
         "keywords": [
