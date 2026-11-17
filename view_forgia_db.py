@@ -26,7 +26,8 @@ from ability_parser import (
 from wahapedia_scraper import (
     scarica_warscroll_da_wahapedia,
     costruisci_url_wahapedia,
-    sincronizza_fazione_da_wahapedia
+    sincronizza_fazione_da_wahapedia,
+    estrai_fazione_da_url_o_testo
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -176,15 +177,12 @@ def render_forgia_db():
                 st.session_state["forgia_version"] += 1
                 st.rerun()
         # ==========================================
-        # IMPORTAZIONE AUTOMATICA DA WAHAPEDIA (URL O TESTO PAGINA)
-        # ==========================================
-        # ==========================================
         # IMPORTAZIONE AUTOMATICA DA WAHAPEDIA (SINGOLA O INTERA FAZIONE)
         # ==========================================
         with st.expander("🌐 Importa o Sincronizza Automaticamente da Wahapedia (AoS 4e)", expanded=False):
             st.caption(
-                "Incolla l'**URL Wahapedia** di una singola unità per compilarla nei campi sottostanti, "
-                "oppure premi **Sincronizza Ultimi Aggiornamenti Fazione** per scaricare e salvare nel database JSON tutte le unità della fazione selezionata."
+                "Incolla l'**URL Wahapedia** di una singola unità (la fazione verrà riconosciuta in automatico dal link!), "
+                "oppure premi **Sincronizza Ultimi Aggiornamenti** per aggiornare nel database JSON tutte le unità della fazione."
             )
             w_col1, w_col2 = st.columns([2.6, 1.4])
             url_suggerito = ""
@@ -198,7 +196,7 @@ def render_forgia_db():
                 value=url_suggerito,
                 height=85,
                 key=f"waha_inp_{v_key}"
-            )  
+            )
             with w_col2:
                 if st.button("⚡ Scarica Singola Unità", type="primary", use_container_width=True, key=f"btn_waha_{v_key}"):
                     dati_w, msg_w, ok_w = scarica_warscroll_da_wahapedia(
@@ -207,6 +205,8 @@ def render_forgia_db():
                         nome_unita="" if inp_waha.strip().startswith("http") else st.session_state.get("forgia_nome", "")
                     )
                     if ok_w and dati_w:
+                        # ---> ECCO IL PUNTO 3: aggiorna automaticamente la Fazione nella tendina! <---
+                        st.session_state["forgia_fazione"] = dati_w["fazione"]
                         st.session_state["forgia_nome"] = dati_w["nome"]
                         st.session_state["forgia_punti"] = dati_w["punti"]
                         st.session_state["forgia_modelli"] = dati_w["n_modelli"]
@@ -226,6 +226,25 @@ def render_forgia_db():
                         st.rerun()
                     else:
                         st.warning(msg_w)
+
+                # Rileva la fazione dall'URL (se presente nel box) oppure usa quella selezionata nella tendina
+                faz_sync = estrai_fazione_da_url_o_testo(inp_waha, st.session_state.get("forgia_fazione", "Nighthaunt"))
+                if st.button(f"🔄 Sincronizza Fazione ({faz_sync})", use_container_width=True, key=f"btn_sync_faz_{v_key}"):
+                    with st.spinner(f"Sincronizzazione di tutte le Warscrolls {faz_sync} da Wahapedia in corso..."):
+                        testo_opt = inp_waha if (len(inp_waha.strip()) > 300 or "warscrolls.html" in inp_waha) else ""
+                        n_agg, nomi_agg, msg_sync, ok_sync = sincronizza_fazione_da_wahapedia(
+                            faz_sync,
+                            st.session_state["db_unita"],
+                            testo_collated_opzionale=testo_opt
+                        )
+                        if ok_sync and n_agg > 0:
+                            st.session_state["forgia_fazione"] = faz_sync
+                            salva_nel_database(st.session_state["db_unita"])
+                            st.session_state["forgia_version"] += 1
+                            mostra_toast_rapido(msg_sync, "✅")
+                            st.rerun()
+                        else:
+                            st.warning(msg_sync)
 
                 faz_sync = st.session_state.get("forgia_fazione", "Nighthaunt")
                 if st.button(f"🔄 Sincronizza Ultimi Aggiornamenti ({faz_sync})", use_container_width=True, key=f"btn_sync_faz_{v_key}"):

@@ -31,6 +31,38 @@ FAZIONI_SLUG_WAHAPEDIA = {
     "Sons of Behemat": "sons-of-behemat"
 }
 
+# Mappa inversa da slug minuscolo di Wahapedia al nome esatto usato nell'app
+SLUG_TO_FAZIONE = {v.lower(): k for k, v in FAZIONI_SLUG_WAHAPEDIA.items()}
+SLUG_TO_FAZIONE["orruk-warclans"] = "Orruk Kruleboyz"  # o "Orruk Warclans" in base alla tua preferenza
+
+def estrai_fazione_da_url_o_testo(url_o_testo, default_fazione="Nighthaunt"):
+    """
+    Riconosce automaticamente la fazione:
+    1) Dall'URL Wahapedia: https://wahapedia.ru/aos4/factions/<slug-fazione>/<unita>
+    2) Dal banner testuale: •<FAZIONE> WARSCROLL•
+    """
+    txt = (url_o_testo or "").strip()
+    
+    # 1. Estrazione diretta dal link di Wahapedia
+    m_url = re.search(r"/aos4/factions/([^/\s\?#]+)", txt, flags=re.IGNORECASE)
+    if m_url:
+        slug = m_url.group(1).strip().lower()
+        if slug in SLUG_TO_FAZIONE:
+            return SLUG_TO_FAZIONE[slug]
+        for k_app, v_slug in FAZIONI_SLUG_WAHAPEDIA.items():
+            if v_slug.lower() == slug or k_app.lower().replace(" ", "-") == slug:
+                return k_app
+
+    # 2. Fallback: estrazione dal banner •FAZIONE WARSCROLL• se è stato incollato il testo
+    m_ban = re.search(r"•\s*([^•\n]+?)\s+WARSCROLL\s*•", txt, flags=re.IGNORECASE)
+    if m_ban:
+        faz_ban = m_ban.group(1).strip().lower()
+        for k_app in FAZIONI_SLUG_WAHAPEDIA.keys():
+            if k_app.lower() in faz_ban or faz_ban in k_app.lower():
+                return k_app
+
+    return default_fazione
+
 ABILITA_CORE_DA_IGNORARE = {
     "fly", "retreat", "charge", "fight", "shoot", "normal move", "run",
     "guarded hero", "ward", "companion", "crit (mortal)", "crit (auto-wound)",
@@ -112,10 +144,9 @@ class _WahapediaHTMLParser(HTMLParser):
             self.current_cell = []
             self.text_chunks.append(" ")
         elif tag_l in ("br", "p", "div", "li", "h1", "h2", "h3", "h4", "table"):
-            if not self.in_td:
-                self.text_chunks.append("\n")
-            else:
-                self.text_chunks.append(" ")
+            if self.in_td:
+                self.current_cell.append(" | ")
+            self.text_chunks.append("\n")
         elif tag_l in ("span", "b", "strong", "i", "a"):
             self.text_chunks.append(" ")
 
@@ -479,23 +510,27 @@ def _isola_sezioni_warscroll(testo_intero):
         testo_pre_header = testo_intero[:1200]
         resto = testo_intero
 
+    # Taglia subito via la coda dei riferimenti di fine pagina ("The X keyword is used in...")
+    m_footer_kw = re.search(r"The\s+[A-Z\s\-]+\s+keyword\s+is\s+used\s+in", resto)
+    if m_footer_kw:
+        resto = resto[:m_footer_kw.start()]
+
     matches_kw = list(re.finditer(r"\bKEYWORDS\b", resto))
     corpo_ws = resto
     coda_kw = ""
 
-    for m_k in matches_kw:
-        finestra_dopo = resto[m_k.end():m_k.end() + 220]
-        prima_riga_kw = finestra_dopo.strip().split("\n")[0].upper() if finestra_dopo.strip() else ""
-        if any(w in prima_riga_kw for w in ["CORE", "SPELL", "PRAYER", "RAMPAGE", "UNLIMITED"]) and not any(
-            u_kw in finestra_dopo.upper() for u_kw in [
-                "HERO", "INFANTRY", "CAVALRY", "MONSTER", "WAR MACHINE", "BEAST",
-                "ORDER", "CHAOS", "DEATH", "DESTRUCTION"
-            ]
-        ):
-            continue
-        corpo_ws = resto[:m_k.start()]
-        coda_kw = resto[m_k.end():m_k.end() + 300]
-        break
+    # Scorre i blocchi KEYWORDS dal fondo per trovare la barra principale della Warscroll
+    # (che contiene sempre almeno una Grande Alleanza, la Fazione o un Ruolo unità)
+    marker_unita = [
+        "ORDER", "CHAOS", "DEATH", "DESTRUCTION",
+        "HERO", "INFANTRY", "CAVALRY", "MONSTER", "WAR MACHINE", "BEAST", "MANIFESTATION"
+    ]
+    for m_k in reversed(matches_kw):
+        finestra = resto[m_k.end():m_k.end() + 260]
+        if any(mk in finestra.upper() for mk in marker_unita):
+            corpo_ws = resto[:m_k.start()]
+            coda_kw = finestra
+            break
 
     return testo_pre_header, corpo_ws, coda_kw
 
@@ -567,16 +602,29 @@ def analizza_warscroll_completa(testo_intero, parser_html=None, fazione_default=
 
     if coda_kw:
         linee_kw = []
-        for l_k in [l.strip() for l in coda_kw.split("\n") if l.strip()][:3]:
+        for l_k in [l.strip() for l in coda_kw.split("\n") if l.strip()]:
             if any(stop_w in l_k.lower() for stop_w in [
                 "keyword is used", "when a unit", "declare:", "effect:", "passive",
-                "phase", "roll a dice", "if an attack", "a model is", "soaring above"
+                "phase", "roll a dice", "if an attack", "a model is", "soaring above",
+                "each time", "pick a", "target"
             ]):
                 break
             linee_kw.append(l_k)
+            if len(linee_kw) >= 2:  # Le unità AoS 4e hanno sempre 2 righe di keywords in fondo
+                break
+
+        # Unisce le due righe con una virgola e divide su virgola, pipe (|) o bullet (•)
         blocco_kw_unito = ", ".join(linee_kw)
-        kws = [k.strip(" .•") for k in re.split(r"[,|•]", blocco_kw_unito) if k.strip(" .•")]
-        risultato["keywords"] = kws
+        kws_grezze = re.split(r"[,|•\n]+", blocco_kw_unito)
+        parole_ab_escluse = {"keywords", "keyword", "spell", "prayer", "rampage", "core", "unlimited", "summon"}
+        kws_pulite = []
+        for k in kws_grezze:
+            # Rimuove la parola KEYWORDS se rimasta attaccata all'inizio
+            k_clean = re.sub(r"^\s*keywords?\s*[:\-]?\s*", "", k, flags=re.IGNORECASE).strip(" .•-\t")
+            if k_clean and k_clean.lower() not in parole_ab_escluse and len(k_clean) < 35:
+                if k_clean.upper() not in [x.upper() for x in kws_pulite]:
+                    kws_pulite.append(k_clean)
+        risultato["keywords"] = kws_pulite
 
     kw_upper_str = " , ".join(risultato["keywords"]).upper()
     m_ward_kw = re.search(r"WARD\s*\(([456]\+)\)", kw_upper_str)
@@ -632,6 +680,7 @@ def converti_warscroll_in_record_db(dati_w, fazione):
 
 
 def scarica_warscroll_da_wahapedia(url_o_testo, fazione="Nighthaunt", nome_unita=""):
+    fazione = estrai_fazione_da_url_o_testo(url_o_testo, default_fazione=fazione)
     inp = (url_o_testo or "").strip()
     if not inp and nome_unita.strip():
         inp = costruisci_url_wahapedia(fazione, nome_unita)
@@ -667,6 +716,8 @@ def scarica_warscroll_da_wahapedia(url_o_testo, fazione="Nighthaunt", nome_unita
 
 
 def sincronizza_fazione_da_wahapedia(fazione, db_unita_attuale, testo_collated_opzionale=""):
+    if testo_collated_opzionale:
+        fazione = estrai_fazione_da_url_o_testo(testo_collated_opzionale, default_fazione=fazione)
     """
     Aggiorna automaticamente in blocco tutte le unità della fazione desiderata e compila il dizionario del DB:
     1) Prova prima a scaricare la pagina riepilogativa di tutte le Warscrolls della fazione:
@@ -732,3 +783,4 @@ def sincronizza_fazione_da_wahapedia(fazione, db_unita_attuale, testo_collated_o
     if unita_aggiornate:
         return len(unita_aggiornate), unita_aggiornate, f"Sincronizzate e aggiornate {len(unita_aggiornate)} unità per la fazione {fazione}!", True
     return 0, [], f"Nessuna Warscroll trovata per {fazione}. Verifica la connessione o incolla il testo di {url_warscrolls_fazione}.", False
+
