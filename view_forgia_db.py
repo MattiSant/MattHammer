@@ -247,7 +247,7 @@ def render_forgia_db():
                         st.rerun()
                     
                     s1, s2, s3, s4, s5 = st.columns(5)
-                    atk = s1.selectbox("Attacks", opzioni_dadi, index=opzioni_dadi.index(str(arma.get("atk", "1"))) if str(arma.get("atk", "1")) in opzioni_dadi else 1, key=f"a_atk_{idx}_{v_key}")
+                    atk = s1.text_input("Attacks", value=str(arma.get("atk", "1")), key=f"a_atk_{idx}_{v_key}").strip().upper() or "1"
                     hit = s2.selectbox("Hit (X+)", opzioni_hw, index=opzioni_hw.index(arma.get("hit", 4)) if arma.get("hit", 4) in opzioni_hw else 3, key=f"a_hit_{idx}_{v_key}")
                     wnd = s3.selectbox("Wound (X+)", opzioni_hw, index=opzioni_hw.index(arma.get("wnd", 4)) if arma.get("wnd", 4) in opzioni_hw else 3, key=f"a_wnd_{idx}_{v_key}")
                     rend = s4.number_input("Rend", 0, 5, value=int(arma.get("rend", 0)) if str(arma.get("rend", 0)) != "---" else 0, key=f"a_rnd_{idx}_{v_key}")

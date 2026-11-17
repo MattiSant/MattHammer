@@ -121,7 +121,7 @@ def render_testa_a_testa():
                     comp_a = c3.checkbox("Companion", value=p_arma.get("companion", False), key=f"cmp_{idx}_{v_key}")
 
                     s1, s2, s3, s4, s5 = st.columns(5)
-                    atk = s1.selectbox("Atk", opzioni_dadi, index=opzioni_dadi.index(str(p_arma.get("atk", "1"))) if str(p_arma.get("atk", "1")) in opzioni_dadi else 1, key=f"atk_{idx}_{v_key}")
+                    atk = s1.text_input("Atk", value=str(p_arma.get("atk", "1")), key=f"atk_{idx}_{v_key}").strip().upper() or "1"
                     hit = s2.selectbox("Hit", opzioni_hw, index=opzioni_hw.index(p_arma.get("hit", 4)) if p_arma.get("hit", 4) in opzioni_hw else 3, key=f"hit_{idx}_{v_key}")
                     wnd = s3.selectbox("Wnd", opzioni_hw, index=opzioni_hw.index(p_arma.get("wnd", 4)) if p_arma.get("wnd", 4) in opzioni_hw else 3, key=f"wnd_{idx}_{v_key}")
                     rend = s4.number_input("Rend", 0, 5, value=int(p_arma.get("rend", 0)) if str(p_arma.get("rend", 0)) != "---" else 0, key=f"rnd_{idx}_{v_key}")
