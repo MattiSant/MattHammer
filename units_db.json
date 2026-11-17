@@ -1297,5 +1297,120 @@
             "DEATH",
             "NIGHTHAUNT"
         ]
+    },
+    "Nighthaunt: Black Coach": {
+        "fazione": "Nighthaunt",
+        "n_modelli": 1,
+        "dimensione_basetta": "170x105mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 200,
+        "statistiche_cerchio": {
+            "movimento": "10\"",
+            "controllo": 5,
+            "save": "5+",
+            "salute": 12,
+            "ward": "5+"
+        },
+        "difesa": {
+            "salute_per_modello": 12,
+            "save": 5,
+            "ward": 5
+        },
+        "armi": [
+            {
+                "nome": "Soulreach Grasp",
+                "attiva": true,
+                "ranged": true,
+                "range": "10\"",
+                "atk": "2",
+                "hit": 4,
+                "wnd": 3,
+                "rend": 2,
+                "dmg": "2",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Relic Bearers’ Claws and Ethereal Steeds’ Hooves",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "12",
+                "hit": 4,
+                "wnd": 4,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": true
+            },
+            {
+                "nome": "Wraith’s Spectral Weapons",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "5",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "2",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "INFANTRY",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "RUNAWAY COACH",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Charge Phase"
+                ],
+                "descrizione": "Declare: If this unit charged this phase, pick an enemy unit within 1\" of it to be the target.\n\nEffect: Roll a D3. On a 2+, inflict an amount of mortal damage equal on the target equal to the roll.",
+                "modificatori": {}
+            },
+            {
+                "nome": "NIMBUS OF POWER",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Movement Phase (Amica)"
+                ],
+                "descrizione": "Effect: If this unit is not in combat, remove it from the battlefield and set it up again on the battlefield more than 9\" from all enemy units.\n\nCORE",
+                "modificatori": {}
+            },
+            {
+                "nome": "EVOCATION OF DEATH",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Fine Turno"
+                ],
+                "descrizione": "Declare: If any damage points were allocated to an enemy unit by this unit’s combat attacks this turn and that enemy unit was destroyed this turn, pick a friendly non-UNIQUE NIGHTHAUNT HERO that has been destroyed.\n\nEffect: Set up a replacement unit wholly within 12\" of this unit. The replacement unit can only be set up in combat with enemy units that are in combat with this unit.",
+                "modificatori": {}
+            }
+        ],
+        "keywords": [
+            "WAR MACHINE",
+            "FLY",
+            "WARD (5+)",
+            "DEATH",
+            "NIGHTHAUNT"
+        ]
     }
 }
