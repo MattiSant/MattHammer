@@ -5,6 +5,7 @@ from view_testa_a_testa import render_testa_a_testa
 from view_sala_di_guerra import render_sala_di_guerra
 from view_forgia_db import render_forgia_db
 from core_engine import ordina_unita_per_fazione_e_nome
+from utils import render_toast_temporizzato, filtra_unita_per_fazione, mostra_toast_rapido
 
 # Configurazione della Pagina
 st.set_page_config(
@@ -16,6 +17,7 @@ st.set_page_config(
 
 # Applica lo stile grafico globale dai fogli di pergamena
 applica_stile_globale()
+render_toast_temporizzato()
 #
 #
 #
@@ -272,7 +274,9 @@ if st.session_state["pagina_selezionata"] == "Laboratorio Tattico (Testa a Testa
     unita_totali = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])
     
     if unita_totali:
-        scelta_rapida = st.sidebar.selectbox("Unità dal Grimorio", unita_totali, key="sb_quick_load")
+        with st.sidebar:
+            unita_filtrate_sb = filtra_unita_per_fazione(st.session_state["db_unita"], unita_totali, "sb_dir")
+        scelta_rapida = st.sidebar.selectbox("Unità dal Grimorio", unita_filtrate_sb, key="sb_quick_load")
         if st.sidebar.button("Carica nel Profilo", type="primary", use_container_width=True):
             dati_sel = st.session_state["db_unita"][scelta_rapida]
             st.session_state["corrente_armi"] = [dict(a) for a in dati_sel["armi"]]
@@ -354,7 +358,7 @@ if is_cloud:
         from core_engine import sincronizza_tutti_i_db
         ok, msg = sincronizza_tutti_i_db()
         if ok:
-            st.toast("✅ Tutti i database sincronizzati con successo!")
+            mostra_toast_rapido("Tutti i database sincronizzati con successo!", "✅")
         else:
             st.sidebar.error(f"Errore: {msg}")
         st.rerun()

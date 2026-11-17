@@ -12,7 +12,11 @@ from core_engine import (
 from utils import (
     estrai_valore_keyword,
     estrai_livello_potere,
-    estrai_intero_sicuro
+    estrai_intero_sicuro,
+    filtra_unita_per_fazione,
+    filtra_supporti_per_fazione,
+    render_card_abilita_wahapedia,
+    mostra_toast_rapido
 )
 from ability_parser import applica_abilita_attive_a_mod_globali
 
@@ -78,6 +82,13 @@ ARMATE_NEMICHE_NOTE = {
         {"nome": "Sylvaneth: Dryads", "rinforzata": True},
         {"nome": "Sylvaneth: Kurnoth Hunters With Greatswords", "rinforzata": False},
         {"nome": "Sylvaneth: Grove Guardian", "rinforzata": False}
+    ],
+    "Nighthaunt: Corte Spettrale (700pt)": [
+        {"nome": "Nighthaunt: Knight of Shrouds", "rinforzata": False},
+        {"nome": "Nighthaunt: Guardian of Souls", "rinforzata": False},
+        {"nome": "Nighthaunt: Bladegheist Revenants", "rinforzata": False},
+        {"nome": "Nighthaunt: Grimghast Reapers", "rinforzata": False},
+        {"nome": "Nighthaunt: Spirit Hosts", "rinforzata": False}
     ]
 }
 
@@ -281,14 +292,14 @@ def render_sala_di_guerra():
     if "sdg_nemici_matchup" not in st.session_state:
         st.session_state["sdg_nemici_matchup"] = []
     
-    st.session_state["db_tratti_eroici_dict"] = carica_db_supporto_dict(TRAITS_DB_FILE)
-    st.session_state["db_tratti_eroici"] = ordina_supporti_per_fazione_e_nome(st.session_state["db_tratti_eroici_dict"])
+    st.session_state["tratti_disp_lead_dict"] = carica_db_supporto_dict(TRAITS_DB_FILE)
+    st.session_state["tratti_disp_lead"] = ordina_supporti_per_fazione_e_nome(st.session_state["tratti_disp_lead_dict"])
 
-    st.session_state["db_artefatti_dict"] = carica_db_supporto_dict(ARTEFACTS_DB_FILE)
-    st.session_state["db_artefatti"] = ordina_supporti_per_fazione_e_nome(st.session_state["db_artefatti_dict"])
+    st.session_state["art_disp_lead_dict"] = carica_db_supporto_dict(ARTEFACTS_DB_FILE)
+    st.session_state["art_disp_lead"] = ordina_supporti_per_fazione_e_nome(st.session_state["art_disp_lead_dict"])
 
-    db_tratti_eroici = st.session_state["db_tratti_eroici"]
-    db_artefatti = st.session_state["db_artefatti"]
+    tratti_disp_lead = st.session_state["tratti_disp_lead"]
+    art_disp_lead = st.session_state["art_disp_lead"]
 
     if "sdg_nome_armata" not in st.session_state:
         st.session_state["sdg_nome_armata"] = "Armata Path to Glory"
@@ -320,13 +331,13 @@ def render_sala_di_guerra():
                     st.session_state["sdg_formato_scelto"] = "Personalizzato (Custom)" if dati_armata.get("limite_punti") not in [1000, 1500] else (
                         "Vanguard (1000 pt)" if dati_armata.get("limite_punti") == 1000 else "Strike Force (1500 pt)"
                     )
-                    st.toast(f"Armata '{armata_da_caricare}' caricata!", icon="✅")
+                    mostra_toast_rapido(f"Armata '{armata_da_caricare}' caricata!", "✅")
                     st.rerun()
             if c_load3.button("🗑️ Elimina", use_container_width=True):
                 if armata_da_caricare != "--- Scegli Armata ---":
                     del st.session_state["archivio_armate"][armata_da_caricare]
                     salva_archivio_armate(st.session_state["archivio_armate"])
-                    st.toast(f"Armata '{armata_da_caricare}' eliminata dall'archivio!", icon="🗑️")
+                    mostra_toast_rapido(f"Armata '{armata_da_caricare}' eliminata dall'archivio!", icon="🗑️")
                     st.rerun()
 
     # ==========================================
@@ -461,10 +472,18 @@ def render_sala_di_guerra():
                 if head_c2.button("🗑️ Rimuovi", key=f"del_reg_{r_idx}", use_container_width=True):
                     reggimenti_da_rimuovere.append(r_idx)
 
-            lc1, lc2 = st.columns([2.5, 1.5])
-            lista_scelta_leader = ["--- Scegli Eroe Leader ---"] + eroi_db_filtrati
-            idx_lead = lista_scelta_leader.index(reg["leader"]) if reg["leader"] in lista_scelta_leader else 0
+            f_reg_col1, lc1, lc2 = st.columns([1.2, 2.2, 1.3])
+            with f_reg_col1:
+                eroi_reg_filtrati = filtra_unita_per_fazione(
+                    st.session_state["db_unita"], eroi_db_filtrati, f"reg_eroi_{r_idx}",
+                    label_fazione="Fazione Leader", default_fazione=st.session_state["sdg_fazione_armata"]
+                )
             
+            lista_scelta_leader = ["--- Scegli Eroe Leader ---"] + list(eroi_reg_filtrati)
+            if reg["leader"] != "--- Scegli Eroe Leader ---" and reg["leader"] not in lista_scelta_leader:
+                lista_scelta_leader.append(reg["leader"])
+
+            idx_lead = lista_scelta_leader.index(reg["leader"]) if reg["leader"] in lista_scelta_leader else 0
             reg["leader"] = lc1.selectbox(
                 "Leader (Solo Eroi)", 
                 lista_scelta_leader, 
@@ -488,27 +507,39 @@ def render_sala_di_guerra():
             lc2.markdown(f"**Ruolo Magico/Religioso:**\n`{ruolo_magico_str}`")
 
             tc1, tc2 = st.columns(2)
-            idx_tratto = db_tratti_eroici.index(reg.get("tratto_eroico", "Nessuno")) if reg.get("tratto_eroico", "Nessuno") in db_tratti_eroici else 0
+            with tc1:
+                tratti_disp_lead = filtra_supporti_per_fazione(st.session_state["tratti_disp_lead_dict"], st.session_state["tratti_disp_lead"], f"tr_lead_{r_idx}", st.session_state["sdg_fazione_armata"])
+                if reg.get("tratto_eroico", "Nessuno") not in tratti_disp_lead:
+                    tratti_disp_lead.append(reg["tratto_eroico"])
+                
+
+            with tc2:
+                art_disp_lead = filtra_supporti_per_fazione(st.session_state["art_disp_lead_dict"], st.session_state["art_disp_lead"], f"ar_lead_{r_idx}", st.session_state["sdg_fazione_armata"])
+                if reg.get("artefatto", "Nessuno") not in art_disp_lead:
+                    art_disp_lead.append(reg["artefatto"])
+                
+            
+            idx_tratto = tratti_disp_lead.index(reg.get("tratto_eroico", "Nessuno")) if reg.get("tratto_eroico", "Nessuno") in tratti_disp_lead else 0
             reg["tratto_eroico"] = tc1.selectbox(
                 "Tratto Eroico (Heroic Trait)", 
-                db_tratti_eroici, 
+                tratti_disp_lead, 
                 index=idx_tratto, 
                 key=f"reg_trait_{r_idx}_v{st.session_state['sdg_roster_version']}"
             )
 
-            idx_art = db_artefatti.index(reg.get("artefatto", "Nessuno")) if reg.get("artefatto", "Nessuno") in db_artefatti else 0
+            idx_art = art_disp_lead.index(reg.get("artefatto", "Nessuno")) if reg.get("artefatto", "Nessuno") in art_disp_lead else 0
             reg["artefatto"] = tc2.selectbox(
                 "Artefatto di Potere", 
-                db_artefatti, 
+                art_disp_lead, 
                 index=idx_art, 
                 key=f"reg_art_{r_idx}_v{st.session_state['sdg_roster_version']}"
             )
 
             if reg.get("tratto_eroico", "Nessuno") != "Nessuno":
-                desc_tr = st.session_state["db_tratti_eroici_dict"].get(reg["tratto_eroico"], {}).get("descrizione", "")
+                desc_tr = st.session_state["tratti_disp_lead_dict"].get(reg["tratto_eroico"], {}).get("descrizione", "")
                 st.caption(f"✨ **{reg['tratto_eroico']}:** {desc_tr}")
             if reg.get("artefatto", "Nessuno") != "Nessuno":
-                desc_ar = st.session_state["db_artefatti_dict"].get(reg["artefatto"], {}).get("descrizione", "")
+                desc_ar = st.session_state["art_disp_lead_dict"].get(reg["artefatto"], {}).get("descrizione", "")
                 st.caption(f"🏺 **{reg['artefatto']}:** {desc_ar}")
 
             if reg["leader"] in st.session_state["db_unita"]:
@@ -523,8 +554,8 @@ def render_sala_di_guerra():
                 wd_val = stat_c.get("ward", f"{dif_lead.get('ward', 5)}+")
 
                 pt_lead_base = d_lead.get('punti', 0)
-                pt_tratto = st.session_state["db_tratti_eroici_dict"].get(reg.get("tratto_eroico", "Nessuno"), {}).get("punti", 0)
-                pt_artefatto = st.session_state["db_artefatti_dict"].get(reg.get("artefatto", "Nessuno"), {}).get("punti", 0)
+                pt_tratto = st.session_state["tratti_disp_lead_dict"].get(reg.get("tratto_eroico", "Nessuno"), {}).get("punti", 0)
+                pt_artefatto = st.session_state["art_disp_lead_dict"].get(reg.get("artefatto", "Nessuno"), {}).get("punti", 0)
                 pt_lead_totale = pt_lead_base + pt_tratto + pt_artefatto
                 
                 str_punti = f"{pt_lead_totale} pt"
@@ -542,27 +573,24 @@ def render_sala_di_guerra():
                 if abilita_leader:
                     st.markdown("**Abilità della Warscroll:**")
                     for ab in abilita_leader:
-                        is_reaz = ab.get("reazione", False)
-                        classe_box = "ability-box-reaction" if is_reaz else "ability-box"
-                        reaz_txt = "🔴 Reaction: " if is_reaz else "🟢 "
-                        fasi_txt = ", ".join(ab.get("fasi", ["Generica"]))
-                        st.markdown(f"""
-                        <div class="{classe_box}">
-                            <small style="color: #d8c29d;"><b>[{fasi_txt}]</b></small><br>
-                            <b>{reaz_txt}{ab.get('nome', 'Abilità')}</b>: {ab.get('descrizione', '')}
-                        </div>
-                        """, unsafe_allow_html=True)
+                        st.markdown(render_card_abilita_wahapedia(ab), unsafe_allow_html=True)
 
             st.markdown("---")
             max_seguito = 4 if reg.get("is_generale", False) else 3
             st.markdown(f"**Seguito ({len(reg['seguito'])} / {max_seguito} slot occupati):**")
 
-            sc_add1, sc_add2 = st.columns([3, 1])
+            sc_f, sc_add1, sc_add2 = st.columns([1.2, 2.2, 0.9])
+            with sc_f:
+                opzioni_seg_filtrate = filtra_unita_per_fazione(
+                    st.session_state["db_unita"], opzioni_db, f"seg_u_{r_idx}",
+                    label_fazione="Fazione Seguito", default_fazione=st.session_state["sdg_fazione_armata"]
+                )
             unita_seg_sel = sc_add1.selectbox(
                 "Aggiungi unità di seguito:", 
-                ["--- Scegli unità ---"] + opzioni_db, 
+                ["--- Scegli unità ---"] + opzioni_seg_filtrate, 
                 key=f"sel_add_seg_{r_idx}_v{st.session_state['sdg_roster_version']}"
-            )    
+            )
+  
             if sc_add2.button("➕ Aggiungi", key=f"btn_add_seg_{r_idx}", use_container_width=True):
                 if unita_seg_sel != "--- Scegli unità ---":
                     if len(reg["seguito"]) < max_seguito:
@@ -599,11 +627,11 @@ def render_sala_di_guerra():
                     st.markdown("<div style='margin-top:-5px; margin-bottom:10px; padding-left:15px;'><small style='color:#d4af37;'>✨ <i>Eroe (Può equipaggiare Tratti e Artefatti)</i></small></div>", unsafe_allow_html=True)
                     tf_col1, tf_col2 = st.columns(2)
                     
-                    idx_t_f = db_tratti_eroici.index(fol.get("tratto_eroico", "Nessuno")) if fol.get("tratto_eroico", "Nessuno") in db_tratti_eroici else 0
-                    fol["tratto_eroico"] = tf_col1.selectbox("Tratto Eroico", db_tratti_eroici, index=idx_t_f, key=f"fol_trait_{r_idx}_{f_idx}_v{st.session_state['sdg_roster_version']}")
+                    idx_t_f = tratti_disp_lead.index(fol.get("tratto_eroico", "Nessuno")) if fol.get("tratto_eroico", "Nessuno") in tratti_disp_lead else 0
+                    fol["tratto_eroico"] = tf_col1.selectbox("Tratto Eroico", tratti_disp_lead, index=idx_t_f, key=f"fol_trait_{r_idx}_{f_idx}_v{st.session_state['sdg_roster_version']}")
                     
-                    idx_a_f = db_artefatti.index(fol.get("artefatto", "Nessuno")) if fol.get("artefatto", "Nessuno") in db_artefatti else 0
-                    fol["artefatto"] = tf_col2.selectbox("Artefatto", db_artefatti, index=idx_a_f, key=f"fol_art_{r_idx}_{f_idx}_v{st.session_state['sdg_roster_version']}")
+                    idx_a_f = art_disp_lead.index(fol.get("artefatto", "Nessuno")) if fol.get("artefatto", "Nessuno") in art_disp_lead else 0
+                    fol["artefatto"] = tf_col2.selectbox("Artefatto", art_disp_lead, index=idx_a_f, key=f"fol_art_{r_idx}_{f_idx}_v{st.session_state['sdg_roster_version']}")
 
                 stat_cf = d_fol_db.get("statistiche_cerchio", {})             
                 dif_f = d_fol_db.get("difesa", {})
@@ -640,8 +668,8 @@ def render_sala_di_guerra():
 
     def combina_bonus_unita(mod_form, nome_tratto, nome_artefatto):
         b = dict(mod_form) if isinstance(mod_form, dict) else {}
-        mod_t = st.session_state["db_tratti_eroici_dict"].get(nome_tratto, {}).get("modificatori", {})
-        mod_a = st.session_state["db_artefatti_dict"].get(nome_artefatto, {}).get("modificatori", {})
+        mod_t = st.session_state["tratti_disp_lead_dict"].get(nome_tratto, {}).get("modificatori", {})
+        mod_a = st.session_state["art_disp_lead_dict"].get(nome_artefatto, {}).get("modificatori", {})
         for sorgente in (mod_t, mod_a):
             if isinstance(sorgente, dict):
                 for k, v in sorgente.items():
@@ -651,8 +679,8 @@ def render_sala_di_guerra():
                         b[k] = min(b.get(k, 7), int(v))
                     else:
                         b[k] = b.get(k, 0) + int(v)
-        pt_t = estrai_intero_sicuro(st.session_state["db_tratti_eroici_dict"].get(nome_tratto, {}).get("punti", 0))
-        pt_a = estrai_intero_sicuro(st.session_state["db_artefatti_dict"].get(nome_artefatto, {}).get("punti", 0))
+        pt_t = estrai_intero_sicuro(st.session_state["tratti_disp_lead_dict"].get(nome_tratto, {}).get("punti", 0))
+        pt_a = estrai_intero_sicuro(st.session_state["art_disp_lead_dict"].get(nome_artefatto, {}).get("punti", 0))
         b["punti_equip"] = pt_t + pt_a
         return b
 
@@ -945,19 +973,33 @@ def render_sala_di_guerra():
     # ==========================================
     with tab_matchup:
         st.markdown('<div class="subsection-title">1. Schieramento dell\'Armata Nemica</div>', unsafe_allow_html=True)
-        st.caption("Importa un'armata avversaria preconfigurata, carica un roster salvato o componi i nemici manualmente.")
+        st.caption("Scegli un'armata preconfigurata, un'intera fazione dal DB o aggiungi singole unità nemiche.")
 
         with st.container(border=True):
             im1, im2 = st.columns([2.5, 1])
-            opzioni_import_nemici = ["--- Scegli armata nemica ---"] + list(ARMATE_NEMICHE_NOTE.keys()) + [f"[Archivio] {k}" for k in armate_salvate]
-            scelta_armata_nota = im1.selectbox("Importa Armata Avversaria:", opzioni_import_nemici)
-            if im2.button("📥 Importa Nemici", type="primary", use_container_width=True):
+            opzioni_import_nemici = (
+                ["--- Scegli armata o fazione nemica ---"]
+                + list(ARMATE_NEMICHE_NOTE.keys())
+                + ["[Fazione DB] Nighthaunt", "[Fazione DB] Blades of Khorne", "[Fazione DB] Orruk Kruleboyz", "[Fazione DB] Sylvaneth"]
+                + [f"[Archivio] {k}" for k in armate_salvate]
+            )
+            scelta_armata_nota = im1.selectbox("Importa Schieramento Avversario:", opzioni_import_nemici, key="sel_preset_nemico")
+            if im2.button("📥 Sostituisci e Importa Nemici", type="primary", use_container_width=True):
                 if scelta_armata_nota in ARMATE_NEMICHE_NOTE:
                     st.session_state["sdg_nemici_matchup"] = [
                         dict(x) for x in ARMATE_NEMICHE_NOTE[scelta_armata_nota]
                         if x["nome"] in st.session_state["db_unita"]
                     ]
-                    st.toast(f"Armata '{scelta_armata_nota}' importata!", icon="✅")
+                    mostra_toast_rapido(f"Armata nemica '{scelta_armata_nota}' caricata!", "✅")
+                    st.rerun()
+                elif scelta_armata_nota.startswith("[Fazione DB] "):
+                    faz_target = scelta_armata_nota.replace("[Fazione DB] ", "").strip()
+                    st.session_state["sdg_nemici_matchup"] = [
+                        {"nome": k_u, "rinforzata": False}
+                        for k_u in opzioni_db
+                        if st.session_state["db_unita"].get(k_u, {}).get("fazione") == faz_target or k_u.startswith(f"{faz_target}:")
+                    ]
+                    mostra_toast_rapido(f"Tutte le unità {faz_target} caricate come nemici!", "✅")
                     st.rerun()
                 elif scelta_armata_nota.startswith("[Archivio] "):
                     k_arch = scelta_armata_nota.replace("[Archivio] ", "")
@@ -970,12 +1012,14 @@ def render_sala_di_guerra():
                             if f_nem.get("nome") in st.session_state["db_unita"]:
                                 nemici_estratti.append({"nome": f_nem["nome"], "rinforzata": bool(f_nem.get("rinforzata", False))})
                     st.session_state["sdg_nemici_matchup"] = nemici_estratti
-                    st.toast(f"Roster '{k_arch}' importato come avversario!", icon="✅")
+                    mostra_toast_rapido(f"Roster '{k_arch}' importato come avversario!", "✅")
                     st.rerun()
 
             st.markdown("---")
-            mc1, mc2, mc3 = st.columns([2.5, 1, 1])
-            nemico_sel = mc1.selectbox("Aggiungi singola unità nemica:", ["--- Scegli unità nemica dal DB ---"] + opzioni_db, key="sel_enemy_mu")
+            mc0, mc1, mc2, mc3 = st.columns([1.2, 2.0, 0.9, 0.9])
+            with mc0:
+                opzioni_nem_filtrate = filtra_unita_per_fazione(st.session_state["db_unita"], opzioni_db, "mu_enemy", label_fazione="Filtra Fazione Nemico")
+            nemico_sel = mc1.selectbox("Aggiungi singola unità nemica:", ["--- Scegli unità nemica dal DB ---"] + opzioni_nem_filtrate, key="sel_enemy_mu")
             nemico_rinf = mc2.checkbox("Rinforzata (x2)", value=False, key="chk_enemy_rinf")
             if mc3.button("➕ Aggiungi Nemico", use_container_width=True):
                 if nemico_sel != "--- Scegli unità nemica dal DB ---":
@@ -984,12 +1028,11 @@ def render_sala_di_guerra():
 
             if st.session_state["sdg_nemici_matchup"]:
                 nem_str_list = [f"{i+1}. {n['nome']}" + (" (x2)" if n["rinforzata"] else "") for i, n in enumerate(st.session_state["sdg_nemici_matchup"])]
-                st.markdown("**Forze Avversarie in Campo:** " + " | ".join(nem_str_list))
+                st.markdown("**🔴 Forze Avversarie Attualmente in Campo:** " + " | ".join(nem_str_list))
                 if st.button("🗑️ Svuota Armata Nemica"):
                     st.session_state["sdg_nemici_matchup"] = []
                     st.rerun()
 
-        # Filtra solo i nemici effettivamente presenti nel DB (rimuove eventuali vecchie unità non valide in sessione)
         nemici_validi = [
             n for n in st.session_state["sdg_nemici_matchup"]
             if n.get("nome") in st.session_state["db_unita"]
@@ -1061,17 +1104,20 @@ def render_sala_di_guerra():
 
             with st.container(border=True):
                 duel_c1, duel_c2 = st.columns(2)
+                hash_mie = len(unita_totali_schierate)
+                hash_nem = len(nemici_elaborati)
+
                 scelta_mia_idx = duel_c1.selectbox(
                     "Scegli la Tua Unità Attaccante:",
                     range(len(unita_totali_schierate)),
                     format_func=lambda i: f"{unita_totali_schierate[i]['etichetta']} ({unita_totali_schierate[i]['punti']} pt | {unita_totali_schierate[i]['salute']} PF)",
-                    key="duel_sel_mia"
+                    key=f"duel_sel_mia_{hash_mie}"
                 )
                 scelta_nem_idx = duel_c2.selectbox(
                     "Scegli l'Unità Bersaglio Nemica:",
                     range(len(nemici_elaborati)),
                     format_func=lambda i: f"{nemici_elaborati[i]['etichetta']} ({nemici_elaborati[i]['profilo_difensivo']['punti']} pt | {nemici_elaborati[i]['profilo_difensivo']['salute']} PF)",
-                    key="duel_sel_nem"
+                    key=f"duel_sel_nem_{hash_nem}"
                 )
 
                 opt_c1, opt_c2, opt_c3, opt_c4 = st.columns(4)
@@ -1079,7 +1125,8 @@ def render_sala_di_guerra():
                 mia_aoa = opt_c2.checkbox("Tu usi All-out Attack (+1 Hit)", value=False, key="duel_mia_aoa")
                 nem_aod = opt_c3.checkbox("Nemico usa All-out Defence (+1 Save)", value=False, key="duel_nem_aod")
                 mia_aod = opt_c4.checkbox("Tu usi All-out Defence (+1 Save)", value=False, key="duel_mia_aod")
-
+                prof_dif_nem_duello["bersaglio_ha_caricato"] = (not mia_carica)
+                
                 mia_sel = unita_totali_schierate[scelta_mia_idx]
                 nem_sel = nemici_elaborati[scelta_nem_idx]
                 d_mia_db = st.session_state["db_unita"][mia_sel["chiave_db"]]
@@ -1185,7 +1232,7 @@ def render_sala_di_guerra():
                     st.session_state["archivio_armate"][chiave_armata] = payload_armata
                     salva_archivio_armate(st.session_state["archivio_armate"])
                     st.session_state["conferma_sovrascrittura_armata"] = False
-                    st.toast(f"Armata '{chiave_armata}' salvata con successo!", icon="✅")
+                    mostra_toast_rapido(f"Armata '{chiave_armata}' salvata con successo!", "✅")
                     st.rerun()
 
             if st.session_state.get("conferma_sovrascrittura_armata", False):
@@ -1196,7 +1243,7 @@ def render_sala_di_guerra():
                     st.session_state["archivio_armate"][chiave_armata] = payload_armata
                     salva_archivio_armate(st.session_state["archivio_armate"])
                     st.session_state["conferma_sovrascrittura_armata"] = False
-                    st.toast(f"Armata '{chiave_armata}' sovrascritta con successo!", icon="✅")
+                    mostra_toast_rapido(f"Armata '{chiave_armata}' sovrascritta con successo!", icon="✅")
                     st.rerun()
                     
                 if col_ov2.button("✨ Crea Copia con Nuovo Nome", use_container_width=True):
@@ -1211,7 +1258,7 @@ def render_sala_di_guerra():
                     salva_archivio_armate(st.session_state["archivio_armate"])
                     st.session_state["conferma_sovrascrittura_armata"] = False
                     st.session_state["sdg_roster_version"] += 1
-                    st.toast(f"Creata nuova lista '{nuova_chiave}'!", icon="✅")
+                    mostra_toast_rapido(f"Creata nuova lista '{nuova_chiave}'!", "✅")
                     st.rerun()
                     
                 if col_ov3.button("✖ Annulla", use_container_width=True):
@@ -1232,8 +1279,8 @@ def render_sala_di_guerra():
                 
                 nome_t = reg.get("tratto_eroico", "Nessuno")
                 nome_a = reg.get("artefatto", "Nessuno")
-                pt_t = st.session_state["db_tratti_eroici_dict"].get(nome_t, {}).get("punti", 0)
-                pt_a = st.session_state["db_artefatti_dict"].get(nome_a, {}).get("punti", 0)
+                pt_t = st.session_state["tratti_disp_lead_dict"].get(nome_t, {}).get("punti", 0)
+                pt_a = st.session_state["art_disp_lead_dict"].get(nome_a, {}).get("punti", 0)
                 pt_l_tot = estrai_intero_sicuro(d_l.get('punti', 0)) + pt_t + pt_a
                 
                 linee_export.append(f"\nREGGIMENTO {r_i+1}:")
@@ -1250,8 +1297,8 @@ def render_sala_di_guerra():
                     
                     nome_t_f = fol.get("tratto_eroico", "Nessuno")
                     nome_a_f = fol.get("artefatto", "Nessuno")
-                    pt_t_f = st.session_state["db_tratti_eroici_dict"].get(nome_t_f, {}).get("punti", 0)
-                    pt_a_f = st.session_state["db_artefatti_dict"].get(nome_a_f, {}).get("punti", 0)
+                    pt_t_f = st.session_state["tratti_disp_lead_dict"].get(nome_t_f, {}).get("punti", 0)
+                    pt_a_f = st.session_state["art_disp_lead_dict"].get(nome_a_f, {}).get("punti", 0)
                     pt_f_base = estrai_intero_sicuro(d_f.get('punti', 0)) * molt
                     pt_f_tot = pt_f_base + pt_t_f + pt_a_f
                     

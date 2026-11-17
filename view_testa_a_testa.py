@@ -13,9 +13,13 @@ from utils import (
     OPZIONI_CRITICO,
     OPZIONI_ANTI,
     OPZIONI_DADI,
-    OPZIONI_HW
+    OPZIONI_HW,
+    filtra_unita_per_fazione,
+    render_card_abilita_wahapedia
 )
-from ability_parser import applica_abilita_attive_a_mod_globali
+from ability_parser import(
+    applica_abilita_attive_a_mod_globali
+) 
 
 def _calcola_mortali_da_mod(m_dict):
         d_base = float(m_dict.get("mortal_extra_fisso", 0.0))
@@ -85,13 +89,17 @@ def render_testa_a_testa():
     st.markdown('<div class="section-header">Schieramento d\'Assalto</div>', unsafe_allow_html=True)
     st.caption("Seleziona un'unità dal database (in Sola Lettura) oppure inserisci manualmente le armi per testarle.")
 
-    attaccante_sel = st.selectbox("Seleziona Unità d'Attacco Principale", opzioni_db, key="sel_attaccante_principale")
+    c_fa1, c_fa2 = st.columns([1, 2.5])
+    with c_fa1:
+        unita_att_filtrate = filtra_unita_per_fazione(st.session_state["db_unita"], unita_ordinate, "lab_att")
+    attaccante_sel = c_fa2.selectbox("Seleziona Unità d'Attacco Principale", ["--- Inserimento Manuale ---"] + unita_att_filtrate, key="sel_attaccante_principale")
 
     armi_attaccante = []
     n_mod_att_base = 1
     punti_att_base = 0
     campione_att = False
     rinforzata_att = False
+    flags_abilita_att = {}
 
     if attaccante_sel == "--- Inserimento Manuale ---":
         # ================= MANUALE =================
@@ -269,18 +277,9 @@ def render_testa_a_testa():
             if abilita_att:
                 st.markdown("**Abilità della Warscroll (Spunta per applicare i bonus al calcolo):**")
                 for idx_ab, ab in enumerate(abilita_att):
-                    is_reaz = ab.get("reazione", False)
-                    tipo_ab = ab.get("tipo", "Ability")
-                    fasi_txt = ", ".join(ab.get("fasi", ["Generica"]))
-                    colore_bordo = "#c0392b" if is_reaz else "#b38b4d"
                     ca_chk, ca_txt = st.columns([0.4, 3.6])
                     flags_abilita_att[idx_ab] = ca_chk.checkbox("Usa", value=True, key=f"use_ab_att_{attaccante_sel}_{idx_ab}")
-                    ca_txt.markdown(f"""
-                    <div style="background: rgba(45, 29, 17, 0.5); border-left: 3px solid {colore_bordo}; padding: 6px 10px; margin-bottom: 6px; border-radius: 3px; font-size: 0.9rem;">
-                        <small style="color: #d8c29d;"><b>[{tipo_ab} — {fasi_txt}]</b></small><br>
-                        <b>{ab.get('nome', 'Abilità')}</b>: {ab.get('descrizione', '')}
-                    </div>
-                    """, unsafe_allow_html=True)
+                    ca_txt.markdown(render_card_abilita_wahapedia(ab), unsafe_allow_html=True)
 
 
     # ==========================================
@@ -344,8 +343,9 @@ def render_testa_a_testa():
     # ==========================================
     st.markdown("---")
     with st.expander("🛡️ Forze Alleate di Supporto (Attacco Combinato)", expanded=bool(st.session_state["lista_supporti_attivi"])):
-        col_sel_sup, col_btn_sup = st.columns([3, 1])
-        opzioni_db_supporto = unita_ordinate
+        col_f_sup, col_sel_sup, col_btn_sup = st.columns([1.2, 2.3, 1])
+        with col_f_sup:
+            opzioni_db_supporto = filtra_unita_per_fazione(st.session_state["db_unita"], unita_ordinate, "lab_sup")
         unita_da_aggiungere = col_sel_sup.selectbox("Scegli supporto dal DB:", ["--- Scegli unità ---"] + opzioni_db_supporto, key="sel_nuovo_supporto")
         
         if col_btn_sup.button("➕ Schiera Supporto"):
@@ -386,13 +386,7 @@ def render_testa_a_testa():
                     if abilita_sup:
                         with st.expander(f"✨ Visualizza Abilità Warscroll ({len(abilita_sup)})", expanded=False):
                             for ab_s in abilita_sup:
-                                fasi_s_txt = ", ".join(ab_s.get("fasi", ["Generica"]))
-                                st.markdown(f"""
-                                <div style="background: rgba(0,0,0,0.25); border-left: 2px solid #8c6d46; padding: 5px 8px; margin-bottom: 4px; border-radius: 3px; font-size: 0.85rem;">
-                                    <small style="color: #d8c29d;"><b>[{ab_s.get('tipo', 'Ability')} — {fasi_s_txt}]</b></small><br>
-                                    <b>{ab_s.get('nome', 'Abilità')}</b>: {ab_s.get('descrizione', '')}
-                                </div>
-                                """, unsafe_allow_html=True)
+                                st.markdown(render_card_abilita_wahapedia(ab_s), unsafe_allow_html=True)
 
                     with st.expander("Modificatori Extra (Supporto)"):
                         mh1, mh2 = st.columns(2)
@@ -434,12 +428,16 @@ def render_testa_a_testa():
     # ==========================================
     st.markdown('<div class="section-header">Bersaglio Designato (Difesa)</div>', unsafe_allow_html=True)
     
-    bersaglio_sel = st.selectbox("Seleziona Unità Avversaria (Bersaglio)", opzioni_db, key="sel_bersaglio_principale")
-
+    c_fb1, c_fb2 = st.columns([1, 2.5])
+    with c_fb1:
+        unita_bers_filtrate = filtra_unita_per_fazione(st.session_state["db_unita"], unita_ordinate, "lab_bers")
+    bersaglio_sel = c_fb2.selectbox("Seleziona Unità Avversaria (Bersaglio)", ["--- Inserimento Manuale ---"] + unita_bers_filtrate, key="sel_bersaglio_principale")
+    
     save_b = 4
     ward_b = 7
     salute_b = 10
     punti_b = 100
+    n_modelli_b = 5
     keywords_b = ["INFANTRY"]
 
     if bersaglio_sel == "--- Inserimento Manuale ---":
@@ -477,6 +475,7 @@ def render_testa_a_testa():
             
             molt_b = 2 if rinforzata_bers else 1
             salute_b = sal_mod * mod_base * molt_b
+            n_modelli_b = mod_base * molt_b
             punti_b = pt_base * molt_b
             save_b = sv_base
             ward_b = wd_base
@@ -487,8 +486,7 @@ def render_testa_a_testa():
             if abilita_bers:
                 with st.expander(f"🛡️ Abilità della Warscroll Bersaglio ({len(abilita_bers)})", expanded=False):
                     for ab_b in abilita_bers:
-                        fasi_b_txt = ", ".join(ab_b.get("fasi", ["Generica"]))
-                        st.markdown(f"<small style='color:#d8c29d;'><b>[{ab_b.get('tipo', 'Ability')} — {fasi_b_txt}]</b></small> <b>{ab_b.get('nome', '')}:</b> {ab_b.get('descrizione', '')}", unsafe_allow_html=True)
+                        st.markdown(render_card_abilita_wahapedia(ab_b), unsafe_allow_html=True)
 
     with st.container(border=True):
         st.markdown("**Buff Difensivi e Terreno del Bersaglio (Modificabili)**")
@@ -520,7 +518,7 @@ def render_testa_a_testa():
         sup["mod_globali"]["bersaglio_ha_caricato"] = bersaglio_carica
 
     bersaglio_dict = {
-        "save": save_b, "ward": ward_b, "salute": salute_b, "keywords": keywords_b,
+        "save": save_b, "ward": ward_b, "salute": salute_b, "n_modelli": n_modelli_b, "keywords": keywords_b,
         "cover": cover_b, "aod": aod_b, "bonus_save_extra": 1 if extra_save_b else 0,
         "obscuring": obscuring_b, "bersaglio_ha_caricato": bersaglio_carica,
         "mod_ward_penalita": 0, "blocca_ward": blocca_ward_b, "mod_wnd_nerf": 0,
@@ -580,13 +578,16 @@ def render_testa_a_testa():
     attacchi_totali = sum(r['attacchi'] for r in risultati_armi)
     tutte_armi_attive = [item["arma"] for item in dettaglio_armi_combinate if item["arma"]["attiva"] and str(item["arma"]["hit"]) != "---"]
     max_rend = max([int(a['rend']) for a in tutte_armi_attive if str(a['rend']) != "---"] + [0])
-    ha_crit_mortal = any(a.get('crit_type', 'Nessuno') == 'Crit (Mortal)' for a in tutte_armi_attive)
+    ha_crit_mortal = any(a.get('crit_type', 'Nessuno') == 'Crit (Mortal)' for a in tutte_armi_attive) or (mod_globali_att.get("crit_override") == "Crit (Mortal)")
     anti_targets = list(set([a['anti_target'] for a in tutte_armi_attive if a.get('anti_target', 'Nessuno') != 'Nessuno']))
 
-    difesa_corrente = st.session_state.get("corrente_difesa", {})
-    ward_unita = int(difesa_corrente.get("ward", 7)) if str(difesa_corrente.get("ward")) != "---" else 7
-    save_unita = int(difesa_corrente.get("save", 4)) if str(difesa_corrente.get("save")) != "---" else 4
-    salute_totale_unita = int(difesa_corrente.get("salute_per_modello", 2)) * mod_globali_att["n_modelli"]
+    if attaccante_sel == "--- Inserimento Manuale ---":
+        difesa_corrente = st.session_state.get("corrente_difesa", {})
+    else:
+        difesa_corrente = st.session_state["db_unita"].get(attaccante_sel, {}).get("difesa", {})
+    ward_unita = estrai_intero_sicuro(difesa_corrente.get("ward", 7), default=7)
+    save_unita = estrai_intero_sicuro(difesa_corrente.get("save", 4), default=4)
+    salute_totale_unita = estrai_intero_sicuro(difesa_corrente.get("salute_per_modello", 2), default=2) * mod_globali_att["n_modelli"]
 
     ruoli_trovati = []
     if ward_unita <= 5 or (save_unita <= 3 and salute_totale_unita >= 15):

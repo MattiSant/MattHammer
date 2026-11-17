@@ -13,9 +13,16 @@ from utils import (
     OPZIONI_CRITICO,
     OPZIONI_ANTI,
     OPZIONI_DADI,
-    OPZIONI_HW
+    OPZIONI_HW,
+    filtra_unita_per_fazione,
+    filtra_supporti_per_fazione,
+    mostra_toast_rapido
 )
-from ability_parser import FASI_GIOCO_COMPLETO, analizza_abilita_warscroll
+from ability_parser import (
+    FASI_GIOCO_COMPLETO, 
+    analizza_abilita_warscroll,
+    estrai_effetti_da_testo
+)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FORMATIONS_FILE = os.path.join(BASE_DIR, "formations.json")
@@ -106,8 +113,10 @@ def render_forgia_db():
         # CARICAMENTO / RESET
         # ==========================================
         with st.container(border=True):
-            col_load1, col_load2 = st.columns([3, 1])
-            unita_da_caricare = col_load1.selectbox("Modifica Unità Esistente (oppure creane una da zero):", ["--- Nuova Unità ---"] + opzioni_db, key=f"load_u_{v_key}")
+            col_load0, col_load1, col_load2 = st.columns([1.2, 2.3, 1])
+            with col_load0:
+                opzioni_db_forgia = filtra_unita_per_fazione(st.session_state["db_unita"], opzioni_db, f"fg_load_{v_key}")
+            unita_da_caricare = col_load1.selectbox("Modifica Unità Esistente (oppure creane una da zero):", ["--- Nuova Unità ---"] + opzioni_db_forgia, key=f"load_u_{v_key}")
             
             if col_load2.button("Carica nel Profilo", type="primary", use_container_width=True):
                 if unita_da_caricare != "--- Nuova Unità ---":
@@ -136,7 +145,7 @@ def render_forgia_db():
                             ab["modificatori"] = {}
                     st.session_state["forgia_abilita"] = abilita_caricate
 
-                    st.toast(f"Unità caricata: {unita_da_caricare}")
+                    mostra_toast_rapido(f"Unità caricata: {unita_da_caricare}")
                 else:
                     # === RESET DEI CAMPI ===
                     st.session_state["forgia_fazione"] = "Nighthaunt"
@@ -157,7 +166,7 @@ def render_forgia_db():
                     st.session_state["forgia_abilita"] = []
                     st.session_state["forgia_keywords"] = ""
                     
-                    st.toast("Campi azzerati. Pronto per creare una nuova unità.")
+                    mostra_toast_rapido("Campi azzerati. Pronto per creare una nuova unità.")
                     
                 st.session_state["forgia_version"] += 1
                 st.rerun()
@@ -288,7 +297,7 @@ def render_forgia_db():
                 if ab_parsata:
                     st.session_state["forgia_abilita"].append(ab_parsata)
                     st.session_state["forgia_version"] += 1
-                    st.toast(f"Abilità '{ab_parsata['nome']}' importata!", icon="✅")
+                    mostra_toast_rapido(f"Abilità '{ab_parsata['nome']}' importata!", "✅")
                     st.rerun()
             if st.button("➕ Aggiungi Abilità Warscroll"):
                 st.session_state["forgia_abilita"].append({
@@ -384,6 +393,9 @@ def render_forgia_db():
                                 c_val = st.number_input(f"Valore per {mod_lbl}:", min_value=-5, max_value=15, value=int(val_prec), key=f"inp_ab_{k_ab}_{a_idx}_{v_key}")
                                 mod_salvati_ab[k_ab] = c_val
 
+                    _, cond_estr = estrai_effetti_da_testo(descrizione)
+                    cond_finali = {**cond_estr, **ab.get("condizioni", {})}
+
                     abilita_aggiornate.append({
                         "nome": nome_ab,
                         "tipo": tipo,
@@ -393,8 +405,9 @@ def render_forgia_db():
                         "fasi": fasi_sel,
                         "descrizione": descrizione,
                         "modificatori": mod_salvati_ab,
-                        "condizioni": ab.get("condizioni", {})
+                        "condizioni": cond_finali
                     })
+                    
             st.session_state["forgia_abilita"] = abilita_aggiornate
 
             st.markdown("---")
@@ -447,7 +460,7 @@ def render_forgia_db():
                 successo, messaggio = salva_nel_database(st.session_state["db_unita"])
 
                 if successo:
-                    st.toast(f"Warscroll '{chiave_db}' registrata con successo nel Grimorio!", icon="✅")
+                    mostra_toast_rapido(f"Warscroll '{chiave_db}' registrata con successo nel Grimorio!", "✅")
                 else:
                     st.error(f"Errore di scrittura sul file: {messaggio}")
 
@@ -543,14 +556,14 @@ def render_forgia_db():
                 }
                 _salva_json_ausiliario(FORMATIONS_FILE, formazioni_db)
                 st.session_state["archivio_formazioni"] = formazioni_db
-                st.toast(f"Formazione '{nome_form}' registrata con successo!", icon="✅")
+                mostra_toast_rapido(f"Formazione '{nome_form}' registrata con successo!", "✅")
                 st.rerun()
 
         if scelta_form != "--- Nuova Formazione ---" and col_s_f2.button("🗑️ Elimina Formazione", use_container_width=True):
             del formazioni_db[fazione_f][scelta_form]
             _salva_json_ausiliario(FORMATIONS_FILE, formazioni_db)
             st.session_state["archivio_formazioni"] = formazioni_db
-            st.toast(f"Formazione '{scelta_form}' rimossa!", icon="🗑️")
+            mostra_toast_rapido(f"Formazione '{scelta_form}' rimossa!", "🗑️")
             st.rerun()
 
     # ==========================================
@@ -603,7 +616,7 @@ def render_forgia_db():
         # ------------------------------------------
         with col_t:
             st.markdown("#### 📜 Gestione Tratti Eroici")
-            lista_nomi_t = ordina_supporti_per_fazione_e_nome(traits_db)
+            lista_nomi_t = filtra_supporti_per_fazione(traits_db, ordina_supporti_per_fazione_e_nome(traits_db), "fg_tratti")            
             sel_t = st.selectbox(
                 "Seleziona Tratto:", 
                 ["--- Nuovo Tratto ---"] + lista_nomi_t, 
@@ -658,14 +671,14 @@ def render_forgia_db():
                         "modificatori": modificatori_salvati_t
                     }
                     _salva_json_ausiliario(TRAITS_FILE, traits_db)
-                    st.toast(f"Tratto '{nome_t}' salvato con successo!", icon="✅")
+                    mostra_toast_rapido(f"Tratto '{nome_t}' salvato con successo!", "✅")
                     st.rerun()
 
             if sel_t not in ["--- Nuovo Tratto ---", "Nessuno"]:
                 if bt2.button("🗑️ Elimina Tratto", use_container_width=True, key=f"tratto_btn_elimina_{sel_t}"):
                     del traits_db[sel_t]
                     _salva_json_ausiliario(TRAITS_FILE, traits_db)
-                    st.toast(f"Tratto '{sel_t}' eliminato!", icon="🗑️")
+                    mostra_toast_rapido(f"Tratto '{sel_t}' eliminato!", "🗑️")
                     st.rerun()
 
         # ------------------------------------------
@@ -673,7 +686,7 @@ def render_forgia_db():
         # ------------------------------------------
         with col_a:
             st.markdown("#### 🏺 Gestione Artefatti di Potere")
-            lista_nomi_a = ordina_supporti_per_fazione_e_nome(artefacts_db)
+            lista_nomi_a = filtra_supporti_per_fazione(artefacts_db, ordina_supporti_per_fazione_e_nome(artefacts_db), "fg_art")            
             sel_a = st.selectbox(
                 "Seleziona Artefatto:", 
                 ["--- Nuovo Artefatto ---"] + lista_nomi_a, 
@@ -728,14 +741,14 @@ def render_forgia_db():
                         "modificatori": modificatori_salvati_a
                     }
                     _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
-                    st.toast(f"Artefatto '{nome_a}' salvato con successo!", icon="✅")
+                    mostra_toast_rapido(f"Artefatto '{nome_a}' salvato con successo!", "✅")
                     st.rerun()
 
             if sel_a not in ["--- Nuovo Artefatto ---", "Nessuno"]:
                 if ba2.button("🗑️ Elimina Artefatto", use_container_width=True, key=f"art_btn_elimina_{sel_a}"):
                     del artefacts_db[sel_a]
                     _salva_json_ausiliario(ARTEFACTS_FILE, artefacts_db)
-                    st.toast(f"Artefatto '{sel_a}' eliminato!", icon="🗑️")
+                    mostra_toast_rapido(f"Artefatto '{sel_a}' eliminato!","🗑️")
                     st.rerun()
     # ==========================================
     # TAB: GESTIONE ED ELIMINAZIONE UNITÀ DAL DB
@@ -744,7 +757,7 @@ def render_forgia_db():
         st.markdown('<div class="subsection-title">Eliminazione Protetta dal Database</div>', unsafe_allow_html=True)
         st.caption("Rimuovi in sicurezza profili obsoleti o non più necessari.")
         
-        tutte_le_unita = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])        
+        tutte_le_unita = filtra_unita_per_fazione(st.session_state["db_unita"], ordina_unita_per_fazione_e_nome(st.session_state["db_unita"]), "fg_del")
         if tutte_le_unita:
             unita_target = st.selectbox("Seleziona Unità da eliminare:", tutte_le_unita, key="del_u_tab")
             st.warning(f"Attenzione: l'eliminazione di **{unita_target}** sarà permanente nel file JSON del database.")

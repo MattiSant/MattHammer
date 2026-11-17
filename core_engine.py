@@ -510,7 +510,7 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
         hits_to_wound = n_norm_hits.copy()
         bonus_dmg_fisso = (1 if (arma.get("charge_dmg", False) and mod_globali.get("ha_caricato", False)) else 0) + (mod_globali.get("bonus_dmg", 0) if not is_comp else 0)
 
-        crit_t = arma.get("crit_type", "Nessuno")
+        crit_t = mod_globali.get("crit_override", arma.get("crit_type", "Nessuno")) if not is_comp else arma.get("crit_type", "Nessuno")
         if crit_t == "Crit (Mortal)": mortal_wounds_sim = n_crits * (tira_dado_mc(arma["dmg"], n_sim) + bonus_dmg_fisso)
         elif crit_t == "Crit (Auto-wound)": auto_wounds_sim = n_crits
         elif crit_t == "Crit (2 Hits)": hits_to_wound += n_crits * 2
@@ -538,9 +538,20 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
     mortal_extra_dadi = mod_globali.get("mortal_extra_dadi", 0)
     mortal_extra_tipo = mod_globali.get("mortal_extra_tipo", 6)
     mortal_extra_soglia = str(mod_globali.get("mortal_extra_soglia", "Nessuna (Somma)"))
-    mortal_extra_fisso = mod_globali.get("mortal_extra_fisso", 0)
+    mortal_extra_fisso = float(mod_globali.get("mortal_extra_fisso", 0.0))
+    mortal_mc_list = mod_globali.get("mortal_mc_list", [])
 
-    danni_totali_sim += mortal_extra_fisso
+    if mortal_mc_list:
+        for prob_m, expr_m in mortal_mc_list:
+            if expr_m == "D3_EQUAL":
+                tiri_d3 = np.random.randint(1, 4, size=n_sim)
+                danni_totali_sim += np.where(tiri_d3 >= 2, tiri_d3, 0)
+            else:
+                attiva_mask = np.random.random(n_sim) < prob_m
+                danni_totali_sim += np.where(attiva_mask, tira_dado_mc(expr_m, n_sim), 0)
+    else:
+        danni_totali_sim += mortal_extra_fisso
+        
     if mortal_extra_dadi > 0:
         if mortal_extra_soglia.startswith("Nessuna"):
             lanci_extra = np.random.randint(1, mortal_extra_tipo + 1, size=(mortal_extra_dadi, n_sim))

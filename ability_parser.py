@@ -310,6 +310,10 @@ def applica_abilita_attive_a_mod_globali(abilita_lista, mod_globali_base, bersag
     n_mod_bersaglio = int(bersaglio.get("n_modelli", max(1, bersaglio.get("salute", 10) // 2))) if bersaglio else 10
 
     for idx, ab in enumerate(abilita_lista or []):
+        # Se non ci sono flag manuali (es. in Sala di Guerra), applica i danni mortali solo se l'abilità è di Carica, Combattimento o Passiva
+        fasi_ab_str = " ".join(ab.get("fasi", ["Qualsiasi Fase"])).lower()
+        is_fase_combat_o_carica = any(k in fasi_ab_str for k in ["combat", "combattimento", "charge", "carica", "qualsiasi", "any", "passiv"])
+        
         if attive_flags is not None and not attive_flags.get(idx, True):
             continue
 
@@ -340,16 +344,20 @@ def applica_abilita_attive_a_mod_globali(abilita_lista, mod_globali_base, bersag
         if "crit_override" in mods:
             mod["crit_override"] = mods["crit_override"]
 
-        # 4. Applica Danni Mortali Extra (sia basati su N dadi a soglia, sia basati su espressione/probabilità)
-        m_dadi = int(mods.get("mortal_extra_dadi", cond.get("mortal_extra_dadi", 0)))
-        m_fisso = float(mods.get("mortal_extra_fisso", cond.get("mortal_extra_fisso", 0.0)))
+        if is_fase_combat_o_carica or attive_flags is not None:
+            m_dadi = int(mods.get("mortal_extra_dadi", cond.get("mortal_extra_dadi", 0)))
+            m_fisso = float(mods.get("mortal_extra_fisso", cond.get("mortal_extra_fisso", 0.0)))
 
-        if m_dadi > 0:
-            mod["mortal_extra_dadi"] = mod.get("mortal_extra_dadi", 0) + m_dadi
-            mod["mortal_extra_tipo"] = int(mods.get("mortal_extra_tipo", cond.get("mortal_extra_tipo", 6)))
-            if str(mod.get("mortal_extra_soglia", "Nessuna (Somma)")).startswith("Nessuna"):
-                mod["mortal_extra_soglia"] = mods.get("mortal_extra_soglia", cond.get("mortal_extra_soglia", "Nessuna (Somma)"))
-        elif m_fisso > 0:
-            mod["mortal_extra_fisso"] = mod.get("mortal_extra_fisso", 0.0) + m_fisso
-
+            if m_dadi > 0 and cond.get("mortal_dmg_expr") != "D3_EQUAL":
+                mod["mortal_extra_dadi"] = mod.get("mortal_extra_dadi", 0) + m_dadi
+                mod["mortal_extra_tipo"] = int(mods.get("mortal_extra_tipo", cond.get("mortal_extra_tipo", 6)))
+                if str(mod.get("mortal_extra_soglia", "Nessuna (Somma)")).startswith("Nessuna"):
+                    mod["mortal_extra_soglia"] = mods.get("mortal_extra_soglia", cond.get("mortal_extra_soglia", "Nessuna (Somma)"))
+            elif m_fisso > 0:
+                mod["mortal_extra_fisso"] = mod.get("mortal_extra_fisso", 0.0) + m_fisso
+                if cond.get("mortal_dmg_expr", "0") != "0":
+                    lista_mc = list(mod.get("mortal_mc_list", []))
+                    lista_mc.append((float(cond.get("mortal_prob", 1.0)), str(cond.get("mortal_dmg_expr", "D3"))))
+                    mod["mortal_mc_list"] = lista_mc
+                    
     return mod
