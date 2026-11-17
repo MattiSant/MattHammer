@@ -1254,77 +1254,6 @@
             "BLOODBOUND"
         ]
     },
-    "Blades of Khorne: Bloodsecrator": {
-        "fazione": "Blades of Khorne",
-        "n_modelli": 1,
-        "dimensione_basetta": "32mm",
-        "può_essere_rinforzata": false,
-        "campione": false,
-        "punti": 110,
-        "statistiche_cerchio": {
-            "movimento": "5\"",
-            "controllo": 5,
-            "save": "3+",
-            "salute": 6,
-            "ward": "7+"
-        },
-        "difesa": {
-            "salute_per_modello": 6,
-            "save": 3,
-            "ward": 7
-        },
-        "armi": [
-            {
-                "nome": "Ensorcelled Axe",
-                "attiva": true,
-                "ranged": false,
-                "range": "Melee",
-                "atk": "4",
-                "hit": 3,
-                "wnd": 3,
-                "rend": 1,
-                "dmg": "2",
-                "crit_type": "Nessuno",
-                "anti_target": "Nessuno",
-                "charge_dmg": false,
-                "anti_charge": false,
-                "companion": false
-            }
-        ],
-        "abilita": [
-            {
-                "nome": "ICON OF THE BLOOD GOD",
-                "tipo": "Passive",
-                "reazione": false,
-                "once_per_battle": false,
-                "valore_lancio": 0,
-                "fasi": [
-                    "Qualsiasi Fase"
-                ],
-                "descrizione": "Effect: If a friendly BLOODBOUND unit wholly within 12\" of this unit uses the ‘Rally’ command, you can make 3 additional rally rolls of D6.",
-                "modificatori": {}
-            },
-            {
-                "nome": "RAGE OF KHORNE",
-                "tipo": "Ability",
-                "reazione": false,
-                "once_per_battle": true,
-                "valore_lancio": 0,
-                "fasi": [
-                    "Combat Phase"
-                ],
-                "descrizione": "Effect: Add 1 to the Attacks characteristics of melee weapons used by friendly BLOODBOUND units for the rest of the turn.",
-                "modificatori": {}
-            }
-        ],
-        "keywords": [
-            "HERO",
-            "INFANTRY",
-            "CHAOS",
-            "BLADES OF KHORNE",
-            "BLOODBOUND"
-        ]
-    },
     "Blades of Khorne: Slaughterpriest": {
         "fazione": "Blades of Khorne",
         "n_modelli": 1,
@@ -1999,6 +1928,103 @@
             "ORDER",
             "SYLVANETH",
             "KURNOTHI"
+        ]
+    },
+    "Altro: Abhorrant Cardinal": {
+        "fazione": "Altro",
+        "n_modelli": 1,
+        "dimensione_basetta": "32mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 130,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 2,
+            "save": "6+",
+            "salute": 5,
+            "ward": "6+"
+        },
+        "difesa": {
+            "salute_per_modello": 5,
+            "save": 6,
+            "ward": 6
+        },
+        "armi": [
+            {
+                "nome": "Cursed Crosier",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "3",
+                "hit": 4,
+                "wnd": 3,
+                "rend": 0,
+                "dmg": "D3",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "Insular Contemplations",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "A Cardinal’s ability to bend reality with their ranting is all the more potent when there are no questioning ‘heretics’ nearby.\nEffect: While this unit is more than 6\" from all enemy units, add 1 to chanting rolls for this unit.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            },
+            {
+                "nome": "Banishing Liturgy",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "The solemn sacraments of a Cardinal and their faithful congregation can nullify the most hostile magics.\nEffect: While you believe this DELUSION:\nAdd 2 to banishment rolls for friendly FLESH-EATER COURTS units.\nFriendly FLESH-EATER COURTS units have WARD ( 4+ ) against damage points inflicted by SPELL abilities, PRAYER abilities and abilities used by MANIFESTATIONS.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            }
+        ],
+        "keywords": [
+            "HERO",
+            "PRIEST ( 1 )",
+            "INFANTRY",
+            "WARD ( 6+ )",
+            "DEATH",
+            "FLESH-EATER COURTS",
+            "ABHORRANT"
         ]
     }
 }
