@@ -1363,7 +1363,7 @@
                 "attiva": true,
                 "ranged": false,
                 "range": "Melee",
-                "atk": "12",
+                "atk": "14",
                 "hit": 4,
                 "wnd": 4,
                 "rend": 0,
