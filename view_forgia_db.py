@@ -23,6 +23,10 @@ from ability_parser import (
     analizza_abilita_warscroll,
     estrai_effetti_da_testo
 )
+from wahapedia_scraper import(
+    scarica_warscroll_da_wahapedia,
+    costruisci_url_wahapedia
+)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FORMATIONS_FILE = os.path.join(BASE_DIR, "formations.json")
@@ -170,7 +174,56 @@ def render_forgia_db():
                     
                 st.session_state["forgia_version"] += 1
                 st.rerun()
-
+        # ==========================================
+        # IMPORTAZIONE AUTOMATICA DA WAHAPEDIA (URL O TESTO PAGINA)
+        # ==========================================
+        with st.expander("🌐 Importa o Aggiorna Automaticamente da Wahapedia (AoS 4e)", expanded=False):
+            st.caption(
+                "Inserisci l'**URL Wahapedia** dell'unità (oppure compila Fazione e Nome Unità qui sotto per generarlo in automatico). "
+                "In alternativa, apri la pagina su Wahapedia, premi **CTRL+A** seguito da **CTRL+C** e incolla l'intera pagina nel box!"
+            )
+            w_col1, w_col2 = st.columns([3, 1])
+            url_suggerito = ""
+            if st.session_state.get("forgia_nome", "").strip():
+                url_suggerito = costruisci_url_wahapedia(
+                    st.session_state.get("forgia_fazione", "Nighthaunt"),
+                    st.session_state.get("forgia_nome", "")
+                )
+            inp_waha = w_col1.text_area(
+                "URL Wahapedia oppure Testo Completo della Pagina (CTRL+A / CTRL+C):",
+                value=url_suggerito,
+                height=75,
+                key=f"waha_inp_{v_key}"
+            )
+            if w_col2.button("⚡ Scarica e Compila Warscroll", type="primary", use_container_width=True, key=f"btn_waha_{v_key}"):
+                dati_w, msg_w, ok_w = scarica_warscroll_da_wahapedia(
+                    inp_waha,
+                    fazione=st.session_state.get("forgia_fazione", "Nighthaunt"),
+                    nome_unita=st.session_state.get("forgia_nome", "")
+                )
+                if ok_w and dati_w:
+                    st.session_state["forgia_nome"] = dati_w["nome"]
+                    st.session_state["forgia_punti"] = dati_w["punti"]
+                    st.session_state["forgia_modelli"] = dati_w["n_modelli"]
+                    st.session_state["forgia_basetta"] = dati_w["basetta"]
+                    st.session_state["forgia_rinf"] = dati_w["puo_rinforzare"]
+                    st.session_state["forgia_campione"] = dati_w["campione"]
+                    st.session_state["forgia_movimento"] = dati_w["movimento"]
+                    st.session_state["forgia_controllo"] = dati_w["controllo"]
+                    st.session_state["forgia_save"] = dati_w["save"]
+                    st.session_state["forgia_salute"] = dati_w["salute"]
+                    st.session_state["forgia_ward"] = dati_w["ward"]
+                    if dati_w["armi"]:
+                        st.session_state["forgia_armi"] = dati_w["armi"]
+                    if dati_w["abilita"]:
+                        st.session_state["forgia_abilita"] = dati_w["abilita"]
+                    if dati_w["keywords"]:
+                        st.session_state["forgia_keywords"] = ", ".join(dati_w["keywords"])
+                    st.session_state["forgia_version"] += 1
+                    mostra_toast_rapido(msg_w, "✅")
+                    st.rerun()
+                else:
+                    st.warning(msg_w)
         # ==========================================
         # DATI GENERALI E STATISTICHE DIFENSIVE
         # ==========================================
