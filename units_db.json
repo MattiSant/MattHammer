@@ -1412,5 +1412,77 @@
             "DEATH",
             "NIGHTHAUNT"
         ]
+    },
+    "Nighthaunt: Lord Executioner": {
+        "fazione": "Nighthaunt",
+        "n_modelli": 1,
+        "dimensione_basetta": "40mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 160,
+        "statistiche_cerchio": {
+            "movimento": "8\"",
+            "controllo": 2,
+            "save": "5+",
+            "salute": 5,
+            "ward": "5+"
+        },
+        "difesa": {
+            "salute_per_modello": 5,
+            "save": 5,
+            "ward": 5
+        },
+        "armi": [
+            {
+                "nome": "Decapitating Greataxe",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "5",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 2,
+                "dmg": "2",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "HERO",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "STARING DEATH IN THE FACE",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Combat Phase"
+                ],
+                "descrizione": "Declare: Pick an enemy unit in combat with this unit to be the target.\n\nEffect: Roll a dice. On a 2+, subtract 1 from the Attacks characteristic of the target’s melee weapons for the rest of the turn. In addition, if the target is a HERO, subtract 5 from the target’s control score for the rest of the turn.",
+                "modificatori": {}
+            },
+            {
+                "nome": "GHASTLY DESCENT:",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Fine Turno"
+                ],
+                "descrizione": "Declare: Pick an enemy INFANTRY or CAVALRY HERO that had any damage points allocated to it this turn by this unit’s attacks to be the target.\n\nEffect: Roll a dice. Add 1 to the roll if the target is a SENTENCED unit. On a 5+, the target is automatically destroyed.",
+                "modificatori": {}
+            }
+        ],
+        "keywords": [
+            "HERO",
+            "INFANTRY",
+            "FLY",
+            "WARD (5+)",
+            "DEATH",
+            "NIGHTHAUNT"
+        ]
     }
 }
