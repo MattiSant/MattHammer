@@ -1929,5 +1929,78 @@
             "SYLVANETH",
             "KURNOTHI"
         ]
+    },
+    "Skaven: Clanrats": {
+        "fazione": "Skaven",
+        "n_modelli": 20,
+        "dimensione_basetta": "25mm",
+        "può_essere_rinforzata": true,
+        "campione": true,
+        "punti": 150,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 1,
+            "save": "5+",
+            "salute": 1,
+            "ward": "7+"
+        },
+        "difesa": {
+            "salute_per_modello": 1,
+            "save": 5,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Rusty Weapon",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "2",
+                "hit": 4,
+                "wnd": 5,
+                "rend": 0,
+                "dmg": "1",
+                "crit_type": "Crit (Auto-wound)",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "Seething Swarm",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Fine Turno (End of Turn)"
+                ],
+                "descrizione": "Clanrats overwhelm their enemies with their seemingly endless numbers - biting, stabbing and trampling their own fallen beneath their bloody claws.\nEffect: You can return D3 slain models to this unit.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            }
+        ],
+        "keywords": [
+            "INFANTRY",
+            "CHAMPION",
+            "MUSICIAN ( 1/20 )",
+            "STANDARD BEARER ( 1/20 )",
+            "CHAOS",
+            "SKAVEN",
+            "VERMINUS"
+        ]
     }
 }
