@@ -6,7 +6,7 @@
             "modificatori": {
                 "bonus_rend": 1
             },
-            "descrizione": "Scegli un'unità bersaglio nemica all'inizio della battaglia. Le unità amiche ottengono +1 Rend con le armi da mischia contro quel bersaglio finché non viene distrutto."
+            "descrizione": "Death Stalkers are spectral killers that relentlessly hunt down a chosen enemy.\nDeclare: If there is not a condemned enemy unit on the battlefield, pick an enemy unit to be condemned.\nEffect: For the rest of the battle, add 1 to the Rend characteristic of melee weapons used for attacks made by friendly NIGHTHAUNT units that target the condemned enemy unit.\nErrata\nRoyal Procession"
         },
         "Vanishing Phantasms": {
             "fase_attivazione": "Movement Phase (Fase di Movimento)",
