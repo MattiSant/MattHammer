@@ -92,7 +92,7 @@
         "campione": true,
         "punti": 200,
         "statistiche_cerchio": {
-            "movimento": "6\"",
+            "movimento": "8\"",
             "controllo": 1,
             "save": "6+",
             "salute": 2,
@@ -108,6 +108,7 @@
                 "nome": "Tomb Greatblade",
                 "attiva": true,
                 "ranged": false,
+                "range": "Melee",
                 "atk": "2",
                 "hit": 3,
                 "wnd": 3,
@@ -122,17 +123,27 @@
         ],
         "abilita": [
             {
-                "nome": "WHIRLWIND OF DESTRUCTION",
+                "nome": "Thrashing Desperation",
                 "tipo": "Passive",
                 "reazione": false,
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Combat Phase (Fase di Combattimento)"
+                    "Qualsiasi Fase"
                 ],
-                "descrizione": "Effect: Add 1 to the Attacks characteristic of this unit's weapons if it charged this turn.",
-                "modificatori": {
-                    "bonus_atk": 1
+                "descrizione": "Only the bravest and most determined of charges can get within striking range of the veritable wall of thrashing blades that are the Bladegheist Revenants.\nEffect: While this unit contests an objective you control, enemy units cannot finish a charge move within ½\" of a model in this unit unless the unmodified charge roll was 7 or more.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
                 }
             }
         ],
