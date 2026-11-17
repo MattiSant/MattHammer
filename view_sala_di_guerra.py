@@ -14,6 +14,7 @@ from utils import (
     estrai_livello_potere,
     estrai_intero_sicuro
 )
+from ability_parser import applica_abilita_attive_a_mod_globali
 
 # Usa percorsi assoluti per evitare scritture in cartelle errate al riavvio
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -141,6 +142,9 @@ def calcola_output_unita_su_bersaglio(dati_unita_db, rinforzata, bersaglio_test,
         "bersaglio_ha_caricato": bersaglio_test.get("bersaglio_ha_caricato", False)
     }
 
+    # Applica automaticamente le abilità Warscroll dell'unità (rispettando ha_caricato e il bersaglio)
+    mod_glob = applica_abilita_attive_a_mod_globali(dati_unita_db.get("abilita", []), mod_glob, bersaglio=bersaglio_test)
+
     danno_melee = 0.0
     danno_ranged = 0.0
     max_rend = 0
@@ -148,15 +152,33 @@ def calcola_output_unita_su_bersaglio(dati_unita_db, rinforzata, bersaglio_test,
 
     for a in armi:
         if a.get("attiva", False) and str(a.get("hit", "---")) != "---":
-            ris = calcola_arma_analitico(a, mod_glob, bersaglio_test)
+            arma_eval = dict(a)
+            if "crit_override" in mod_glob and not arma_eval.get("companion", False):
+                arma_eval["crit_type"] = mod_glob["crit_override"]
+            ris = calcola_arma_analitico(arma_eval, mod_glob, bersaglio_test)
             if a.get("ranged", False):
                 danno_ranged += ris["danno_netto"]
             else:
                 danno_melee += ris["danno_netto"]
             attacchi_tot += ris["attacchi"]
-            r_val = estrai_intero_sicuro(a.get("rend", 0), default=0) + int(bonus_attaccante.get("bonus_rend", 0))
+            r_val = estrai_intero_sicuro(a.get("rend", 0), default=0) + int(mod_glob.get("bonus_rend", 0))
             if r_val > max_rend:
                 max_rend = r_val
+
+    # Aggiunge eventuali Danni Mortali Extra generati da abilità (es. impatto in carica) ridotti dal Ward bersaglio
+    ward_b = bersaglio_test.get("ward", 7)
+    molt_ward = 0.0 if bersaglio_test.get("blocca_ward", False) else (1.0 if ward_b >= 7 else 1.0 - ((7 - max(2, ward_b)) / 6.0))
+    mortali_ab = float(mod_glob.get("mortal_extra_fisso", 0.0))
+    n_d_ab = int(mod_glob.get("mortal_extra_dadi", 0))
+    if n_d_ab > 0:
+        t_d_ab = int(mod_glob.get("mortal_extra_tipo", 6))
+        soglia_ab = str(mod_glob.get("mortal_extra_soglia", "Nessuna (Somma)"))
+        if soglia_ab.startswith("Nessuna"):
+            mortali_ab += n_d_ab * (2.0 if t_d_ab == 3 else 3.5)
+        else:
+            mortali_ab += n_d_ab * max(0.0, (t_d_ab - int(soglia_ab[0]) + 1) / float(t_d_ab))
+    
+    danno_melee += (mortali_ab * molt_ward)
 
     return {
         "danno_melee": danno_melee,

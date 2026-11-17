@@ -15,6 +15,19 @@ from utils import (
     OPZIONI_DADI,
     OPZIONI_HW
 )
+from ability_parser import applica_abilita_attive_a_mod_globali
+
+def _calcola_mortali_da_mod(m_dict):
+        d_base = float(m_dict.get("mortal_extra_fisso", 0.0))
+        n_d = int(m_dict.get("mortal_extra_dadi", 0))
+        t_d = int(m_dict.get("mortal_extra_tipo", 6))
+        soglia_s = str(m_dict.get("mortal_extra_soglia", "Nessuna (Somma)"))
+        if n_d > 0:
+            if soglia_s.startswith("Nessuna"):
+                d_base += n_d * (2.0 if t_d == 3 else 3.5)
+            else:
+                d_base += n_d * max(0.0, (t_d - int(soglia_s[0]) + 1) / float(t_d))
+        return d_base
 
 def render_testa_a_testa():
     st.markdown("""
@@ -251,14 +264,18 @@ def render_testa_a_testa():
                     """, unsafe_allow_html=True)
 
             # --- ABILITÀ DELL'UNITÀ PRINCIPALE IN SOLA LETTURA ---
+            # --- ABILITÀ DELL'UNITÀ PRINCIPALE (ATTIVABILI) ---
+            flags_abilita_att = {}
             if abilita_att:
-                st.markdown("**Abilità della Warscroll:**")
-                for ab in abilita_att:
+                st.markdown("**Abilità della Warscroll (Spunta per applicare i bonus al calcolo):**")
+                for idx_ab, ab in enumerate(abilita_att):
                     is_reaz = ab.get("reazione", False)
                     tipo_ab = ab.get("tipo", "Ability")
                     fasi_txt = ", ".join(ab.get("fasi", ["Generica"]))
                     colore_bordo = "#c0392b" if is_reaz else "#b38b4d"
-                    st.markdown(f"""
+                    ca_chk, ca_txt = st.columns([0.4, 3.6])
+                    flags_abilita_att[idx_ab] = ca_chk.checkbox("Usa", value=True, key=f"use_ab_att_{attaccante_sel}_{idx_ab}")
+                    ca_txt.markdown(f"""
                     <div style="background: rgba(45, 29, 17, 0.5); border-left: 3px solid {colore_bordo}; padding: 6px 10px; margin-bottom: 6px; border-radius: 3px; font-size: 0.9rem;">
                         <small style="color: #d8c29d;"><b>[{tipo_ab} — {fasi_txt}]</b></small><br>
                         <b>{ab.get('nome', 'Abilità')}</b>: {ab.get('descrizione', '')}
@@ -510,6 +527,14 @@ def render_testa_a_testa():
         "immune_rend": immune_rend_b
     }
 
+    if attaccante_sel != "--- Inserimento Manuale ---":
+        abilita_unita_att = st.session_state["db_unita"][attaccante_sel].get("abilita", [])
+        mod_globali_att = applica_abilita_attive_a_mod_globali(abilita_unita_att, mod_globali_att, bersaglio=bersaglio_dict, attive_flags=flags_abilita_att)
+
+    for sup in config_supporti:
+        ab_sup_list = st.session_state["db_unita"].get(sup["nome_unita"], {}).get("abilita", [])
+        sup["mod_globali"] = applica_abilita_attive_a_mod_globali(ab_sup_list, sup["mod_globali"], bersaglio=bersaglio_dict)
+
     # ==========================================
     # CALCOLO MOTORE ANALITICO E MONTE CARLO
     # ==========================================
@@ -532,10 +557,7 @@ def render_testa_a_testa():
     danno_atteso_armi = sum(r["danno_netto"] for r in risultati_armi)
     moltiplicatore_ward = 0.0 if bersaglio_dict["blocca_ward"] else (1.0 if ward_b >= 7 else 1.0 - ((7 - max(2, ward_b)) / 6.0))
 
-    danno_extra_base = float(mortal_extra_fisso)
-    if mortal_extra_dadi > 0:
-        if mortal_extra_soglia == "Nessuna (Somma)": danno_extra_base += mortal_extra_dadi * (2.0 if mortal_extra_tipo == 3 else 3.5)
-        else: danno_extra_base += mortal_extra_dadi * max(0.0, (mortal_extra_tipo - int(mortal_extra_soglia[0]) + 1) / float(mortal_extra_tipo))
+    danno_extra_base = _calcola_mortali_da_mod(mod_globali_att) + sum(_calcola_mortali_da_mod(s["mod_globali"]) for s in config_supporti)
 
     danno_totale_atteso = danno_atteso_armi + (danno_extra_base * moltiplicatore_ward)
     punti_attaccante_totali = punti_att_totale + sum(sup["punti"] for sup in config_supporti)

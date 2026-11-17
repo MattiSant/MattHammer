@@ -15,6 +15,7 @@ from utils import (
     OPZIONI_DADI,
     OPZIONI_HW
 )
+from ability_parser import FASI_GIOCO_COMPLETO, analizza_abilita_warscroll
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FORMATIONS_FILE = os.path.join(BASE_DIR, "formations.json")
@@ -281,6 +282,14 @@ def render_forgia_db():
         # ==========================================
         st.markdown('<div class="section-header">3. Abilità e Keywords</div>', unsafe_allow_html=True)
         with st.container(border=True):
+            txt_ab_incolla = st.text_area("Incolla testo ufficiale abilità (es. Header + Declare + Effect):", height=90, key=f"f_txt_ab_{v_key}")
+            if st.button("Analizza e Importa Abilità", key=f"btn_parse_ab_{v_key}"):
+                ab_parsata = analizza_abilita_warscroll(txt_ab_incolla)
+                if ab_parsata:
+                    st.session_state["forgia_abilita"].append(ab_parsata)
+                    st.session_state["forgia_version"] += 1
+                    st.toast(f"Abilità '{ab_parsata['nome']}' importata!", icon="✅")
+                    st.rerun()
             if st.button("➕ Aggiungi Abilità Warscroll"):
                 st.session_state["forgia_abilita"].append({
                     "nome": "Nuova Abilità", 
@@ -296,11 +305,8 @@ def render_forgia_db():
                 st.rerun()
 
             abilita_aggiornate = []
-            fasi_gioco = [
-                "Qualsiasi Fase", "Deployment", "Hero Phase (Amica)", "Hero Phase (Nemica)", 
-                "Movement Phase (Amica)", "Movement Phase (Nemica)", "Shooting Phase", 
-                "Charge Phase", "Combat Phase", "Fine Turno"
-            ]
+            fasi_gioco = FASI_GIOCO_COMPLETO
+            
 
             LABEL_TO_KEY_AB = {
                 "Attacchi Extra (+Atk)": "bonus_atk",
@@ -342,7 +348,8 @@ def render_forgia_db():
                         reazione = st.checkbox("È una Reazione (Reaction)?", value=ab.get("reazione", False), key=f"ab_reaz_{a_idx}_{v_key}")
                         once_per_battle = st.checkbox("Once per Battle", value=ab.get("once_per_battle", False), key=f"ab_once_{a_idx}_{v_key}")
                         
-                    fasi_sel = r3.multiselect("Fasi di Attivazione", fasi_gioco, default=ab.get("fasi", ["Qualsiasi Fase"]), key=f"ab_fasi_{a_idx}_{v_key}")
+                    fasi_valide = [f for f in ab.get("fasi", ["Qualsiasi Fase"]) if f in fasi_gioco] or ["Qualsiasi Fase"]
+                    fasi_sel = r3.multiselect("Fasi di Attivazione", fasi_gioco, default=fasi_valide, key=f"ab_fasi_{a_idx}_{v_key}")
                     descrizione = st.text_area("Descrizione dell'Effetto", value=ab.get("descrizione", ""), key=f"ab_desc_{a_idx}_{v_key}")
 
                     # Multi-Modificatori Meccanici per Abilità
