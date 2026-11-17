@@ -363,7 +363,11 @@ def render_forgia_db():
                         key=f"ms_mod_ab_{a_idx}_{v_key}"
                     )
 
-                    mod_salvati_ab = {}
+                    # Preserva i valori estratti automaticamente dal parser (es. mortali e condizioni)
+                    mod_salvati_ab = {
+                        k: v for k, v in mod_ab_esistenti.items()
+                        if k not in KEY_TO_LABEL_AB
+                    }
                     if scelte_mod_ab:
                         st.markdown("**Valori Modificatori Abilità:**")
                         for mod_lbl in scelte_mod_ab:
@@ -388,7 +392,8 @@ def render_forgia_db():
                         "valore_lancio": val_lancio,
                         "fasi": fasi_sel,
                         "descrizione": descrizione,
-                        "modificatori": mod_salvati_ab
+                        "modificatori": mod_salvati_ab,
+                        "condizioni": ab.get("condizioni", {})
                     })
             st.session_state["forgia_abilita"] = abilita_aggiornate
 

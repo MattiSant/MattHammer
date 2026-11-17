@@ -427,7 +427,7 @@ def calcola_arma_analitico(arma, mod_globali, bersaglio):
     auto_wounds = 0.0
     hits_che_devono_ferire = atk_totali * prob_hit_normale
 
-    crit_t = arma.get("crit_type", "Nessuno")
+    crit_t = mod_globali.get("crit_override", arma.get("crit_type", "Nessuno")) if not is_comp else arma.get("crit_type", "Nessuno")
     if crit_t == "Crit (Mortal)": mortal_da_crit = atk_totali * prob_crit * danno_per_colpo
     elif crit_t == "Crit (Auto-wound)": auto_wounds = atk_totali * prob_crit
     elif crit_t == "Crit (2 Hits)": hits_che_devono_ferire += atk_totali * prob_crit * 2.0
@@ -550,7 +550,11 @@ def simula_monte_carlo(armi, mod_globali, bersaglio, n_sim=10000):
             prob = max(0.0, (mortal_extra_tipo - target_val + 1) / float(mortal_extra_tipo))
             danni_totali_sim += np.random.binomial(mortal_extra_dadi, prob, n_sim)
 
-    if ha_ward: danni_totali_sim = np.random.binomial(danni_totali_sim.astype(int), 1.0 - ((7 - ward_target) / 6.0))
+    if ha_ward:
+        parte_intera = np.floor(danni_totali_sim).astype(int)
+        resto_prob = danni_totali_sim - parte_intera
+        dadi_ward = parte_intera + (np.random.random(n_sim) < resto_prob).astype(int)
+        danni_totali_sim = np.random.binomial(dadi_ward, 1.0 - ((7 - ward_target) / 6.0)).astype(float)
     return danni_totali_sim
 
 def sincronizza_tutti_i_db():
