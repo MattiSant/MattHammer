@@ -24,12 +24,6 @@
             },
             "descrizione": "La coesione e la resilienza spettrale rafforzano le truppe di fanteria amiche."
         },
-        "Vanish And Reappear": {
-            "fase_attivazione": "Movement Phase (Fase di Movimento)",
-            "monouso": false,
-            "modificatori": {},
-            "descrizione": "These mercurial spirits are feared for their ability to dissolve into nothingness before suddenly reappearing elsewhere - often right behind their next targets' backs.\nDeclare: Pick a friendly NIGHTHAUNT unit that is in combat to use this ability.\nEffect: Roll a dice. The unit using this ability can move a distance up to its Move characteristic added to the roll. It can pass through other models and the combat ranges of enemy units, and it can end that move in combat."
-        },
         "Quicksilver Gheists": {
             "fase_attivazione": "Movement Phase (Fase di Movimento)",
             "monouso": false,
