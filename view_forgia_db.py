@@ -246,22 +246,7 @@ def render_forgia_db():
                         else:
                             st.warning(msg_sync)
 
-                faz_sync = st.session_state.get("forgia_fazione", "Nighthaunt")
-                if st.button(f"🔄 Sincronizza Ultimi Aggiornamenti ({faz_sync})", use_container_width=True, key=f"btn_sync_faz_{v_key}"):
-                    with st.spinner(f"Sincronizzazione di tutte le Warscrolls {faz_sync} da Wahapedia in corso..."):
-                        testo_opt = inp_waha if (len(inp_waha.strip()) > 300 or "warscrolls.html" in inp_waha) else ""
-                        n_agg, nomi_agg, msg_sync, ok_sync = sincronizza_fazione_da_wahapedia(
-                            faz_sync,
-                            st.session_state["db_unita"],
-                            testo_collated_opzionale=testo_opt
-                        )
-                        if ok_sync and n_agg > 0:
-                            salva_nel_database(st.session_state["db_unita"])
-                            st.session_state["forgia_version"] += 1
-                            mostra_toast_rapido(msg_sync, "✅")
-                            st.rerun()
-                        else:
-                            st.warning(msg_sync)
+                
         # ==========================================
         # DATI GENERALI E STATISTICHE DIFENSIVE
         # ==========================================
