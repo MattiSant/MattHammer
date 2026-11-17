@@ -1727,5 +1727,170 @@
             "DEATH",
             "NIGHTHAUNT"
         ]
+    },
+    "Sylvaneth: Belthanos, First Thorn of Kurnoth": {
+        "fazione": "Sylvaneth",
+        "n_modelli": 1,
+        "dimensione_basetta": "150x95mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 290,
+        "statistiche_cerchio": {
+            "movimento": "12\"",
+            "controllo": 5,
+            "save": "3+",
+            "salute": 14,
+            "ward": "7+"
+        },
+        "difesa": {
+            "salute_per_modello": 14,
+            "save": 3,
+            "ward": 7
+        },
+        "armi": [
+            {
+                "nome": "Kurnoth Glaive",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "5",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 2,
+                "dmg": "2",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": true,
+                "anti_charge": false,
+                "companion": false
+            },
+            {
+                "nome": "Carnelian Greatspite’s Mandibles",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "4",
+                "hit": 4,
+                "wnd": 2,
+                "rend": 2,
+                "dmg": "3",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": true
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "Battle Damaged Effect",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "While this unit has 10 or more damage points, the Attacks characteristic of its Carnelian Greatspite’s Mandibles is 3.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            },
+            {
+                "nome": "Kurnothi War-Horn",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "The sounding of Belthanos’s war-horn brings forth a surging response from the hunt.\nEffect: Add 2\" to the Move characteristic of friendly KURNOTHI units while they are wholly within 12\" of this unit.",
+                "modificatori": {
+                    "bonus_movimento": 2
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            },
+            {
+                "nome": "Huntmaster’S Strike",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Fine Turno (End of Turn)"
+                ],
+                "descrizione": "The battlefield is the hunting ground and until his god returns, Belthanos is the prime hunter.\nEffect: If this unit charged this turn, remove it from the battlefield and set it up again more than 6\" from all enemy units and wholly within the creeping overgrowth.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": true,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            },
+            {
+                "nome": "Rhythm Of The Chase",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Combat Phase (Qualsiasi)"
+                ],
+                "descrizione": "Belthanos relentlessly harries his quarry before deftly closing the distance to deliver the killing strike\nDeclare: Pick an enemy unit in combat with this unit to be the target.\nEffect: Roll a D3. On a 2+, inflict an amount of mortal damage on the target equal to the roll, then you can remove this unit from the battlefield and set it up again within 1\" of the target.",
+                "modificatori": {
+                    "mortal_extra_fisso": 1.67
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "D3_EQUAL",
+                    "mortal_extra_dadi": 1,
+                    "mortal_extra_tipo": 3,
+                    "mortal_extra_soglia": "2+",
+                    "mortal_extra_fisso": 0.0
+                }
+            }
+        ],
+        "keywords": [
+            "UNIQUE",
+            "HERO",
+            "MONSTER",
+            "FLY",
+            "ORDER",
+            "SYLVANETH",
+            "KURNOTHI"
+        ]
     }
 }
