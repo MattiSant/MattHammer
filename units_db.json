@@ -2000,5 +2000,80 @@
             "SYLVANETH",
             "KURNOTHI"
         ]
+    },
+    "Altro: Abhorrant Archregent": {
+        "fazione": "Altro",
+        "n_modelli": 1,
+        "dimensione_basetta": "40mm",
+        "può_essere_rinforzata": false,
+        "campione": false,
+        "punti": 120,
+        "statistiche_cerchio": {
+            "movimento": "6\"",
+            "controllo": 2,
+            "save": "5+",
+            "salute": 5,
+            "ward": "6+"
+        },
+        "difesa": {
+            "salute_per_modello": 5,
+            "save": 5,
+            "ward": 6
+        },
+        "armi": [
+            {
+                "nome": "Gory Talons and Fangs",
+                "attiva": true,
+                "ranged": false,
+                "range": "Melee",
+                "atk": "5",
+                "hit": 3,
+                "wnd": 3,
+                "rend": 1,
+                "dmg": "2",
+                "crit_type": "Nessuno",
+                "anti_target": "Nessuno",
+                "charge_dmg": false,
+                "anti_charge": false,
+                "companion": false
+            }
+        ],
+        "abilita": [
+            {
+                "nome": "Musicians, Play!",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "On the Archregent’s signal, the court musicians strike up an exhilarating tune to which the joyful revellers begin to dance.\nEffect: While you believe this DELUSION, subtract 1 from hit rolls for shooting attacks that target friendly FLESH-EATER COURTS units while they are wholly within 12\" of a friendly FLESH-EATER COURTS HERO.",
+                "modificatori": {
+                    "mod_hit_subito": -1
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            }
+        ],
+        "keywords": [
+            "HERO",
+            "WIZARD (1)",
+            "INFANTRY",
+            "WARD (6+)",
+            "DEATH",
+            "FLESH-EATER COURTS",
+            "ABHORRANT"
+        ]
     }
 }
