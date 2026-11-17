@@ -30,12 +30,26 @@ FAZIONI_SLUG_WAHAPEDIA = {
     "Sons of Behemat": "sons-of-behemat"
 }
 
+# Regole base / Keyword nei tooltip di Wahapedia che NON sono abilità specifiche dell'unità
+ABILITA_CORE_DA_IGNORARE = {
+    "fly", "retreat", "charge", "fight", "shoot", "normal move", "run",
+    "guarded hero", "ward", "companion", "crit (mortal)", "crit (auto-wound)",
+    "crit (2 hits)", "shoot in combat", "anti-charge", "obscuring", "cover",
+    "in combat", "combat range", "visibility", "coherency", "mortal damage",
+    "wound roll", "hit roll", "save roll", "ward save", "rally", "all-out attack",
+    "all-out defence", "redeploy", "forward to victory", "counter-charge",
+    "magical intervention", "counter-magic", "power through", "pile-in", "pile in",
+    "auto-wound", "beast", "champion", "musician", "standard bearer", "priest", "wizard"
+}
+
 
 class _WahapediaHTMLParser(HTMLParser):
     """
-    Parser HTML nativo (zero dipendenze esterne) progettato per leggere
-    le Warscroll di Wahapedia AoS 4e: estrae testo strutturato, righe di tabelle
-    delle armi e statistiche del cerchio (Move, Health, Save, Control).
+    Parser HTML nativo che:
+    1) Scarta script, stili, menu e soprattutto i contenitori nascosti di tooltip
+       (quelli che compaiono passandoci sopra col cursore per 'in combat', 'Fly', 'Retreat', ecc.).
+    2) Raccoglie le righe delle tabelle (<tr>/<td>) mantenendo unito il testo di ogni cella.
+    3) Produce il testo pulito della pagina per estrarre Statistiche, Battle Profile, Armi, Abilità e Keywords.
     """
     def __init__(self):
         super().__init__()
@@ -47,49 +61,53 @@ class _WahapediaHTMLParser(HTMLParser):
         self.current_cell = []
         self.rows = []
         self.text_chunks = []
-        self.stats_classes = {}
-        self.active_stat_key = None
 
     def handle_starttag(self, tag, attrs):
         tag_l = tag.lower()
-        if tag_l in self.ignore_tags:
+        if self.ignore_depth > 0:
             self.ignore_depth += 1
             return
-        if self.ignore_depth > 0:
+
+        attr_dict = {k.lower(): (v or "").lower() for k, v in attrs}
+        cls_s = attr_dict.get("class", "")
+        id_s = attr_dict.get("id", "")
+        style_s = attr_dict.get("style", "").replace(" ", "")
+
+        # Ignora contenitori di tooltip in sovraimpressione, menu o blocchi duplicati mobile (d_mob)
+        if (
+            tag_l in self.ignore_tags
+            or "display:none" in style_s
+            or "visibility:hidden" in style_s
+            or "tooltip" in id_s
+            or "tooltip" in cls_s
+            or "tippy" in cls_s
+            or "d_mob" in cls_s.split()
+            or "nav" in cls_s.split()
+        ):
+            self.ignore_depth = 1
             return
-
-        attr_dict = dict(attrs)
-        cls_str = attr_dict.get("class", "").lower()
-
-        if "wsmove" in cls_str:
-            self.active_stat_key = "movimento"
-        elif "wswounds" in cls_str or "wshealth" in cls_str:
-            self.active_stat_key = "salute"
-        elif "wssave" in cls_str:
-            self.active_stat_key = "save"
-        elif "wscontrol" in cls_str or "wsbravery" in cls_str:
-            self.active_stat_key = "controllo"
-        elif "wsheader" in cls_str or "wstitle" in cls_str:
-            self.active_stat_key = "nome"
 
         if tag_l == "tr":
             self.in_tr = True
             self.current_row = []
+            self.text_chunks.append("\n")
         elif tag_l in ("td", "th") and self.in_tr:
             self.in_td = True
             self.current_cell = []
-        elif tag_l in ("br", "p", "div", "li", "tr", "h1", "h2", "h3", "h4"):
-            self.text_chunks.append("\n")
+            self.text_chunks.append(" ")
+        elif tag_l in ("br", "p", "div", "li", "h1", "h2", "h3", "h4", "table"):
+            if not self.in_td:
+                self.text_chunks.append("\n")
+            else:
+                self.text_chunks.append(" ")
+        elif tag_l in ("span", "b", "strong", "i", "a"):
+            self.text_chunks.append(" ")
 
     def handle_endtag(self, tag):
         tag_l = tag.lower()
-        if tag_l in self.ignore_tags and self.ignore_depth > 0:
+        if self.ignore_depth > 0:
             self.ignore_depth -= 1
             return
-        if self.ignore_depth > 0:
-            return
-
-        self.active_stat_key = None
 
         if tag_l in ("td", "th") and self.in_td:
             cell_txt = re.sub(r"\s+", " ", "".join(self.current_cell)).strip()
@@ -101,18 +119,14 @@ class _WahapediaHTMLParser(HTMLParser):
                 self.rows.append(self.current_row)
             self.in_tr = False
             self.text_chunks.append("\n")
-        elif tag_l in ("div", "p", "li", "h1", "h2", "h3"):
+        elif tag_l in ("div", "p", "li", "h1", "h2", "h3", "h4", "table") and not self.in_td:
             self.text_chunks.append("\n")
 
     def handle_data(self, data):
-        if self.ignore_depth > 0:
-            return
-        if self.active_stat_key and data.strip():
-            if self.active_stat_key not in self.stats_classes:
-                self.stats_classes[self.active_stat_key] = data.strip()
-        if self.in_td:
-            self.current_cell.append(data)
-        self.text_chunks.append(data)
+        if self.ignore_depth == 0:
+            if self.in_td:
+                self.current_cell.append(data)
+            self.text_chunks.append(data)
 
     def get_clean_text(self):
         raw = "".join(self.text_chunks)
@@ -139,21 +153,142 @@ def costruisci_url_wahapedia(fazione, nome_unita):
     return f"https://wahapedia.ru/aos4/factions/{slug_fazione}/{slug_unita}"
 
 
-def _parsa_riga_arma(nome_arma, gittata, atk, hit_str, wnd_str, rnd_str, dmg, abilita_str):
-    nome_pulito = re.sub(r"\s+", " ", nome_arma).strip(" ,-\t\n")
-    if not nome_pulito or nome_pulito.lower() in ["ranged weapons", "melee weapons", "weapon", "weapons"]:
+def _isola_sezioni_warscroll(testo_intero):
+    """
+    Divide il testo della pagina di Wahapedia in 3 blocchi precisi:
+    1) testo_pre_header: i 1500 caratteri prima di '•... WARSCROLL•' (dove si trovano la ruota delle
+       statistiche Move/Health/Save/Control/Ward seguita dal paragrafo di Lore).
+    2) corpo_ws: solo il corpo della Warscroll (Armi, Battle Profile e Abilità dell'unità).
+    3) coda_kw: le sole righe della barra KEYWORDS finale della Warscroll, tagliando via
+       tutti i popup/tooltip che Wahapedia accoda in fondo alla pagina!
+    """
+    m_ws = list(re.finditer(r"•[^•\n]*WARSCROLL•", testo_intero, flags=re.IGNORECASE))
+    if m_ws:
+        idx_inizio_stats = max(0, m_ws[0].start() - 1500)
+        idx_inizio_corpo = m_ws[0].end()
+        testo_pre_header = testo_intero[idx_inizio_stats:idx_inizio_corpo]
+        resto = testo_intero[idx_inizio_corpo:]
+    else:
+        testo_pre_header = testo_intero[:1200]
+        resto = testo_intero
+
+    # Cerca la barra KEYWORDS finale dell'unità (ignorando eventuali mini-tag KEYWORDS: SPELL / PRAYER / CORE)
+    matches_kw = list(re.finditer(r"\bKEYWORDS\b", resto))
+    corpo_ws = resto
+    coda_kw = ""
+
+    for m_k in matches_kw:
+        finestra_dopo = resto[m_k.end():m_k.end() + 220]
+        prima_riga_kw = finestra_dopo.strip().split("\n")[0].upper() if finestra_dopo.strip() else ""
+        if any(w in prima_riga_kw for w in ["CORE", "SPELL", "PRAYER", "RAMPAGE", "UNLIMITED"]) and not any(
+            u_kw in finestra_dopo.upper() for u_kw in [
+                "HERO", "INFANTRY", "CAVALRY", "MONSTER", "WAR MACHINE", "BEAST",
+                "ORDER", "CHAOS", "DEATH", "DESTRUCTION"
+            ]
+        ):
+            continue
+        corpo_ws = resto[:m_k.start()]
+        coda_kw = resto[m_k.end():m_k.end() + 300]
+        break
+
+    return testo_pre_header, corpo_ws, coda_kw
+
+
+def _estrai_statistiche_cerchio(testo_pre, testo_corpo):
+    """
+    Estrae Move, Health, Save, Control e Ward dalla ruota delle caratteristiche di Wahapedia AoS 4e.
+    Su Wahapedia i numeri compaiono prima del testo di lore nel formato:
+    10" 12 4+ 5. 5+  oppure  8" 5 5+ 2 5+  (sia sulla stessa riga sia su righe separate).
+    """
+    combinato = testo_pre + "\n" + testo_corpo[:400]
+    pattern_ruota = re.compile(
+        r"\b(\d{1,2}\"|2D6\"|3D6\"|D6\")\s*"
+        r"(\d{1,2})\.?\s*"
+        r"([2-6]\+|\-)\.?\s*"
+        r"(\d{1,2}|\-)\.?"
+        r"(?:\s*([456]\+))?",
+        re.MULTILINE
+    )
+    matches = list(pattern_ruota.finditer(combinato))
+    if matches:
+        m = matches[-1]
+        return {
+            "movimento": m.group(1),
+            "salute": max(1, int(m.group(2))),
+            "save": m.group(3),
+            "controllo": int(m.group(4)) if m.group(4).isdigit() else 1,
+            "ward": m.group(5) if m.group(5) else None
+        }
+    return None
+
+
+def _pulisci_nome_arma(nome_grezzo):
+    """
+    Pulisce il nome dell'arma rimuovendo:
+    - Le abilità tra parentesi quadre (es. "[Crit (Auto-wound)]")
+    - Eventuali righe precedenti (es. il nome dell'unità se precede la prima arma)
+    - Eventuali duplicazioni desktop/mobile (es. "Warblade Warblade")
+    """
+    txt = nome_grezzo.strip()
+    if "[" in txt:
+        prima_parte = txt.split("[")[0].strip()
+        linee_p = [l.strip(" ,-\t•.") for l in prima_parte.split("\n") if l.strip(" ,-\t•.")]
+        if linee_p:
+            txt = linee_p[-1]
+    else:
+        linee_p = [l.strip(" ,-\t•.") for l in txt.split("\n") if l.strip(" ,-\t•.")]
+        if linee_p:
+            txt = linee_p[-1]
+
+    for tag in [
+        "Crit (Auto-wound)", "Crit (Mortal)", "Crit (2 Hits)", "Shoot in Combat",
+        "Anti-HERO (+1 Rend)", "Anti-INFANTRY (+1 Rend)", "Anti-MONSTER (+1 Rend)",
+        "Anti-CAVALRY (+1 Rend)", "Anti-WAR MACHINE (+1 Rend)", "Anti-BEAST (+1 Rend)",
+        "Anti-charge (+1 Rend)", "Charge (+1 Damage)", "Companion", "Damage calculator",
+        "Anti-HERO", "Anti-INFANTRY", "Anti-MONSTER", "Anti-CAVALRY",
+        "Anti-WAR MACHINE", "Anti-BEAST", "Anti-charge"
+    ]:
+        txt = re.sub(re.escape(tag), "", txt, flags=re.IGNORECASE)
+
+    txt = re.sub(r"\(\+1\s*Rend\)", "", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"\s+", " ", txt).strip(" ,-\t\n•.")
+
+    parti_punto = [p.strip() for p in txt.split(".") if p.strip()]
+    if len(parti_punto) >= 2 and parti_punto[0].lower() == parti_punto[1].lower():
+        txt = parti_punto[0]
+
+    parole = txt.split()
+    n_p = len(parole)
+    if n_p >= 2 and n_p % 2 == 0:
+        meta = n_p // 2
+        if " ".join(parole[:meta]).lower() == " ".join(parole[meta:]).lower():
+            txt = " ".join(parole[:meta])
+
+    return txt.strip(" ,-\t\n•.")
+
+
+def _parsa_riga_arma(nome_arma_grezzo, gittata, atk, hit_str, wnd_str, rnd_str, dmg, abilita_extra=""):
+    """
+    Converte i campi grezzi di una riga arma di Wahapedia nel dizionario arma di MattHammer.
+    Nota: su Wahapedia le abilità dell'arma sono scritte dentro la prima cella (nome_arma_grezzo)!
+    """
+    nome_pulito = _pulisci_nome_arma(nome_arma_grezzo)
+    if not nome_pulito or nome_pulito.lower() in [
+        "ranged weapons", "melee weapons", "weapon", "weapons", "view conditions", "damage calculator"
+    ]:
         return None
 
     ranged = True if (gittata and gittata.strip() not in ["-", "---", "Melee", ""]) else False
     range_val = gittata.strip() if ranged else "Melee"
 
-    atk_val = str(atk).strip().upper().replace(" ", "")
+    atk_val = str(atk).strip().upper().replace(" ", "").rstrip(".")
     hit_val = estrai_intero_sicuro(hit_str, default=4)
     wnd_val = estrai_intero_sicuro(wnd_str, default=4)
-    rend_val = 0 if str(rnd_str).strip() in ["-", "---", "0", ""] else estrai_intero_sicuro(rnd_str, default=0)
-    dmg_val = str(dmg).strip().upper().replace(" ", "")
+    rnd_clean = str(rnd_str).strip().rstrip(".")
+    rend_val = 0 if rnd_clean in ["-", "–", "---", "0", ""] else estrai_intero_sicuro(rnd_clean, default=0)
+    dmg_val = str(dmg).strip().upper().replace(" ", "").rstrip(".")
 
-    ab_up = (abilita_str or "").upper()
+    ab_up = f"{nome_arma_grezzo} {abilita_extra}".upper()
 
     crit = "Nessuno"
     if "CRIT (MORTAL)" in ab_up:
@@ -165,20 +300,20 @@ def _parsa_riga_arma(nome_arma, gittata, atk, hit_str, wnd_str, rnd_str, dmg, ab
 
     anti = "Nessuno"
     anti_charge_flag = False
-    if "ANTI-CHARGE" in ab_up:
+    if "ANTI-CHARGE" in ab_up or "ANTI‐CHARGE" in ab_up:
         anti = "CHARGE"
         anti_charge_flag = True
-    elif "ANTI-HERO" in ab_up:
+    elif "ANTI-HERO" in ab_up or "ANTI‐HERO" in ab_up:
         anti = "HERO"
-    elif "ANTI-INFANTRY" in ab_up:
+    elif "ANTI-INFANTRY" in ab_up or "ANTI‐INFANTRY" in ab_up:
         anti = "INFANTRY"
-    elif "ANTI-MONSTER" in ab_up:
+    elif "ANTI-MONSTER" in ab_up or "ANTI‐MONSTER" in ab_up:
         anti = "MONSTER"
-    elif "ANTI-CAVALRY" in ab_up:
+    elif "ANTI-CAVALRY" in ab_up or "ANTI‐CAVALRY" in ab_up:
         anti = "CAVALRY"
-    elif "ANTI-WAR MACHINE" in ab_up:
+    elif "ANTI-WAR MACHINE" in ab_up or "ANTI‐WAR MACHINE" in ab_up:
         anti = "WAR MACHINE"
-    elif "ANTI-BEAST" in ab_up:
+    elif "ANTI-BEAST" in ab_up or "ANTI‐BEAST" in ab_up:
         anti = "BEAST"
 
     charge_dmg_flag = bool(re.search(r"CHARGE\s*\(\+1\s*DAMAGE\)", ab_up))
@@ -202,83 +337,97 @@ def _parsa_riga_arma(nome_arma, gittata, atk, hit_str, wnd_str, rnd_str, dmg, ab
     }
 
 
-def estrai_armi_da_testo_o_html(testo_grezzo, righe_tabella_html=None):
+def estrai_armi_da_testo_o_html(corpo_ws, righe_tabella_html=None):
+    """
+    Estrae tutte le armi della Warscroll:
+    1) Prima controlla le righe `<tr>` estratte dal parser HTML (se Wahapedia usa `<table>`).
+    2) Altrimenti usa il parser universale multi-linea (che funziona anche quando Wahapedia
+       usa layout `<div>` con ogni valore su una riga diversa o quando si incolla il testo!).
+    """
     armi = []
+    nomi_armi_visti = set()
 
+    # 1. Estrazione da righe <tr> HTML
     if righe_tabella_html:
         for celle in righe_tabella_html:
-            if len(celle) >= 6:
-                if len(celle) >= 7 and re.match(r"^[2-6]\+$", celle[3]) and re.match(r"^[2-6]\+$", celle[4]):
-                    ab_str = celle[7] if len(celle) >= 8 else ""
-                    arma = _parsa_riga_arma(celle[0], celle[1], celle[2], celle[3], celle[4], celle[5], celle[6], ab_str)
-                    if arma:
+            celle_pulite = [c.strip() for c in celle if c.strip()]
+            if len(celle_pulite) >= 6:
+                if len(celle_pulite) >= 7 and re.match(r"^[2-6]\+$", celle_pulite[3]) and re.match(r"^[2-6]\+$", celle_pulite[4]):
+                    ab_extra = celle_pulite[7] if len(celle_pulite) >= 8 else ""
+                    arma = _parsa_riga_arma(
+                        celle_pulite[0], celle_pulite[1], celle_pulite[2],
+                        celle_pulite[3], celle_pulite[4], celle_pulite[5], celle_pulite[6], ab_extra
+                    )
+                    if arma and (arma["nome"].lower(), arma["ranged"]) not in nomi_armi_visti:
+                        nomi_armi_visti.add((arma["nome"].lower(), arma["ranged"]))
                         armi.append(arma)
-                elif re.match(r"^[2-6]\+$", celle[2]) and re.match(r"^[2-6]\+$", celle[3]):
-                    ab_str = celle[6] if len(celle) >= 7 else ""
-                    arma = _parsa_riga_arma(celle[0], None, celle[1], celle[2], celle[3], celle[4], celle[5], ab_str)
-                    if arma:
+                elif re.match(r"^[2-6]\+$", celle_pulite[2]) and re.match(r"^[2-6]\+$", celle_pulite[3]):
+                    ab_extra = celle_pulite[6] if len(celle_pulite) >= 7 else ""
+                    arma = _parsa_riga_arma(
+                        celle_pulite[0], None, celle_pulite[1],
+                        celle_pulite[2], celle_pulite[3], celle_pulite[4], celle_pulite[5], ab_extra
+                    )
+                    if arma and (arma["nome"].lower(), arma["ranged"]) not in nomi_armi_visti:
+                        nomi_armi_visti.add((arma["nome"].lower(), arma["ranged"]))
                         armi.append(arma)
 
     if armi:
         return armi
 
-    pattern_riga = re.compile(
-        r"^(?:(.*?)\s+)?"
-        r"(?:(\d+\")\s+)?"
-        r"(\d+|[1-9]?D[36](?:\+\d+)?)\s+"
-        r"([2-6]\+)\s+"
-        r"([2-6]\+)\s+"
-        r"(\-|---|0|\d+)\s+"
-        r"(\d+|[1-9]?D[36](?:\+\d+)?)"
-        r"(?:\s+(.*))?$",
+    # 2. Estrazione universale multi-linea (supporta sia layout <div> su righe separate sia testo incollato)
+    testo_sezione = corpo_ws
+    for marker_fine in ["BATTLE PROFILE", "View conditions"]:
+        if marker_fine in testo_sezione:
+            testo_sezione = testo_sezione.split(marker_fine)[0]
+            break
+
+    testo_pulito = re.sub(
+        r"\b(?:RANGED\s+WEAPONS|MELEE\s+WEAPONS|Damage\s+calculator)\b"
+        r"(?:[\s,]+(?:Rng|Atk|Hit|Wnd|Rnd|Dmg|Ability))*",
+        "\n",
+        testo_sezione,
+        flags=re.IGNORECASE
+    )
+
+    pattern_arma_ml = re.compile(
+        r"([^\n]+(?:\n[^\n]+)?)\s+"
+        r"(?:(\d{1,2}\")[\s,]+)?"
+        r"(\d+|[1-9]?D[36](?:\+\d+)?)[\s,]+"
+        r"([2-6]\+)[\s,]+"
+        r"([2-6]\+)[\s,]+"
+        r"(\-|–|---|0|[1-5])[\s,]+"
+        r"(\d+|[1-9]?D[36](?:\+\d+)?)\b",
         re.IGNORECASE
     )
 
-    linee = [re.sub(r"\s+", " ", l.replace("\t", " ")).strip() for l in testo_grezzo.split("\n") if l.strip()]
-    buffer_nome = ""
+    for m in pattern_arma_ml.finditer(testo_pulito):
+        blocco_nome = m.group(1).strip()
+        gittata = m.group(2)
+        atk = m.group(3)
+        hit = m.group(4)
+        wnd = m.group(5)
+        rnd = m.group(6)
+        dmg = m.group(7)
 
-    for l in linee:
-        if any(l.upper().startswith(h) for h in ["RANGED WEAPONS", "MELEE WEAPONS", "WEAPON ", "RNG ATK", "ATK HIT"]):
-            buffer_nome = ""
-            continue
-
-        m = pattern_riga.match(l)
-        if m:
-            prefisso_nome = (m.group(1) or "").strip()
-            gittata = m.group(2)
-            atk = m.group(3)
-            hit = m.group(4)
-            wnd = m.group(5)
-            rnd = m.group(6)
-            dmg = m.group(7)
-            coda_abilita = m.group(8) or ""
-
-            nome_completo = prefisso_nome if prefisso_nome else buffer_nome
-            ab_combinata = f"{nome_completo} {coda_abilita}"
-            for tag in [
-                "Crit (Auto-wound)", "Crit (Mortal)", "Crit (2 Hits)", "Shoot in Combat",
-                "Anti-HERO (+1 Rend)", "Anti-INFANTRY (+1 Rend)", "Anti-MONSTER (+1 Rend)",
-                "Anti-CAVALRY (+1 Rend)", "Anti-WAR MACHINE (+1 Rend)", "Anti-BEAST (+1 Rend)",
-                "Anti-charge (+1 Rend)", "Charge (+1 Damage)", "Companion"
-            ]:
-                nome_completo = re.sub(re.escape(tag), "", nome_completo, flags=re.IGNORECASE)
-
-            arma = _parsa_riga_arma(nome_completo, gittata, atk, hit, wnd, rnd, dmg, ab_combinata)
-            if arma:
-                armi.append(arma)
-            buffer_nome = ""
-        else:
-            if len(l) < 45 and not any(k in l.lower() for k in ["declare:", "effect:", "keywords", "phase", "passive"]):
-                buffer_nome = l
+        arma = _parsa_riga_arma(blocco_nome, gittata, atk, hit, wnd, rnd, dmg)
+        if arma and (arma["nome"].lower(), arma["ranged"]) not in nomi_armi_visti:
+            nomi_armi_visti.add((arma["nome"].lower(), arma["ranged"]))
+            armi.append(arma)
 
     return armi
 
 
-def estrai_abilita_multiple_da_testo(testo_grezzo):
+def estrai_abilita_multiple_da_testo(corpo_ws):
+    """
+    Estrae SOLO le vere abilità della Warscroll (contenute in corpo_ws, quindi PRIMA della barra KEYWORDS),
+    scartando qualsiasi regola base o tooltip ("Fly", "Retreat", "Charge", "in combat", ecc.).
+    """
     abilita_trovate = []
     nomi_visti = set()
 
-    linee = [l.strip() for l in testo_grezzo.split("\n") if l.strip()]
+    testo_ab = corpo_ws.split("BATTLE PROFILE", 1)[1] if "BATTLE PROFILE" in corpo_ws else corpo_ws
+
+    linee = [l.strip() for l in testo_ab.split("\n") if l.strip()]
     pattern_header_fase = re.compile(
         r"^(?:Passive|Once Per (?:Turn|Battle).*|Any .* Phase|Your .* Phase|Enemy .* Phase|Deployment Phase|Start of .*|End of .*|Reaction:.*)$",
         re.IGNORECASE
@@ -286,23 +435,37 @@ def estrai_abilita_multiple_da_testo(testo_grezzo):
 
     indici_inizio = [i for i, l in enumerate(linee) if pattern_header_fase.match(l)]
     for idx_pos, start_i in enumerate(indici_inizio):
-        end_i = indici_inizio[idx_pos + 1] if idx_pos + 1 < len(indici_inizio) else min(len(linee), start_i + 15)
+        end_i = indici_inizio[idx_pos + 1] if idx_pos + 1 < len(indici_inizio) else min(len(linee), start_i + 12)
         blocco_linee = []
         for l_sub in linee[start_i:end_i]:
-            if l_sub.upper().startswith("KEYWORDS") or l_sub.upper().startswith("UNIT SIZE"):
+            if l_sub.upper().startswith(("KEYWORDS", "UNIT SIZE:", "POINTS:", "BASE SIZE:", "CAN BE REINFORCED:", "REGIMENT OPTIONS:", "NOTES:")):
+                continue
+            if "keyword is used in the following" in l_sub.lower():
                 break
             blocco_linee.append(l_sub)
+
         blocco_txt = "\n".join(blocco_linee)
         if "effect:" in blocco_txt.lower() or "effetto:" in blocco_txt.lower():
             ab_parsed = analizza_abilita_warscroll(blocco_txt)
-            if ab_parsed and ab_parsed["nome"].lower() not in nomi_visti:
-                nomi_visti.add(ab_parsed["nome"].lower())
-                abilita_trovate.append(ab_parsed)
+            if ab_parsed:
+                nome_low = ab_parsed["nome"].strip().lower()
+                if nome_low in ABILITA_CORE_DA_IGNORARE or any(
+                    nome_low.startswith(core_k + ":") or nome_low == core_k
+                    for core_k in ABILITA_CORE_DA_IGNORARE
+                ):
+                    continue
+                if nome_low not in nomi_visti:
+                    nomi_visti.add(nome_low)
+                    abilita_trovate.append(ab_parsed)
 
     return abilita_trovate
 
 
-def analizza_warscroll_completa(testo_grezzo, parser_html=None, fazione_default="Nighthaunt", nome_default=""):
+def analizza_warscroll_completa(testo_intero, parser_html=None, fazione_default="Nighthaunt", nome_default=""):
+    """
+    Estrae l'intera Warscroll (Statistiche Cerchio, Punti, Modelli, Basetta, Armi, Abilità, Keywords)
+    isolando rigorosamente il corpo della Warscroll dai tooltip di Wahapedia.
+    """
     risultato = {
         "fazione": fazione_default,
         "nome": nome_default or "Unità Importata",
@@ -321,78 +484,107 @@ def analizza_warscroll_completa(testo_grezzo, parser_html=None, fazione_default=
         "keywords": []
     }
 
-    righe_html = None
-    if parser_html is not None:
-        righe_html = parser_html.rows
-        sc = parser_html.stats_classes
-        if "nome" in sc:
-            risultato["nome"] = sc["nome"].title()
-        if "movimento" in sc:
-            mv = sc["movimento"]
-            risultato["movimento"] = mv if '"' in mv else f'{mv}"'
-        if "salute" in sc:
-            risultato["salute"] = max(1, estrai_intero_sicuro(sc["salute"], 2))
-        if "save" in sc:
-            sv = sc["save"]
-            risultato["save"] = sv if ("+" in sv or sv == "-") else f"{sv}+"
-        if "controllo" in sc:
-            risultato["controllo"] = max(0, estrai_intero_sicuro(sc["controllo"], 1))
+    # 1. Separa Pre-Header (Ruota Statistiche), Corpo Warscroll e Barra Keywords (tagliando via tutti i tooltip finali)
+    testo_pre, corpo_ws, coda_kw = _isola_sezioni_warscroll(testo_intero)
 
-    m_mov_txt = re.search(r"(?:Move|Movimento)\s*[:\-]?\s*(\d+\")", testo_grezzo, re.I)
-    if m_mov_txt:
-        risultato["movimento"] = m_mov_txt.group(1)
+    # 2. Nome Unità (prima riga subito dopo •... WARSCROLL•)
+    linee_corpo = [l.strip() for l in corpo_ws.split("\n") if l.strip()]
+    if linee_corpo and len(linee_corpo[0]) < 55 and not any(
+        k in linee_corpo[0].upper() for k in ["WEAPONS", "DAMAGE CALCULATOR", "MOVE", "BATTLE PROFILE"]
+    ):
+        risultato["nome"] = linee_corpo[0].title()
 
-    m_hp_txt = re.search(r"(?:Health|Wounds|Salute)\s*[:\-]?\s*(\d{1,2})\b", testo_grezzo, re.I)
-    if m_hp_txt:
-        risultato["salute"] = max(1, int(m_hp_txt.group(1)))
+    # 3. Estrazione Statistiche Difensive e Movimento dalla Ruota (es. 10" 12 4+ 5. 5+)
+    stats_ruota = _estrai_statistiche_cerchio(testo_pre, corpo_ws)
+    if stats_ruota:
+        risultato["movimento"] = stats_ruota["movimento"]
+        risultato["salute"] = stats_ruota["salute"]
+        risultato["save"] = stats_ruota["save"]
+        risultato["controllo"] = stats_ruota["controllo"]
+        if stats_ruota["ward"]:
+            risultato["ward"] = stats_ruota["ward"]
+    else:
+        m_mov = re.search(r"(?:Move|Movimento)\s*[:\-]?\s*(\d+\")", testo_intero, re.I)
+        if m_mov:
+            risultato["movimento"] = m_mov.group(1)
+        m_hp = re.search(r"(?:Health|Wounds|Salute)\s*[:\-]?\s*(\d{1,2})\b", testo_intero, re.I)
+        if m_hp:
+            risultato["salute"] = max(1, int(m_hp.group(1)))
+        m_sv = re.search(r"(?:Save|Salvezza)\s*[:\-]?\s*([2-6]\+|\-)", testo_intero, re.I)
+        if m_sv:
+            risultato["save"] = m_sv.group(1)
+        m_oc = re.search(r"(?:Control|Controllo)\s*[:\-]?\s*(\d{1,2})\b", testo_intero, re.I)
+        if m_oc:
+            risultato["controllo"] = int(m_oc.group(1))
 
-    m_sv_txt = re.search(r"(?:Save|Salvezza)\s*[:\-]?\s*([2-6]\+|\-)", testo_grezzo, re.I)
-    if m_sv_txt:
-        risultato["save"] = m_sv_txt.group(1)
+    # 4. Estrazione BATTLE PROFILE (Unit Size, Points, Base size, Can be reinforced)
+    m_size = re.search(r"(?:Unit\s*Size|Modelli)\s*[:\-]?\s*(\d{1,2})", corpo_ws, re.I)
+    if m_size:
+        risultato["n_modelli"] = max(1, int(m_size.group(1)))
 
-    m_oc_txt = re.search(r"(?:Control|Controllo)\s*[:\-]?\s*(\d{1,2})\b", testo_grezzo, re.I)
-    if m_oc_txt:
-        risultato["controllo"] = int(m_oc_txt.group(1))
-
-    m_base = re.search(r"(\d+(?:\s*x\s*\d+)?\s*mm)", testo_grezzo, re.I)
-    if m_base:
-        risultato["basetta"] = m_base.group(1).replace(" ", "")
-
-    m_pts = re.search(r"(?:Points|Punti|Cost)\s*[:\-]?\s*(\d{2,4})|(\d{2,3})\s*(?:pts|pt\b)", testo_grezzo, re.I)
+    m_pts = re.search(r"(?:Points|Punti|Cost)\s*[:\-]?\s*(\d{2,4})|(\d{2,3})\s*(?:pts|pt\b)", corpo_ws, re.I)
     if m_pts:
         pt_v = int(m_pts.group(1) or m_pts.group(2))
         if 40 <= pt_v <= 2000:
             risultato["punti"] = pt_v
 
-    m_size = re.search(r"(?:Unit\s*Size|Modelli)\s*[:\-]?\s*(\d{1,2})", testo_grezzo, re.I)
-    if m_size:
-        risultato["n_modelli"] = max(1, int(m_size.group(1)))
+    m_base = re.search(r"Base\s*size\s*:\s*([^\n\.]+?mm)|(\d+(?:\s*[x×]\s*\d+)?\s*mm)", corpo_ws, re.I)
+    if m_base:
+        b_raw = (m_base.group(1) or m_base.group(2)).replace("×", "x")
+        risultato["basetta"] = re.sub(r"\s+", "", b_raw)
 
-    m_kw = re.search(r"KEYWORDS\s*[:\n\t ]\s*([^\n]+)", testo_grezzo, re.I)
-    if m_kw:
-        blocco_kw = m_kw.group(1).strip()
-        kws = [k.strip() for k in re.split(r"[,|•]", blocco_kw) if k.strip()]
+    m_reinf = re.search(r"Can\s+be\s+reinforced\s*:\s*(Yes|No)", corpo_ws, re.I)
+    if m_reinf:
+        risultato["puo_rinforzare"] = (m_reinf.group(1).lower() == "yes")
+
+    # 5. Estrazione Keywords dell'Unità (solo le righe della barra KEYWORDS, prima dei tooltip!)
+    if coda_kw:
+        linee_kw = []
+        for l_k in [l.strip() for l in coda_kw.split("\n") if l.strip()][:3]:
+            if any(stop_w in l_k.lower() for stop_w in [
+                "keyword is used", "when a unit", "declare:", "effect:", "passive",
+                "phase", "roll a dice", "if an attack", "a model is", "soaring above"
+            ]):
+                break
+            linee_kw.append(l_k)
+        blocco_kw_unito = ", ".join(linee_kw)
+        kws = [k.strip(" .•") for k in re.split(r"[,|•]", blocco_kw_unito) if k.strip(" .•")]
         risultato["keywords"] = kws
 
-    kw_upper_str = " , ".join(risultato["keywords"]).upper() + " " + testo_grezzo[-400:].upper()
+    kw_upper_str = " , ".join(risultato["keywords"]).upper()
     m_ward_kw = re.search(r"WARD\s*\(([456]\+)\)", kw_upper_str)
     if m_ward_kw:
         risultato["ward"] = m_ward_kw.group(1)
     if "CHAMPION" in kw_upper_str:
         risultato["campione"] = True
-    if "HERO" in kw_upper_str and "Unit Size" not in testo_grezzo:
+    if "HERO" in kw_upper_str and not m_size:
         risultato["n_modelli"] = 1
         risultato["puo_rinforzare"] = False
-    if "UNIQUE" in kw_upper_str or "cannot be reinforced" in testo_grezzo.lower():
+    if "UNIQUE" in kw_upper_str:
         risultato["puo_rinforzare"] = False
 
-    risultato["armi"] = estrai_armi_da_testo_o_html(testo_grezzo, righe_tabella_html=righe_html)
-    risultato["abilita"] = estrai_abilita_multiple_da_testo(testo_grezzo)
+    # 6. Estrazione Armi e Abilità
+    righe_html = parser_html.rows if parser_html is not None else None
+    risultato["armi"] = estrai_armi_da_testo_o_html(corpo_ws, righe_tabella_html=righe_html)
+    risultato["abilita"] = estrai_abilita_multiple_da_testo(corpo_ws)
+
+    # 7. Se una delle abilità passive dell'unità conferisce un Ward nativo (es. Dryads), aggiorna se necessario
+    for ab in risultato["abilita"]:
+        w_ab = ab.get("modificatori", {}).get("ward_nativo")
+        if w_ab in [4, 5, 6] and risultato["ward"] == "7+":
+            risultato["ward"] = f"{w_ab}+"
 
     return risultato
 
 
 def scarica_warscroll_da_wahapedia(url_o_testo, fazione="Nighthaunt", nome_unita=""):
+    """
+    Funzione principale (Zero dipendenze esterne):
+    - Se 'url_o_testo' è un URL (o se viene fornito solo il nome unità), scarica la pagina da Wahapedia.
+    - Se Wahapedia blocca la richiesta (es. Cloudflare 403) o se l'utente ha incollato direttamente
+      il testo della pagina (CTRL+A / CTRL+C da Wahapedia), analizza direttamente il testo!
+    Restituisce: (dati_warscroll_dict, messaggio_stato, successo_bool)
+    """
     inp = (url_o_testo or "").strip()
     if not inp and nome_unita.strip():
         inp = costruisci_url_wahapedia(fazione, nome_unita)

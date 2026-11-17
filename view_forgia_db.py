@@ -179,8 +179,7 @@ def render_forgia_db():
         # ==========================================
         with st.expander("🌐 Importa o Aggiorna Automaticamente da Wahapedia (AoS 4e)", expanded=False):
             st.caption(
-                "Inserisci l'**URL Wahapedia** dell'unità (oppure compila Fazione e Nome Unità qui sotto per generarlo in automatico). "
-                "In alternativa, apri la pagina su Wahapedia, premi **CTRL+A** seguito da **CTRL+C** e incolla l'intera pagina nel box!"
+                "Inserisci l'**URL Wahapedia** dell'unità (per generarlo in automatico). "
             )
             w_col1, w_col2 = st.columns([3, 1])
             url_suggerito = ""
@@ -190,7 +189,7 @@ def render_forgia_db():
                     st.session_state.get("forgia_nome", "")
                 )
             inp_waha = w_col1.text_area(
-                "URL Wahapedia oppure Testo Completo della Pagina (CTRL+A / CTRL+C):",
+                "URL Wahapedia:",
                 value=url_suggerito,
                 height=75,
                 key=f"waha_inp_{v_key}"
