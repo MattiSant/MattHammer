@@ -21,6 +21,44 @@
             "monouso": false,
             "modificatori": {},
             "descrizione": "These mercurial spirits are feared for their ability to dissolve into nothingness before suddenly reappearing elsewhere - often right behind their next targets' backs.\nDeclare: Pick a friendly NIGHTHAUNT unit that is in combat to use this ability.\nEffect: Roll a dice. The unit using this ability can move a distance up to its Move characteristic added to the roll. It can pass through other models and the combat ranges of enemy units, and it can end that move in combat."
+        },
+        "Vanish And Reappear": {
+            "fase_attivazione": "Movement Phase (Fase di Movimento)",
+            "monouso": false,
+            "modificatori": {},
+            "descrizione": "These mercurial spirits are feared for their ability to dissolve into nothingness before suddenly reappearing elsewhere - often right behind their next targets' backs.\nDeclare: Pick a friendly NIGHTHAUNT unit that is in combat to use this ability.\nEffect: Roll a dice. The unit using this ability can move a distance up to its Move characteristic added to the roll. It can pass through other models and the combat ranges of enemy units, and it can end that move in combat."
+        },
+        "Petrify": {
+            "fase_attivazione": "Hero Phase (Fase Eroi Amica o Nemica)",
+            "monouso": false,
+            "modificatori": {},
+            "descrizione": "The screams and wails of this procession's bloodthirsty champions are so terrifying that their foes often become rooted in place, ripe for the slaughter.\nDeclare: Pick a friendly NIGHTHAUNT HERO to be the target.\nEffect: For the rest of the turn, enemy units cannot use RETREAT abilities while they are in combat with the target.\nDeath Stalkers"
+        },
+        "There Is No Escape": {
+            "fase_attivazione": "Hero Phase (Fase Eroi Amica o Nemica)",
+            "monouso": false,
+            "modificatori": {
+                "bonus_rend": 1
+            },
+            "descrizione": "Death Stalkers are spectral killers that relentlessly hunt down a chosen enemy.\nDeclare: If there is not a condemned enemy unit on the battlefield, pick an enemy unit to be condemned.\nEffect: For the rest of the battle, add 1 to the Rend characteristic of melee weapons used for attacks made by friendly NIGHTHAUNT units that target the condemned enemy unit.\nErrata\nRoyal Procession"
+        },
+        "Lethal Rancour": {
+            "fase_attivazione": "Hero Phase (Fase Eroi Amica o Nemica)",
+            "monouso": false,
+            "modificatori": {},
+            "descrizione": "The gheists of this horde are drawn from haughty nobles and obsequious courtiers who refused to admit fault even at the very end. They rail constantly at their kingdom's doom, and their undying bitterness renders their spectral touch even more deadly against those they perceive as interlopers.\nDeclare: Pick up to 2 friendly NIGHTHAUNT units to be the targets.\nEffect: The targets’ melee weapons have Anti-charge (+1 Rend) for the rest of the turn.\nExpansion. Scourge of Ghyran - Nighthaunt (4th edition)Hungry Nexus"
+        },
+        "Greedy For Souls": {
+            "fase_attivazione": "Fine Turno",
+            "monouso": false,
+            "modificatori": {},
+            "descrizione": "A Nexus of Grief’s bricks fly apart and its metal rails extend outwards like a grasping claw, dragging it ever nearer to living, breathing victims.\nDeclare: Pick a friendly Nexus of Grief to be the target.\nEffect: For the rest of the turn, the target has a Move characteristic of 3\". It can immediately move up to 3\" and can move into combat but cannot end that move on a terrain feature or within 3\" of an objective.\nExpansion. Scourge of Ghyran - Nighthaunt (4th edition)Deathrust Gheists"
+        },
+        "Blades Of Eternal Rust": {
+            "fase_attivazione": "Hero Phase (Fase Eroi Amica o Nemica)",
+            "monouso": false,
+            "modificatori": {},
+            "descrizione": "The weapons of these Nighthaunt constantly shed flakes of spectral rust that cause whatever physical substance they come to rest upon to corrode in moments.\nDeclare: Pick an enemy unit that is in combat with any friendly NIGHTHAUNT units to be the target.\nEffect: Subtract 1 from save rolls for the target for the rest of the turn."
         }
     },
     "Blades of Khorne": {
