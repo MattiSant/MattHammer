@@ -23,9 +23,10 @@ from ability_parser import (
     analizza_abilita_warscroll,
     estrai_effetti_da_testo
 )
-from wahapedia_scraper import(
+from wahapedia_scraper import (
     scarica_warscroll_da_wahapedia,
-    costruisci_url_wahapedia
+    costruisci_url_wahapedia,
+    sincronizza_fazione_da_wahapedia
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -177,11 +178,15 @@ def render_forgia_db():
         # ==========================================
         # IMPORTAZIONE AUTOMATICA DA WAHAPEDIA (URL O TESTO PAGINA)
         # ==========================================
-        with st.expander("🌐 Importa o Aggiorna Automaticamente da Wahapedia (AoS 4e)", expanded=False):
+        # ==========================================
+        # IMPORTAZIONE AUTOMATICA DA WAHAPEDIA (SINGOLA O INTERA FAZIONE)
+        # ==========================================
+        with st.expander("🌐 Importa o Sincronizza Automaticamente da Wahapedia (AoS 4e)", expanded=False):
             st.caption(
-                "Inserisci l'**URL Wahapedia** dell'unità (per generarlo in automatico). "
+                "Incolla l'**URL Wahapedia** di una singola unità per compilarla nei campi sottostanti, "
+                "oppure premi **Sincronizza Ultimi Aggiornamenti Fazione** per scaricare e salvare nel database JSON tutte le unità della fazione selezionata."
             )
-            w_col1, w_col2 = st.columns([3, 1])
+            w_col1, w_col2 = st.columns([2.6, 1.4])
             url_suggerito = ""
             if st.session_state.get("forgia_nome", "").strip():
                 url_suggerito = costruisci_url_wahapedia(
@@ -189,40 +194,55 @@ def render_forgia_db():
                     st.session_state.get("forgia_nome", "")
                 )
             inp_waha = w_col1.text_area(
-                "URL Wahapedia:",
+                "URL Wahapedia (o testo CTRL+A / CTRL+C se protetto da Cloudflare):",
                 value=url_suggerito,
-                height=75,
+                height=85,
                 key=f"waha_inp_{v_key}"
             )
-            if w_col2.button("⚡ Scarica e Compila Warscroll", type="primary", use_container_width=True, key=f"btn_waha_{v_key}"):
-                dati_w, msg_w, ok_w = scarica_warscroll_da_wahapedia(
-                    inp_waha,
-                    fazione=st.session_state.get("forgia_fazione", "Nighthaunt"),
-                    nome_unita=st.session_state.get("forgia_nome", "")
-                )
-                if ok_w and dati_w:
-                    st.session_state["forgia_nome"] = dati_w["nome"]
-                    st.session_state["forgia_punti"] = dati_w["punti"]
-                    st.session_state["forgia_modelli"] = dati_w["n_modelli"]
-                    st.session_state["forgia_basetta"] = dati_w["basetta"]
-                    st.session_state["forgia_rinf"] = dati_w["puo_rinforzare"]
-                    st.session_state["forgia_campione"] = dati_w["campione"]
-                    st.session_state["forgia_movimento"] = dati_w["movimento"]
-                    st.session_state["forgia_controllo"] = dati_w["controllo"]
-                    st.session_state["forgia_save"] = dati_w["save"]
-                    st.session_state["forgia_salute"] = dati_w["salute"]
-                    st.session_state["forgia_ward"] = dati_w["ward"]
-                    if dati_w["armi"]:
+            with w_col2:
+                if st.button("⚡ Scarica Singola Unità", type="primary", use_container_width=True, key=f"btn_waha_{v_key}"):
+                    dati_w, msg_w, ok_w = scarica_warscroll_da_wahapedia(
+                        inp_waha,
+                        fazione=st.session_state.get("forgia_fazione", "Nighthaunt"),
+                        nome_unita="" if inp_waha.strip().startswith("http") else st.session_state.get("forgia_nome", "")
+                    )
+                    if ok_w and dati_w:
+                        st.session_state["forgia_nome"] = dati_w["nome"]
+                        st.session_state["forgia_punti"] = dati_w["punti"]
+                        st.session_state["forgia_modelli"] = dati_w["n_modelli"]
+                        st.session_state["forgia_basetta"] = dati_w["basetta"]
+                        st.session_state["forgia_rinf"] = dati_w["puo_rinforzare"]
+                        st.session_state["forgia_campione"] = dati_w["campione"]
+                        st.session_state["forgia_movimento"] = dati_w["movimento"]
+                        st.session_state["forgia_controllo"] = dati_w["controllo"]
+                        st.session_state["forgia_save"] = dati_w["save"]
+                        st.session_state["forgia_salute"] = dati_w["salute"]
+                        st.session_state["forgia_ward"] = dati_w["ward"]
                         st.session_state["forgia_armi"] = dati_w["armi"]
-                    if dati_w["abilita"]:
                         st.session_state["forgia_abilita"] = dati_w["abilita"]
-                    if dati_w["keywords"]:
                         st.session_state["forgia_keywords"] = ", ".join(dati_w["keywords"])
-                    st.session_state["forgia_version"] += 1
-                    mostra_toast_rapido(msg_w, "✅")
-                    st.rerun()
-                else:
-                    st.warning(msg_w)
+                        st.session_state["forgia_version"] += 1
+                        mostra_toast_rapido(msg_w, "✅")
+                        st.rerun()
+                    else:
+                        st.warning(msg_w)
+
+                faz_sync = st.session_state.get("forgia_fazione", "Nighthaunt")
+                if st.button(f"🔄 Sincronizza Ultimi Aggiornamenti ({faz_sync})", use_container_width=True, key=f"btn_sync_faz_{v_key}"):
+                    with st.spinner(f"Sincronizzazione di tutte le Warscrolls {faz_sync} da Wahapedia in corso..."):
+                        testo_opt = inp_waha if (len(inp_waha.strip()) > 300 or "warscrolls.html" in inp_waha) else ""
+                        n_agg, nomi_agg, msg_sync, ok_sync = sincronizza_fazione_da_wahapedia(
+                            faz_sync,
+                            st.session_state["db_unita"],
+                            testo_collated_opzionale=testo_opt
+                        )
+                        if ok_sync and n_agg > 0:
+                            salva_nel_database(st.session_state["db_unita"])
+                            st.session_state["forgia_version"] += 1
+                            mostra_toast_rapido(msg_sync, "✅")
+                            st.rerun()
+                        else:
+                            st.warning(msg_sync)
         # ==========================================
         # DATI GENERALI E STATISTICHE DIFENSIVE
         # ==========================================

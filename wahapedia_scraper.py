@@ -30,7 +30,6 @@ FAZIONI_SLUG_WAHAPEDIA = {
     "Sons of Behemat": "sons-of-behemat"
 }
 
-# Regole base / Keyword nei tooltip di Wahapedia che NON sono abilità specifiche dell'unità
 ABILITA_CORE_DA_IGNORARE = {
     "fly", "retreat", "charge", "fight", "shoot", "normal move", "run",
     "guarded hero", "ward", "companion", "crit (mortal)", "crit (auto-wound)",
@@ -43,13 +42,20 @@ ABILITA_CORE_DA_IGNORARE = {
 }
 
 
+def _normalizza_trattini(testo):
+    """Converte tutti i trattini Unicode (es. non-breaking hyphen \u2011 di Wahapedia) in '-' standard."""
+    if not testo:
+        return ""
+    return re.sub(r"[\u2010\u2011\u2012\u2013\u2014\u2212‐‑‒–—]", "-", str(testo))
+
+
 class _WahapediaHTMLParser(HTMLParser):
     """
-    Parser HTML nativo che:
-    1) Scarta script, stili, menu e soprattutto i contenitori nascosti di tooltip
-       (quelli che compaiono passandoci sopra col cursore per 'in combat', 'Fly', 'Retreat', ecc.).
-    2) Raccoglie le righe delle tabelle (<tr>/<td>) mantenendo unito il testo di ogni cella.
-    3) Produce il testo pulito della pagina per estrarre Statistiche, Battle Profile, Armi, Abilità e Keywords.
+    Parser HTML nativo per Wahapedia AoS 4e:
+    - NON ignora <span class="tooltip"> o <a class="tooltip">, perché lì dentro Wahapedia
+      scrive 'Crit (Auto-wound)', 'Anti-X (+1 Rend)', 'Companion', ecc.!
+    - Ignora invece solo i <div> nascosti di template tooltip in fondo alla pagina
+      (style='display:none', id='tooltip_content...', class='tooltip_templates').
     """
     def __init__(self):
         super().__init__()
@@ -57,6 +63,8 @@ class _WahapediaHTMLParser(HTMLParser):
         self.ignore_depth = 0
         self.in_tr = False
         self.in_td = False
+        self.in_title = False
+        self.page_title = ""
         self.current_row = []
         self.current_cell = []
         self.rows = []
@@ -68,21 +76,28 @@ class _WahapediaHTMLParser(HTMLParser):
             self.ignore_depth += 1
             return
 
+        if tag_l == "title":
+            self.in_title = True
+            return
+
         attr_dict = {k.lower(): (v or "").lower() for k, v in attrs}
         cls_s = attr_dict.get("class", "")
         id_s = attr_dict.get("id", "")
         style_s = attr_dict.get("style", "").replace(" ", "")
 
-        # Ignora contenitori di tooltip in sovraimpressione, menu o blocchi duplicati mobile (d_mob)
+        # Ignora solo contenitori <div> nascosti o template popup, MAI <span> o <a>!
+        is_hidden_div = tag_l == "div" and (
+            "tooltip_templates" in cls_s
+            or "tooltip_content" in id_s
+            or "tooltip" in id_s
+            or "d_mob" in cls_s.split()
+            or "nav" in cls_s.split()
+        )
         if (
             tag_l in self.ignore_tags
             or "display:none" in style_s
             or "visibility:hidden" in style_s
-            or "tooltip" in id_s
-            or "tooltip" in cls_s
-            or "tippy" in cls_s
-            or "d_mob" in cls_s.split()
-            or "nav" in cls_s.split()
+            or is_hidden_div
         ):
             self.ignore_depth = 1
             return
@@ -105,12 +120,15 @@ class _WahapediaHTMLParser(HTMLParser):
 
     def handle_endtag(self, tag):
         tag_l = tag.lower()
+        if tag_l == "title":
+            self.in_title = False
+            return
         if self.ignore_depth > 0:
             self.ignore_depth -= 1
             return
 
         if tag_l in ("td", "th") and self.in_td:
-            cell_txt = re.sub(r"\s+", " ", "".join(self.current_cell)).strip()
+            cell_txt = _normalizza_trattini(re.sub(r"\s+", " ", "".join(self.current_cell)).strip())
             self.current_row.append(cell_txt)
             self.in_td = False
             self.text_chunks.append(" ")
@@ -123,22 +141,21 @@ class _WahapediaHTMLParser(HTMLParser):
             self.text_chunks.append("\n")
 
     def handle_data(self, data):
+        if self.in_title:
+            self.page_title += data
+            return
         if self.ignore_depth == 0:
             if self.in_td:
                 self.current_cell.append(data)
             self.text_chunks.append(data)
 
     def get_clean_text(self):
-        raw = "".join(self.text_chunks)
+        raw = _normalizza_trattini("".join(self.text_chunks))
         linee = [re.sub(r"[ \t]+", " ", l).strip() for l in raw.split("\n")]
         return "\n".join([l for l in linee if l])
 
 
 def costruisci_url_wahapedia(fazione, nome_unita):
-    """
-    Genera automaticamente l'URL di Wahapedia AoS 4e a partire da Fazione e Nome Unità.
-    Esempio: ('Nighthaunt', 'Black Coach') -> 'https://wahapedia.ru/aos4/factions/nighthaunt/Black-Coach'
-    """
     slug_fazione = FAZIONI_SLUG_WAHAPEDIA.get(fazione, fazione.lower().replace(" ", "-"))
     parole_pic = {"of", "on", "with", "the", "and", "in", "to", "for", "a"}
     tokens = re.split(r"[\s\-]+", nome_unita.strip())
@@ -153,53 +170,36 @@ def costruisci_url_wahapedia(fazione, nome_unita):
     return f"https://wahapedia.ru/aos4/factions/{slug_fazione}/{slug_unita}"
 
 
-def _isola_sezioni_warscroll(testo_intero):
+def _estrai_nome_unita_sicuro(corpo_ws, page_title="", nome_fallback=""):
     """
-    Divide il testo della pagina di Wahapedia in 3 blocchi precisi:
-    1) testo_pre_header: i 1500 caratteri prima di '•... WARSCROLL•' (dove si trovano la ruota delle
-       statistiche Move/Health/Save/Control/Ward seguita dal paragrafo di Lore).
-    2) corpo_ws: solo il corpo della Warscroll (Armi, Battle Profile e Abilità dell'unità).
-    3) coda_kw: le sole righe della barra KEYWORDS finale della Warscroll, tagliando via
-       tutti i popup/tooltip che Wahapedia accoda in fondo alla pagina!
+    Estrae il nome dell'unità con triplo controllo:
+    1) Dal testo subito dopo '•... WARSCROLL•' e prima di 'Damage calculator' / 'RANGED WEAPONS' / 'MELEE WEAPONS'
+    2) Dal tag <title> della pagina Wahapedia (es. 'Knight of Shrouds — Nighthaunt [Age of Sigmar...]')
+    3) Dall'URL o nome_fallback.
     """
-    m_ws = list(re.finditer(r"•[^•\n]*WARSCROLL•", testo_intero, flags=re.IGNORECASE))
-    if m_ws:
-        idx_inizio_stats = max(0, m_ws[0].start() - 1500)
-        idx_inizio_corpo = m_ws[0].end()
-        testo_pre_header = testo_intero[idx_inizio_stats:idx_inizio_corpo]
-        resto = testo_intero[idx_inizio_corpo:]
-    else:
-        testo_pre_header = testo_intero[:1200]
-        resto = testo_intero
+    # 1. Cerca tra l'inizio di corpo_ws (subito dopo •WARSCROLL•) e 'Damage calculator' o 'WEAPONS'
+    m_prima_dc = re.search(
+        r"^\s*([^\n•]{2,65}?)(?:\s+Damage\s+calculator|\s*\n\s*Damage\s+calculator|\s*\n\s*(?:RANGED|MELEE)\s+WEAPONS)",
+        corpo_ws.strip(),
+        flags=re.IGNORECASE | re.DOTALL
+    )
+    if m_prima_dc:
+        candidato = re.sub(r"\s+", " ", m_prima_dc.group(1)).strip(" .•-\n\t")
+        if 2 <= len(candidato) <= 55 and not any(k in candidato.upper() for k in ["WARSCROLL", "WEAPONS", "MOVE", "BATTLE PROFILE"]):
+            return candidato
 
-    # Cerca la barra KEYWORDS finale dell'unità (ignorando eventuali mini-tag KEYWORDS: SPELL / PRAYER / CORE)
-    matches_kw = list(re.finditer(r"\bKEYWORDS\b", resto))
-    corpo_ws = resto
-    coda_kw = ""
+    # 2. Dal <title> della pagina HTML (es. "Guardian of Souls — Nighthaunt...")
+    if page_title:
+        t_norm = _normalizza_trattini(page_title)
+        if "-" in t_norm:
+            cand_t = t_norm.split("-")[0].strip()
+            if 2 <= len(cand_t) <= 55 and "warscrolls" not in cand_t.lower():
+                return cand_t
 
-    for m_k in matches_kw:
-        finestra_dopo = resto[m_k.end():m_k.end() + 220]
-        prima_riga_kw = finestra_dopo.strip().split("\n")[0].upper() if finestra_dopo.strip() else ""
-        if any(w in prima_riga_kw for w in ["CORE", "SPELL", "PRAYER", "RAMPAGE", "UNLIMITED"]) and not any(
-            u_kw in finestra_dopo.upper() for u_kw in [
-                "HERO", "INFANTRY", "CAVALRY", "MONSTER", "WAR MACHINE", "BEAST",
-                "ORDER", "CHAOS", "DEATH", "DESTRUCTION"
-            ]
-        ):
-            continue
-        corpo_ws = resto[:m_k.start()]
-        coda_kw = resto[m_k.end():m_k.end() + 300]
-        break
-
-    return testo_pre_header, corpo_ws, coda_kw
+    return nome_fallback.strip() or "Unità Importata"
 
 
 def _estrai_statistiche_cerchio(testo_pre, testo_corpo):
-    """
-    Estrae Move, Health, Save, Control e Ward dalla ruota delle caratteristiche di Wahapedia AoS 4e.
-    Su Wahapedia i numeri compaiono prima del testo di lore nel formato:
-    10" 12 4+ 5. 5+  oppure  8" 5 5+ 2 5+  (sia sulla stessa riga sia su righe separate).
-    """
     combinato = testo_pre + "\n" + testo_corpo[:400]
     pattern_ruota = re.compile(
         r"\b(\d{1,2}\"|2D6\"|3D6\"|D6\")\s*"
@@ -223,13 +223,7 @@ def _estrai_statistiche_cerchio(testo_pre, testo_corpo):
 
 
 def _pulisci_nome_arma(nome_grezzo):
-    """
-    Pulisce il nome dell'arma rimuovendo:
-    - Le abilità tra parentesi quadre (es. "[Crit (Auto-wound)]")
-    - Eventuali righe precedenti (es. il nome dell'unità se precede la prima arma)
-    - Eventuali duplicazioni desktop/mobile (es. "Warblade Warblade")
-    """
-    txt = nome_grezzo.strip()
+    txt = _normalizza_trattini(nome_grezzo).strip()
     if "[" in txt:
         prima_parte = txt.split("[")[0].strip()
         linee_p = [l.strip(" ,-\t•.") for l in prima_parte.split("\n") if l.strip(" ,-\t•.")]
@@ -240,18 +234,14 @@ def _pulisci_nome_arma(nome_grezzo):
         if linee_p:
             txt = linee_p[-1]
 
-    for tag in [
-        "Crit (Auto-wound)", "Crit (Mortal)", "Crit (2 Hits)", "Shoot in Combat",
-        "Anti-HERO (+1 Rend)", "Anti-INFANTRY (+1 Rend)", "Anti-MONSTER (+1 Rend)",
-        "Anti-CAVALRY (+1 Rend)", "Anti-WAR MACHINE (+1 Rend)", "Anti-BEAST (+1 Rend)",
-        "Anti-charge (+1 Rend)", "Charge (+1 Damage)", "Companion", "Damage calculator",
-        "Anti-HERO", "Anti-INFANTRY", "Anti-MONSTER", "Anti-CAVALRY",
-        "Anti-WAR MACHINE", "Anti-BEAST", "Anti-charge"
-    ]:
+    # Rimuove qualsiasi tag abilità dal nome dell'arma
+    txt = re.sub(r"Crit\s*\([^\)]+\)", "", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"Anti-[A-Za-z\s]+(?:\(\+1\s*Rend\))?", "", txt, flags=re.IGNORECASE)
+    txt = re.sub(r"Charge\s*\(\+1\s*Damage\)", "", txt, flags=re.IGNORECASE)
+    for tag in ["Shoot in Combat", "Companion", "Damage calculator", "(+1 Rend)"]:
         txt = re.sub(re.escape(tag), "", txt, flags=re.IGNORECASE)
 
-    txt = re.sub(r"\(\+1\s*Rend\)", "", txt, flags=re.IGNORECASE)
-    txt = re.sub(r"\s+", " ", txt).strip(" ,-\t\n•.")
+    txt = re.sub(r"\s+", " ", txt).strip(" ,-\t\n•.[]")
 
     parti_punto = [p.strip() for p in txt.split(".") if p.strip()]
     if len(parti_punto) >= 2 and parti_punto[0].lower() == parti_punto[1].lower():
@@ -264,17 +254,16 @@ def _pulisci_nome_arma(nome_grezzo):
         if " ".join(parole[:meta]).lower() == " ".join(parole[meta:]).lower():
             txt = " ".join(parole[:meta])
 
-    return txt.strip(" ,-\t\n•.")
+    return txt.strip(" ,-\t\n•.[]")
 
 
 def _parsa_riga_arma(nome_arma_grezzo, gittata, atk, hit_str, wnd_str, rnd_str, dmg, abilita_extra=""):
-    """
-    Converte i campi grezzi di una riga arma di Wahapedia nel dizionario arma di MattHammer.
-    Nota: su Wahapedia le abilità dell'arma sono scritte dentro la prima cella (nome_arma_grezzo)!
-    """
-    nome_pulito = _pulisci_nome_arma(nome_arma_grezzo)
+    nome_arma_norm = _normalizza_trattini(nome_arma_grezzo)
+    abilita_extra_norm = _normalizza_trattini(abilita_extra)
+
+    nome_pulito = _pulisci_nome_arma(nome_arma_norm)
     if not nome_pulito or nome_pulito.lower() in [
-        "ranged weapons", "melee weapons", "weapon", "weapons", "view conditions", "damage calculator"
+        "ranged weapons", "melee weapons", "weapon", "weapons", "view conditions", "damage calculator", "atk", "rng"
     ]:
         return None
 
@@ -288,35 +277,36 @@ def _parsa_riga_arma(nome_arma_grezzo, gittata, atk, hit_str, wnd_str, rnd_str, 
     rend_val = 0 if rnd_clean in ["-", "–", "---", "0", ""] else estrai_intero_sicuro(rnd_clean, default=0)
     dmg_val = str(dmg).strip().upper().replace(" ", "").rstrip(".")
 
-    ab_up = f"{nome_arma_grezzo} {abilita_extra}".upper()
+    # Cerca i tag abilità con regex flessibili (così cattura Crit (Auto-wound), Anti-X, Charge (+1 Damage), Companion)
+    ab_up = f"{nome_arma_norm} {abilita_extra_norm}".upper()
 
     crit = "Nessuno"
-    if "CRIT (MORTAL)" in ab_up:
+    if re.search(r"CRIT\s*\(\s*MORTAL\s*\)", ab_up):
         crit = "Crit (Mortal)"
-    elif "CRIT (AUTO-WOUND)" in ab_up:
+    elif re.search(r"CRIT\s*\(\s*AUTO\s*[\-\s]?\s*WOUND\s*\)", ab_up):
         crit = "Crit (Auto-wound)"
-    elif "CRIT (2 HITS)" in ab_up:
+    elif re.search(r"CRIT\s*\(\s*2\s*HITS\s*\)", ab_up):
         crit = "Crit (2 Hits)"
 
     anti = "Nessuno"
     anti_charge_flag = False
-    if "ANTI-CHARGE" in ab_up or "ANTI‐CHARGE" in ab_up:
+    if re.search(r"ANTI\s*[\-\s]\s*CHARGE", ab_up):
         anti = "CHARGE"
         anti_charge_flag = True
-    elif "ANTI-HERO" in ab_up or "ANTI‐HERO" in ab_up:
+    elif re.search(r"ANTI\s*[\-\s]\s*HERO", ab_up):
         anti = "HERO"
-    elif "ANTI-INFANTRY" in ab_up or "ANTI‐INFANTRY" in ab_up:
+    elif re.search(r"ANTI\s*[\-\s]\s*INFANTRY", ab_up):
         anti = "INFANTRY"
-    elif "ANTI-MONSTER" in ab_up or "ANTI‐MONSTER" in ab_up:
+    elif re.search(r"ANTI\s*[\-\s]\s*MONSTER", ab_up):
         anti = "MONSTER"
-    elif "ANTI-CAVALRY" in ab_up or "ANTI‐CAVALRY" in ab_up:
+    elif re.search(r"ANTI\s*[\-\s]\s*CAVALRY", ab_up):
         anti = "CAVALRY"
-    elif "ANTI-WAR MACHINE" in ab_up or "ANTI‐WAR MACHINE" in ab_up:
+    elif re.search(r"ANTI\s*[\-\s]\s*WAR\s*MACHINE", ab_up):
         anti = "WAR MACHINE"
-    elif "ANTI-BEAST" in ab_up or "ANTI‐BEAST" in ab_up:
+    elif re.search(r"ANTI\s*[\-\s]\s*BEAST", ab_up):
         anti = "BEAST"
 
-    charge_dmg_flag = bool(re.search(r"CHARGE\s*\(\+1\s*DAMAGE\)", ab_up))
+    charge_dmg_flag = bool(re.search(r"CHARGE\s*\(\s*\+1\s*DAMAGE\s*\)", ab_up))
     companion_flag = "COMPANION" in ab_up
 
     return {
@@ -339,43 +329,63 @@ def _parsa_riga_arma(nome_arma_grezzo, gittata, atk, hit_str, wnd_str, rnd_str, 
 
 def estrai_armi_da_testo_o_html(corpo_ws, righe_tabella_html=None):
     """
-    Estrae tutte le armi della Warscroll:
-    1) Prima controlla le righe `<tr>` estratte dal parser HTML (se Wahapedia usa `<table>`).
-    2) Altrimenti usa il parser universale multi-linea (che funziona anche quando Wahapedia
-       usa layout `<div>` con ogni valore su una riga diversa o quando si incolla il testo!).
+    Estrae tutte le armi gestendo anche la struttura a 2 righe di Wahapedia:
+    - Riga 1 (colspan): 'Sword of Stolen Hours [Crit (Auto-wound)]'
+    - Riga 2 (numeri):  ['5', '4+', '3+', '1', '2'] oppure ['Sword of Stolen Hours...', '5', '4+', '3+', '1', '2']
     """
     armi = []
     nomi_armi_visti = set()
 
-    # 1. Estrazione da righe <tr> HTML
     if righe_tabella_html:
+        ultimo_header_arma = ""
         for celle in righe_tabella_html:
-            celle_pulite = [c.strip() for c in celle if c.strip()]
-            if len(celle_pulite) >= 6:
-                if len(celle_pulite) >= 7 and re.match(r"^[2-6]\+$", celle_pulite[3]) and re.match(r"^[2-6]\+$", celle_pulite[4]):
-                    ab_extra = celle_pulite[7] if len(celle_pulite) >= 8 else ""
-                    arma = _parsa_riga_arma(
-                        celle_pulite[0], celle_pulite[1], celle_pulite[2],
-                        celle_pulite[3], celle_pulite[4], celle_pulite[5], celle_pulite[6], ab_extra
-                    )
-                    if arma and (arma["nome"].lower(), arma["ranged"]) not in nomi_armi_visti:
-                        nomi_armi_visti.add((arma["nome"].lower(), arma["ranged"]))
-                        armi.append(arma)
-                elif re.match(r"^[2-6]\+$", celle_pulite[2]) and re.match(r"^[2-6]\+$", celle_pulite[3]):
-                    ab_extra = celle_pulite[6] if len(celle_pulite) >= 7 else ""
-                    arma = _parsa_riga_arma(
-                        celle_pulite[0], None, celle_pulite[1],
-                        celle_pulite[2], celle_pulite[3], celle_pulite[4], celle_pulite[5], ab_extra
-                    )
-                    if arma and (arma["nome"].lower(), arma["ranged"]) not in nomi_armi_visti:
-                        nomi_armi_visti.add((arma["nome"].lower(), arma["ranged"]))
-                        armi.append(arma)
+            celle_pulite = [_normalizza_trattini(c).strip() for c in celle if c.strip()]
+            if not celle_pulite:
+                continue
+
+            # Se è la riga 1 con solo il Nome Arma + [Abilità] (1 o 2 celle senza statistiche X+)
+            if len(celle_pulite) <= 2 and not any(re.match(r"^[2-6]\+$", c) for c in celle_pulite):
+                testo_c = " ".join(celle_pulite)
+                if not any(h in testo_c.upper() for h in ["WEAPONS", "DAMAGE CALCULATOR", "VIEW CONDITIONS"]):
+                    ultimo_header_arma = testo_c
+                continue
+
+            # Caso Ranged o Melee con 5, 6, 7 o 8 celle
+            # Cerchiamo la coppia adiacente (Hit, Wnd) nel formato [2-6]+
+            idx_hit = -1
+            for i in range(len(celle_pulite) - 2):
+                if re.match(r"^[2-6]\+$", celle_pulite[i]) and re.match(r"^[2-6]\+$", celle_pulite[i + 1]):
+                    idx_hit = i
+                    break
+
+            if idx_hit >= 1 and idx_hit + 3 < len(celle_pulite):
+                atk_c = celle_pulite[idx_hit - 1]
+                hit_c = celle_pulite[idx_hit]
+                wnd_c = celle_pulite[idx_hit + 1]
+                rnd_c = celle_pulite[idx_hit + 2]
+                dmg_c = celle_pulite[idx_hit + 3]
+                ab_dopo = " ".join(celle_pulite[idx_hit + 4:]) if idx_hit + 4 < len(celle_pulite) else ""
+
+                gittata_c = None
+                nome_cella = ""
+                if idx_hit >= 2 and re.match(r"^\d{1,2}\"$", celle_pulite[idx_hit - 2]):
+                    gittata_c = celle_pulite[idx_hit - 2]
+                    nome_cella = " ".join(celle_pulite[:idx_hit - 2])
+                else:
+                    nome_cella = " ".join(celle_pulite[:idx_hit - 1])
+
+                nome_combinato = f"{ultimo_header_arma} {nome_cella}".strip() if ultimo_header_arma else nome_cella
+                arma = _parsa_riga_arma(nome_combinato, gittata_c, atk_c, hit_c, wnd_c, rnd_c, dmg_c, ab_dopo)
+                if arma and (arma["nome"].lower(), arma["ranged"]) not in nomi_armi_visti:
+                    nomi_armi_visti.add((arma["nome"].lower(), arma["ranged"]))
+                    armi.append(arma)
+                ultimo_header_arma = ""
 
     if armi:
         return armi
 
-    # 2. Estrazione universale multi-linea (supporta sia layout <div> su righe separate sia testo incollato)
-    testo_sezione = corpo_ws
+    # Fallback multi-linea universale sul testo del corpo warscroll
+    testo_sezione = _normalizza_trattini(corpo_ws)
     for marker_fine in ["BATTLE PROFILE", "View conditions"]:
         if marker_fine in testo_sezione:
             testo_sezione = testo_sezione.split(marker_fine)[0]
@@ -418,10 +428,6 @@ def estrai_armi_da_testo_o_html(corpo_ws, righe_tabella_html=None):
 
 
 def estrai_abilita_multiple_da_testo(corpo_ws):
-    """
-    Estrae SOLO le vere abilità della Warscroll (contenute in corpo_ws, quindi PRIMA della barra KEYWORDS),
-    scartando qualsiasi regola base o tooltip ("Fly", "Retreat", "Charge", "in combat", ecc.).
-    """
     abilita_trovate = []
     nomi_visti = set()
 
@@ -461,11 +467,40 @@ def estrai_abilita_multiple_da_testo(corpo_ws):
     return abilita_trovate
 
 
+def _isola_sezioni_warscroll(testo_intero):
+    m_ws = list(re.finditer(r"•[^•\n]*WARSCROLL•", testo_intero, flags=re.IGNORECASE))
+    if m_ws:
+        idx_inizio_stats = max(0, m_ws[0].start() - 1500)
+        idx_inizio_corpo = m_ws[0].end()
+        testo_pre_header = testo_intero[idx_inizio_stats:idx_inizio_corpo]
+        resto = testo_intero[idx_inizio_corpo:]
+    else:
+        testo_pre_header = testo_intero[:1200]
+        resto = testo_intero
+
+    matches_kw = list(re.finditer(r"\bKEYWORDS\b", resto))
+    corpo_ws = resto
+    coda_kw = ""
+
+    for m_k in matches_kw:
+        finestra_dopo = resto[m_k.end():m_k.end() + 220]
+        prima_riga_kw = finestra_dopo.strip().split("\n")[0].upper() if finestra_dopo.strip() else ""
+        if any(w in prima_riga_kw for w in ["CORE", "SPELL", "PRAYER", "RAMPAGE", "UNLIMITED"]) and not any(
+            u_kw in finestra_dopo.upper() for u_kw in [
+                "HERO", "INFANTRY", "CAVALRY", "MONSTER", "WAR MACHINE", "BEAST",
+                "ORDER", "CHAOS", "DEATH", "DESTRUCTION"
+            ]
+        ):
+            continue
+        corpo_ws = resto[:m_k.start()]
+        coda_kw = resto[m_k.end():m_k.end() + 300]
+        break
+
+    return testo_pre_header, corpo_ws, coda_kw
+
+
 def analizza_warscroll_completa(testo_intero, parser_html=None, fazione_default="Nighthaunt", nome_default=""):
-    """
-    Estrae l'intera Warscroll (Statistiche Cerchio, Punti, Modelli, Basetta, Armi, Abilità, Keywords)
-    isolando rigorosamente il corpo della Warscroll dai tooltip di Wahapedia.
-    """
+    testo_intero = _normalizza_trattini(testo_intero)
     risultato = {
         "fazione": fazione_default,
         "nome": nome_default or "Unità Importata",
@@ -484,17 +519,10 @@ def analizza_warscroll_completa(testo_intero, parser_html=None, fazione_default=
         "keywords": []
     }
 
-    # 1. Separa Pre-Header (Ruota Statistiche), Corpo Warscroll e Barra Keywords (tagliando via tutti i tooltip finali)
     testo_pre, corpo_ws, coda_kw = _isola_sezioni_warscroll(testo_intero)
+    titolo_pag = parser_html.page_title if parser_html is not None else ""
+    risultato["nome"] = _estrai_nome_unita_sicuro(corpo_ws, page_title=titolo_pag, nome_fallback=nome_default)
 
-    # 2. Nome Unità (prima riga subito dopo •... WARSCROLL•)
-    linee_corpo = [l.strip() for l in corpo_ws.split("\n") if l.strip()]
-    if linee_corpo and len(linee_corpo[0]) < 55 and not any(
-        k in linee_corpo[0].upper() for k in ["WEAPONS", "DAMAGE CALCULATOR", "MOVE", "BATTLE PROFILE"]
-    ):
-        risultato["nome"] = linee_corpo[0].title()
-
-    # 3. Estrazione Statistiche Difensive e Movimento dalla Ruota (es. 10" 12 4+ 5. 5+)
     stats_ruota = _estrai_statistiche_cerchio(testo_pre, corpo_ws)
     if stats_ruota:
         risultato["movimento"] = stats_ruota["movimento"]
@@ -517,7 +545,6 @@ def analizza_warscroll_completa(testo_intero, parser_html=None, fazione_default=
         if m_oc:
             risultato["controllo"] = int(m_oc.group(1))
 
-    # 4. Estrazione BATTLE PROFILE (Unit Size, Points, Base size, Can be reinforced)
     m_size = re.search(r"(?:Unit\s*Size|Modelli)\s*[:\-]?\s*(\d{1,2})", corpo_ws, re.I)
     if m_size:
         risultato["n_modelli"] = max(1, int(m_size.group(1)))
@@ -537,7 +564,6 @@ def analizza_warscroll_completa(testo_intero, parser_html=None, fazione_default=
     if m_reinf:
         risultato["puo_rinforzare"] = (m_reinf.group(1).lower() == "yes")
 
-    # 5. Estrazione Keywords dell'Unità (solo le righe della barra KEYWORDS, prima dei tooltip!)
     if coda_kw:
         linee_kw = []
         for l_k in [l.strip() for l in coda_kw.split("\n") if l.strip()][:3]:
@@ -563,12 +589,10 @@ def analizza_warscroll_completa(testo_intero, parser_html=None, fazione_default=
     if "UNIQUE" in kw_upper_str:
         risultato["puo_rinforzare"] = False
 
-    # 6. Estrazione Armi e Abilità
     righe_html = parser_html.rows if parser_html is not None else None
     risultato["armi"] = estrai_armi_da_testo_o_html(corpo_ws, righe_tabella_html=righe_html)
     risultato["abilita"] = estrai_abilita_multiple_da_testo(corpo_ws)
 
-    # 7. Se una delle abilità passive dell'unità conferisce un Ward nativo (es. Dryads), aggiorna se necessario
     for ab in risultato["abilita"]:
         w_ab = ab.get("modificatori", {}).get("ward_nativo")
         if w_ab in [4, 5, 6] and risultato["ward"] == "7+":
@@ -577,14 +601,36 @@ def analizza_warscroll_completa(testo_intero, parser_html=None, fazione_default=
     return risultato
 
 
+def converti_warscroll_in_record_db(dati_w, fazione):
+    """Converte il dizionario estratto da Wahapedia nel formato esatto di units_db.json."""
+    s_int = estrai_intero_sicuro(dati_w.get("save", "4+"), default=7)
+    w_int = estrai_intero_sicuro(dati_w.get("ward", "7+"), default=7)
+    return {
+        "fazione": fazione,
+        "n_modelli": dati_w["n_modelli"],
+        "dimensione_basetta": dati_w["basetta"],
+        "può_essere_rinforzata": dati_w["puo_rinforzare"],
+        "campione": dati_w["campione"],
+        "punti": dati_w["punti"],
+        "statistiche_cerchio": {
+            "movimento": dati_w["movimento"],
+            "controllo": dati_w["controllo"],
+            "save": dati_w["save"],
+            "salute": dati_w["salute"],
+            "ward": dati_w["ward"]
+        },
+        "difesa": {
+            "salute_per_modello": dati_w["salute"],
+            "save": s_int,
+            "ward": w_int
+        },
+        "armi": dati_w["armi"],
+        "abilita": dati_w["abilita"],
+        "keywords": dati_w["keywords"]
+    }
+
+
 def scarica_warscroll_da_wahapedia(url_o_testo, fazione="Nighthaunt", nome_unita=""):
-    """
-    Funzione principale (Zero dipendenze esterne):
-    - Se 'url_o_testo' è un URL (o se viene fornito solo il nome unità), scarica la pagina da Wahapedia.
-    - Se Wahapedia blocca la richiesta (es. Cloudflare 403) o se l'utente ha incollato direttamente
-      il testo della pagina (CTRL+A / CTRL+C da Wahapedia), analizza direttamente il testo!
-    Restituisce: (dati_warscroll_dict, messaggio_stato, successo_bool)
-    """
     inp = (url_o_testo or "").strip()
     if not inp and nome_unita.strip():
         inp = costruisci_url_wahapedia(fazione, nome_unita)
@@ -593,6 +639,8 @@ def scarica_warscroll_da_wahapedia(url_o_testo, fazione="Nighthaunt", nome_unita
         return None, "Inserisci un URL di Wahapedia, un Nome Unità oppure incolla il testo della Warscroll.", False
 
     if inp.startswith("http://") or inp.startswith("https://"):
+        # Se è un URL, il fallback del nome viene SEMPRE preso dallo slug dell'URL (mai dal vecchio nome in sessione!)
+        nome_da_url = inp.rstrip("/").split("/")[-1].replace(".html", "").replace("-", " ")
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -604,9 +652,8 @@ def scarica_warscroll_da_wahapedia(url_o_testo, fazione="Nighthaunt", nome_unita
                 parser = _WahapediaHTMLParser()
                 parser.feed(resp.text)
                 testo_pagina = parser.get_clean_text()
-                nome_fallback = nome_unita or inp.rstrip("/").split("/")[-1].replace("-", " ")
-                dati = analizza_warscroll_completa(testo_pagina, parser_html=parser, fazione_default=fazione, nome_default=nome_fallback)
-                return dati, f"Warscroll '{dati['nome']}' scaricata da Wahapedia ({len(dati['armi'])} armi, {len(dati['abilita'])} abilità)!", True
+                dati = analizza_warscroll_completa(testo_pagina, parser_html=parser, fazione_default=fazione, nome_default=nome_da_url)
+                return dati, f"Warscroll '{dati['nome']}' scaricata ({len(dati['armi'])} armi, {len(dati['abilita'])} abilità)!", True
             elif resp.status_code in [403, 503]:
                 return None, "Wahapedia ha protetto la pagina con Cloudflare (403). Apri la pagina nel browser, premi CTRL+A e CTRL+C e incolla tutto il testo nel box qui sotto!", False
             else:
@@ -615,4 +662,72 @@ def scarica_warscroll_da_wahapedia(url_o_testo, fazione="Nighthaunt", nome_unita
             return None, f"Errore di rete durante il collegamento a Wahapedia: {e}", False
 
     dati = analizza_warscroll_completa(inp, parser_html=None, fazione_default=fazione, nome_default=nome_unita or "Unità Wahapedia")
-    return dati, f"Warscroll analizzata con successo: {len(dati['armi'])} armi e {len(dati['abilita'])} abilità estratte!", True
+    return dati, f"Warscroll '{dati['nome']}' analizzata: {len(dati['armi'])} armi e {len(dati['abilita'])} abilità estratte!", True
+
+
+def sincronizza_fazione_da_wahapedia(fazione, db_unita_attuale, testo_collated_opzionale=""):
+    """
+    Aggiorna automaticamente in blocco tutte le unità della fazione desiderata e compila il dizionario del DB:
+    1) Prova prima a scaricare la pagina riepilogativa di tutte le Warscrolls della fazione:
+       https://wahapedia.ru/aos4/factions/{slug_fazione}/warscrolls.html
+       (oppure analizza il testo incollato se fornito in 'testo_collated_opzionale').
+    2) Inoltre, aggiorna via URL individuale eventuali unità di quella fazione già presenti in db_unita_attuale.
+    Restituisce: (n_unita_aggiornate, elenco_nomi_aggiornati, messaggio_stato, successo_bool)
+    """
+    slug_fazione = FAZIONI_SLUG_WAHAPEDIA.get(fazione, fazione.lower().replace(" ", "-"))
+    url_warscrolls_fazione = f"https://wahapedia.ru/aos4/factions/{slug_fazione}/warscrolls.html"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+
+    testo_sorgente = (testo_collated_opzionale or "").strip()
+    if not testo_sorgente or testo_sorgente.startswith("http"):
+        url_target = testo_sorgente if testo_sorgente.startswith("http") else url_warscrolls_fazione
+        try:
+            resp = requests.get(url_target, headers=headers, timeout=15)
+            if resp.status_code == 200:
+                p_all = _WahapediaHTMLParser()
+                p_all.feed(resp.text)
+                testo_sorgente = p_all.get_clean_text()
+            elif resp.status_code in [403, 503]:
+                return 0, [], f"Cloudflare (403) ha bloccato il download massivo da {url_target}. Apri {url_warscrolls_fazione} nel browser, premi CTRL+A / CTRL+C e incolla tutto nel box per aggiornare l'intera fazione in un click!", False
+        except Exception as e:
+            return 0, [], f"Errore di rete durante la sincronizzazione fazione: {e}", False
+
+    unita_aggiornate = []
+
+    # Divide la pagina 'warscrolls.html' in blocchi, uno per ogni '•... WARSCROLL•'
+    matches_ws = list(re.finditer(r"•[^•\n]*WARSCROLL•", testo_sorgente, flags=re.IGNORECASE))
+    if matches_ws:
+        for i, m_w in enumerate(matches_ws):
+            start_chunk = max(0, m_w.start() - 400)
+            end_chunk = matches_ws[i + 1].start() - 120 if i + 1 < len(matches_ws) else len(testo_sorgente)
+            chunk_unita = testo_sorgente[start_chunk:end_chunk]
+
+            # Passiamo None come parser_html così usa l'estrattore multi-linea universale sul singolo blocco
+            dati_u = analizza_warscroll_completa(chunk_unita, parser_html=None, fazione_default=fazione)
+            nome_u = dati_u["nome"].strip()
+            if nome_u and nome_u != "Unità Importata" and (dati_u["armi"] or dati_u["abilita"]):
+                chiave_db = f"{fazione}: {nome_u}"
+                db_unita_attuale[chiave_db] = converti_warscroll_in_record_db(dati_u, fazione)
+                unita_aggiornate.append(nome_u)
+
+    # Se non era una pagina multipla ma non abbiamo ancora aggiornato le unità esistenti nel DB,
+    # prova ad aggiornare singolarmente le unità della fazione già presenti nel database
+    if not unita_aggiornate:
+        chiavi_fazione = [
+            k for k, v in db_unita_attuale.items()
+            if k != "--- Seleziona o Resetta ---" and (v.get("fazione") == fazione or k.startswith(f"{fazione}:"))
+        ]
+        for k_u in chiavi_fazione:
+            nome_solo = k_u.split(": ")[-1] if ": " in k_u else k_u
+            dati_sing, _, ok_s = scarica_warscroll_da_wahapedia("", fazione=fazione, nome_unita=nome_solo)
+            if ok_s and dati_sing and (dati_sing["armi"] or dati_sing["abilita"]):
+                db_unita_attuale[k_u] = converti_warscroll_in_record_db(dati_sing, fazione)
+                unita_aggiornate.append(nome_solo)
+
+    if unita_aggiornate:
+        return len(unita_aggiornate), unita_aggiornate, f"Sincronizzate e aggiornate {len(unita_aggiornate)} unità per la fazione {fazione}!", True
+    return 0, [], f"Nessuna Warscroll trovata per {fazione}. Verifica la connessione o incolla il testo di {url_warscrolls_fazione}.", False
