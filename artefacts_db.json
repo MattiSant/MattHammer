@@ -51,5 +51,25 @@
         "punti": 0,
         "descrizione": "Reaction: Opponent declared a SPELL or PRAYER ability for a WIZARD or PRIEST within 12\" of this unit\nDeclare: Pick each enemy WIZARD and PRIEST within 12\" of this unit to be the targets.\n\nEffect: Roll a D3. On a 2+, for the rest of the phase:\nSubtract 1 from casting rolls and chanting rolls for the targets.\nEach time any of the targets fails to cast a spell or chant a prayer, inflict 1 mortal damage on that target",
         "modificatori": {}
+    },
+    "Brazier Of Nagashizzar": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "Green flames billow from this brazier, lashing at nearby gheists and ensuring that there is no rest for the wicked.\nEffect: If you roll a 1-3 when determining the distance that unit can move, you can use a value of 4 instead.",
+        "modificatori": {}
+    },
+    "Lightshard Of The Harvest Moon": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "This lightshard is filled with a baleful gloom that, upon release, casts the battlefield in an eerie glow, readying the enemy for the reaping.\nEffect: If this unit is in combat, add 1 to the Attacks characteristic of melee weapons used by friendly NIGHTHAUNT units while they are wholly within 12\" of this unit for the rest of the turn.",
+        "modificatori": {
+            "bonus_atk": 1
+        }
+    },
+    "Mirror Of Echoing Failures": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "To fail in front of this awful artefact is to have those miseries echoed in excruciating detail by a caterwauling reflection of your own face deriding your futile efforts.\nDeclare: Pick each enemy WIZARD and PRIEST within 12\" of this unit to be the targets.\nEffect: Roll a D3. On a 2+, for the rest of the phase:\nSubtract 1 from casting rolls and chanting rolls for the targets.\nEach time any of the targets fails to cast a spell or chant a prayer, inflict 1 mortal damage on that target.",
+        "modificatori": {}
     }
 }
