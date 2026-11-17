@@ -1734,7 +1734,7 @@
         "dimensione_basetta": "150x95mm",
         "può_essere_rinforzata": false,
         "campione": false,
-        "punti": 290,
+        "punti": 350,
         "statistiche_cerchio": {
             "movimento": "12\"",
             "controllo": 5,
