@@ -855,6 +855,7 @@
                 "nome": "Greenwood Scythe and Bittergrub",
                 "attiva": true,
                 "ranged": false,
+                "range": "Melee",
                 "atk": "3",
                 "hit": 3,
                 "wnd": 4,
@@ -869,23 +870,38 @@
         ],
         "abilita": [
             {
-                "nome": "BLESSINGS OF THE FOREST",
+                "nome": "Slay The Trespassers!",
                 "tipo": "Ability",
                 "reazione": false,
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Hero Phase (Fase Eroi Amica)"
+                    "Hero Phase (Amica)"
                 ],
-                "descrizione": "Effect: Heal up to D3 wounds allocated to this unit.",
-                "modificatori": {}
+                "descrizione": "The Branchwych singles out a foe to suffer the full extent of the Sylvaneth’s vengeance.\nDeclare: Pick an enemy unit that is within the creeping overgrowth or that is visible to this unit and within friendly territory to be the target.\nEffect: Roll a dice. On a 3+, add 1 to wound rolls for combat attacks that target that enemy unit for the rest of the turn.",
+                "modificatori": {
+                    "mod_wnd": 1
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
             }
         ],
         "keywords": [
-            "Hero",
-            "Infantry",
-            "Wizard (1)",
-            "Sylvaneth"
+            "HERO",
+            "WIZARD ( 1 )",
+            "INFANTRY",
+            "ORDER",
+            "SYLVANETH"
         ]
     },
     "Sylvaneth: Dryads": {
@@ -912,10 +928,11 @@
                 "nome": "Wracking Talons",
                 "attiva": true,
                 "ranged": false,
+                "range": "Melee",
                 "atk": "2",
                 "hit": 3,
                 "wnd": 4,
-                "rend": 1,
+                "rend": 0,
                 "dmg": "1",
                 "crit_type": "Nessuno",
                 "anti_target": "Nessuno",
@@ -926,35 +943,51 @@
         ],
         "abilita": [
             {
-                "nome": "WOODLAND BLENDING",
+                "nome": "One With The Forest",
                 "tipo": "Passive",
                 "reazione": false,
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Any Phase"
+                    "Qualsiasi Fase"
                 ],
-                "descrizione": "Effect: This unit has a 5+ Ward while wholly within 6\" of friendly Awildwood terrain features.",
+                "descrizione": "Dryads seamlessly blend in with the surrounding foliage; in overgrown environments, the attacks of their opponents are as likely to strike unfeeling wood as they are the Sylvaneth themselves.\nEffect: Subtract 1 from hit rolls and wound rolls for attacks that target this unit while it is wholly within the creeping overgrowth.",
                 "modificatori": {
-                    "ward_nativo": 5
+                    "mod_hit_subito": -1,
+                    "mod_wnd_nerf": -1
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
                 }
             }
         ],
         "keywords": [
-            "Infantry",
-            "Sylvaneth"
+            "INFANTRY",
+            "CHAMPION",
+            "ORDER",
+            "SYLVANETH",
+            "Errata"
         ]
     },
     "Sylvaneth: Grove Guardian": {
         "fazione": "Sylvaneth",
         "n_modelli": 1,
         "dimensione_basetta": "105x70mm",
-        "può_essere_rinforzata": false,
+        "può_essere_rinforzata": true,
         "campione": false,
         "punti": 200,
         "statistiche_cerchio": {
-            "movimento": "6\"",
-            "controllo": 5,
+            "movimento": "4\"",
+            "controllo": 2,
             "save": "5+",
             "salute": 7,
             "ward": "7+"
@@ -969,6 +1002,7 @@
                 "nome": "Grove Sickle or Shears",
                 "attiva": true,
                 "ranged": false,
+                "range": "Melee",
                 "atk": "3",
                 "hit": 3,
                 "wnd": 4,
@@ -984,6 +1018,7 @@
                 "nome": "Guardian Spites",
                 "attiva": true,
                 "ranged": false,
+                "range": "Melee",
                 "atk": "6",
                 "hit": 4,
                 "wnd": 4,
@@ -998,23 +1033,40 @@
         ],
         "abilita": [
             {
-                "nome": "SPIRITUAL RAMPART",
-                "tipo": "Passive",
+                "nome": "Soulshriek",
+                "tipo": "Ability",
                 "reazione": false,
                 "once_per_battle": false,
                 "valore_lancio": 0,
                 "fasi": [
-                    "Hero Phase (Fase Eroi Amica)",
-                    "Hero Phase (Fase Eroi Nemica)"
+                    "Combat Phase (Qualsiasi)"
                 ],
-                "descrizione": "Effect: Friendly Sylvaneth units wholly within 6\" of this unit benefit from cover.",
-                "modificatori": {}
+                "descrizione": "Should a Revenant be slain in their presence,\na Grove Guardian can trigger a spiritual backlash through the fallen’s lamentiri fuelled by the collective trauma of generations, stilling the heart of their killer in a sudden burst of soul-shock.\nDeclare: Pick each friendly non- HERO REVENANT unit wholly within 12\" of and visible to this unit to be the targets.\nEffect: For the rest of the phase, each time a model in a target unit is slain by a combat attack, roll a dice. On a 5+, inflict 1 mortal damage on the attacking unit.\nYour Hero Phase 4\nREGENESIS : Freshly grown forest spirits leap from the amniotic pods of the Grove Guardian’s genesis tree, ready to join the Everqueen’s war.\nDeclare: Declare: Pick a friendly SYLVANETH unit that is wholly within the creeping overgrowth or that is visible to and wholly within 12\" of this unit to be the target, then make a chanting roll of D6.\nEffect: If the chanting roll was 6+, you can pick another eligible unit to be a second target. If a target is a non- HERO REVENANT INFANTRY or Dryads unit, return up to D3 models to the target unit. Otherwise, Heal (3) that target.",
+                "modificatori": {
+                    "mortal_extra_fisso": 0.33
+                },
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 0.3333333333333333,
+                    "mortal_dmg_expr": "1",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.33
+                }
             }
         ],
         "keywords": [
-            "Hero",
-            "Monster",
-            "Sylvaneth"
+            "PRAYER",
+            "KEYWORDS HERO",
+            "PRIEST ( 2 )",
+            "INFANTRY",
+            "ORDER",
+            "SYLVANETH",
+            "FOREST ELDER"
         ]
     },
     "Sylvaneth: Kurnoth Hunters With Greatswords": {
@@ -1025,7 +1077,7 @@
         "campione": true,
         "punti": 210,
         "statistiche_cerchio": {
-            "movimento": "5\"",
+            "movimento": "6\"",
             "controllo": 2,
             "save": "4+",
             "salute": 5,
@@ -1054,10 +1106,65 @@
                 "companion": false
             }
         ],
-        "abilita": [],
+        "abilita": [
+            {
+                "nome": "Hunter’S Endurance",
+                "tipo": "Passive",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Qualsiasi Fase"
+                ],
+                "descrizione": "As the spirit-song intensifies and the magic of life surges across the battlefield, Kurnoth Hunters are gripped with a sacred fervour of the chase that sees them shrug off wounds.\nEffect: Subtract 1 from the Rend characteristic of weapons used for attacks that target this unit while it is wholly within the creeping overgrowth.",
+                "modificatori": {},
+                "condizioni": {
+                    "richiede_carica": false,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 1.0,
+                    "mortal_dmg_expr": "0",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.0
+                }
+            },
+            {
+                "nome": "Crashing Impact",
+                "tipo": "Ability",
+                "reazione": false,
+                "once_per_battle": false,
+                "valore_lancio": 0,
+                "fasi": [
+                    "Combat Phase (Qualsiasi)"
+                ],
+                "descrizione": "On the charge, Kurnoth Hunters use their great size and durability as a weapon, delivering powerful strikes driven by their momentum and trampling smaller foes underfoot.\nDeclare: If this unit charged this turn, pick an enemy unit in combat with it to be the target.\nEffect: Roll a dice for each model in this unit that is in combat with the target. For each 3+, inflict 1 mortal damage on the target.",
+                "modificatori": {
+                    "mortal_extra_fisso": 0.67
+                },
+                "condizioni": {
+                    "richiede_carica": true,
+                    "richiede_5_modelli": false,
+                    "solo_melee": false,
+                    "solo_ranged": false,
+                    "mortal_prob": 0.6666666666666666,
+                    "mortal_dmg_expr": "1",
+                    "mortal_extra_dadi": 0,
+                    "mortal_extra_tipo": 6,
+                    "mortal_extra_soglia": "Nessuna (Somma)",
+                    "mortal_extra_fisso": 0.67
+                }
+            }
+        ],
         "keywords": [
-            "Infantry",
-            "Sylvaneth"
+            "INFANTRY",
+            "CHAMPION",
+            "ORDER",
+            "SYLVANETH",
+            "KURNOTHI",
+            "FAQ"
         ]
     },
     "Blades of Khorne: Mighty Lord of Khorne": {
@@ -1734,7 +1841,7 @@
         "dimensione_basetta": "150x95mm",
         "può_essere_rinforzata": false,
         "campione": false,
-        "punti": 350,
+        "punti": 290,
         "statistiche_cerchio": {
             "movimento": "12\"",
             "controllo": 5,
@@ -1884,7 +1991,8 @@
             }
         ],
         "keywords": [
-            "UNIQUE",
+            "RAMPAGE",
+            "KEYWORDS UNIQUE",
             "HERO",
             "MONSTER",
             "FLY",
