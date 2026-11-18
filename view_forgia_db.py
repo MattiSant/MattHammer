@@ -28,8 +28,7 @@ from wahapedia_scraper import (
     costruisci_url_wahapedia,
     sincronizza_fazione_da_wahapedia,
     estrai_fazione_da_url_o_testo,
-    sincronizza_regole_fazione_da_wahapedia,
-    sincronizza_tutte_le_regole_globale
+    sincronizza_regole_fazione_da_wahapedia
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

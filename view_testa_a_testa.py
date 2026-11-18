@@ -664,7 +664,7 @@ def render_testa_a_testa():
             if danno_extra_base > 0:
                 righe_armi.append({
                     "Arma": "⚡ Abilità / Danni Mortali Extra",
-                    "Attacchi": "0.0", "Hits": "0.0", "Wounds": "0.0",
+                    "Attacchi": "0.0", "Hits": "0.0", "Wounds": 0.0,
                     "Danno Netto": round(danno_extra_base * moltiplicatore_ward, 2)
                 })
             if righe_armi:
