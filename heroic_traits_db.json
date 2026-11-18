@@ -11,14 +11,6 @@
             "bonus_atk": 1
         }
     },
-    "Cacciatore di Eroi": {
-        "fazione": "Generale",
-        "descrizione": "Aggiungi 1 alla caratteristica Rend delle armi da mischia contro HERO e MONSTER.",
-        "modificatori": {
-            "bonus_rend": 1,
-            "condizione": "Anti-HERO/MONSTER"
-        }
-    },
     "Protettore Ancestrale": {
         "fazione": "Generale",
         "descrizione": "Il portatore ottiene un tiro Ward di 5+.",
