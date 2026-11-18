@@ -40,25 +40,49 @@
             "modificatori": {
                 "bonus_rend": 1
             },
-            "descrizione": "Death Stalkers are spectral killers that relentlessly hunt down a chosen enemy.\nDeclare: If there is not a condemned enemy unit on the battlefield, pick an enemy unit to be condemned.\nEffect: For the rest of the battle, add 1 to the Rend characteristic of melee weapons used for attacks made by friendly NIGHTHAUNT units that target the condemned enemy unit.\nErrata\nRoyal Procession"
+            "descrizione": "Death Stalkers are spectral killers that relentlessly hunt down a chosen enemy.\nDeclare: If there is not a condemned enemy unit on the battlefield, pick an enemy unit to be condemned.\nEffect: For the rest of the battle, add 1 to the Rend characteristic of melee weapons used for attacks made by friendly NIGHTHAUNT units that target the condemned enemy unit.\nErrata\nShow\nBATTLE FORMATIONS, DEATH STALKERS\nChange ‘There is No Escape’ to:"
         },
         "Lethal Rancour": {
             "fase_attivazione": "Hero Phase (Fase Eroi Amica o Nemica)",
             "monouso": false,
             "modificatori": {},
-            "descrizione": "The gheists of this horde are drawn from haughty nobles and obsequious courtiers who refused to admit fault even at the very end. They rail constantly at their kingdom's doom, and their undying bitterness renders their spectral touch even more deadly against those they perceive as interlopers.\nDeclare: Pick up to 2 friendly NIGHTHAUNT units to be the targets.\nEffect: The targets’ melee weapons have Anti-charge (+1 Rend) for the rest of the turn.\nExpansion. Scourge of Ghyran - Nighthaunt (4th edition)Hungry Nexus"
+            "descrizione": "The gheists of this horde are drawn from haughty nobles and obsequious courtiers who refused to admit fault even at the very end. They rail constantly at their kingdom's doom, and their undying bitterness renders their spectral touch even more deadly against those they perceive as interlopers.\nDeclare: Pick up to 2 friendly NIGHTHAUNT units to be the targets.\nEffect: The targets’ melee weapons have Anti-charge (+1 Rend) for the rest of the turn.\nHungry Nexus"
         },
         "Greedy For Souls": {
             "fase_attivazione": "Fine Turno",
             "monouso": false,
             "modificatori": {},
-            "descrizione": "A Nexus of Grief’s bricks fly apart and its metal rails extend outwards like a grasping claw, dragging it ever nearer to living, breathing victims.\nDeclare: Pick a friendly Nexus of Grief to be the target.\nEffect: For the rest of the turn, the target has a Move characteristic of 3\". It can immediately move up to 3\" and can move into combat but cannot end that move on a terrain feature or within 3\" of an objective.\nExpansion. Scourge of Ghyran - Nighthaunt (4th edition)Deathrust Gheists"
+            "descrizione": "A Nexus of Grief’s bricks fly apart and its metal rails extend outwards like a grasping claw, dragging it ever nearer to living, breathing victims.\nDeclare: Pick a friendly Nexus of Grief to be the target.\nEffect: For the rest of the turn, the target has a Move characteristic of 3\". It can immediately move up to 3\" and can move into combat but cannot end that move on a terrain feature or within 3\" of an objective.\nDeathrust Gheists"
         },
         "Blades Of Eternal Rust": {
             "fase_attivazione": "Hero Phase (Fase Eroi Amica o Nemica)",
             "monouso": false,
             "modificatori": {},
-            "descrizione": "The weapons of these Nighthaunt constantly shed flakes of spectral rust that cause whatever physical substance they come to rest upon to corrode in moments.\nDeclare: Pick an enemy unit that is in combat with any friendly NIGHTHAUNT units to be the target.\nEffect: Subtract 1 from save rolls for the target for the rest of the turn."
+            "descrizione": "The weapons of these Nighthaunt constantly shed flakes of spectral rust that cause whatever physical substance they come to rest upon to corrode in moments.\nDeclare: Pick an enemy unit that is in combat with any friendly NIGHTHAUNT units to be the target.\nEffect: Subtract 1 from save rolls for the target for the rest of the turn.\nHeroic Traits\nShades of Death\nHERO only\nBATTLE PROFILE\nName Points\nRULER OF THE SPECTRAL HOSTS 0\nDEATHLY POSSESSOR 0\nSHADOWY AURA 0"
+        },
+        "Ruler Of The Spectral Hosts": {
+            "fase_attivazione": "Hero Phase (Fase Eroi Amica o Nemica)",
+            "monouso": false,
+            "modificatori": {},
+            "descrizione": "The deathly power of this spirit is like a siren call, an unseen signal that beckons to those who have passed beyond the grave.\nDeclare: Pick up to 3 friendly non- HERO NIGHTHAUNT units wholly within 12\" of this unit to be the targets.\nEffect: Roll a D3 for each target. On a 2+:\nIf the target is damaged, Heal (X) the target, where X is an amount equal to the roll.\nIf the target is not damaged, return a number of slain models to it with a combined Health characteristic of up to X, where X is an amount equal to the roll."
+        },
+        "Deathly Possessor": {
+            "fase_attivazione": "Combat Phase (Fase di Combattimento)",
+            "monouso": false,
+            "modificatori": {},
+            "descrizione": "In a flash ofbalefire, the Nighthaunt vanishes. An instant later, a nearby foe's eyes glow with spectral power and they lash out at their allies, cackling in a voice not their own.\nDeclare: Pick an enemy HERO in combat with this unit to be the target, then pick another enemy unit within the target’s combat range to be the victim.\nEffect: Roll a dice. On a 3+, pick 1 of the target’s melee weapons. Immediately resolve combat attacks for the target with that weapon against the victim."
+        },
+        "Shadowy Aura": {
+            "fase_attivazione": "Passiva / Permanente",
+            "monouso": false,
+            "modificatori": {},
+            "descrizione": "A pall of gloom hangs over this champion, concealing the movements of nearby gheists and allowing them to ambush their victims.\nEffect: While they are wholly within 6\" of this unit, friendly NIGHTHAUNT INFANTRY and CAVALRY units are not visible to enemy units more than 9\" from them.\nErrata\nShow\nHEROIC TRAITS\nChange ‘Shadowy Aura’ to:"
+        },
+        "Brazier Of Nagashizzar": {
+            "fase_attivazione": "Passiva / Permanente",
+            "monouso": false,
+            "modificatori": {},
+            "descrizione": "Green flames billow from this brazier, lashing at nearby gheists and ensuring that there is no rest for the wicked.\nEffect: If you roll a 1-3 when determining the"
         }
     },
     "Blades of Khorne": {
