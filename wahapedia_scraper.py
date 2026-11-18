@@ -864,18 +864,31 @@ def _estrai_blocchi_regole_sezione(testo_sezione):
 
 def _trova_sezione_reale(testo, pattern_titolo):
     """
-    Trova la vera sezione nel corpo della pagina Wahapedia, saltando
-    le voci dell'Indice (Table of Contents) in cima alla pagina.
+    Trova la vera intestazione di sezione nel corpo della pagina Wahapedia,
+    saltando l'Indice (Table of Contents) in cima alla pagina.
     """
-    matches = list(re.finditer(pattern_titolo, testo, re.IGNORECASE))
+    # Cerca il titolo come riga autonoma (non dentro una frase)
+    matches = list(re.finditer(rf"(?m)^\s*{pattern_titolo}\s*$", testo, re.IGNORECASE))
+    if not matches:
+        matches = list(re.finditer(rf"\b{pattern_titolo}\b", testo, re.IGNORECASE))
     if not matches:
         return None
-    # Scorre i match e prende il primo che ha almeno un 'Effect:' nei 2500 caratteri successivi
+
+    # Scarta i match che appartengono all'indice in cima (dove gli altri titoli appaiono entro 250 caratteri)
+    candidati_validi = []
     for m in matches:
-        finestra = testo[m.end():m.end() + 2500].lower()
-        if "effect:" in finestra or "effetto:" in finestra:
-            return m
-    return matches[-1]
+        subito_dopo = testo[m.end():m.end() + 250].upper()
+        # Se subito dopo il titolo compaiono altri 2 titoli di sezione, è l'indice!
+        altri_titoli = sum(
+            1 for kw in ["BATTLE TRAITS", "BATTLE FORMATIONS", "HEROIC TRAITS", "ARTEFACTS OF POWER", "SPELL LORE", "PRAYER LORE"]
+            if kw in subito_dopo and kw not in m.group(0).upper()
+        )
+        if altri_titoli >= 2:
+            continue
+        candidati_validi.append(m)
+
+    # Prende l'ultima occorrenza valida (nel corpo della pagina, mai nell'indice)
+    return candidati_validi[-1] if candidati_validi else matches[-1]
 
 
 def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, artefacts_db, url_o_testo_opzionale=""):
@@ -892,7 +905,6 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
     url_fazione = f"https://wahapedia.ru/aos4/factions/{slug_fazione}/"
 
     testo_pagina = ""
-    righe_html_pagina = []
 
     if not inp or inp.startswith("http"):
         url_target = inp if (inp.startswith("http") and "warscrolls" not in inp) else url_fazione
@@ -908,7 +920,6 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
                 parser = _WahapediaHTMLParser()
                 parser.feed(resp.text)
                 testo_pagina = parser.get_clean_text()
-                righe_html_pagina = parser.rows
             elif resp.status_code in [403, 503]:
                 return 0, 0, 0, f"Cloudflare (403) ha protetto {url_target}. Apri {url_fazione} nel browser, premi CTRL+A / CTRL+C e incolla il testo nel box!", False
             else:
@@ -918,23 +929,23 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
     else:
         testo_pagina = _normalizza_trattini(inp)
 
-    # Trova le vere sezioni nel corpo pagina (saltando l'indice in cima!)
-    m_bf = _trova_sezione_reale(testo_pagina, r"\bBATTLE\s+FORMATIONS\b")
-    m_ht = _trova_sezione_reale(testo_pagina, r"\bHEROIC\s+TRAITS\b")
-    m_ap = _trova_sezione_reale(testo_pagina, r"\bARTEFACTS\s+OF\s+POWER\b")
+    # Trova le vere sezioni nel corpo pagina (saltando l'indice in cima)
+    m_bf = _trova_sezione_reale(testo_pagina, r"BATTLE\s+FORMATIONS")
+    m_ht = _trova_sezione_reale(testo_pagina, r"HEROIC\s+TRAITS")
+    m_ap = _trova_sezione_reale(testo_pagina, r"ARTEFACTS\s+OF\s+POWER")
 
-    # Calcola i confini esatti di ogni sezione ordinandoli per posizione nel testo
+    # Confini ordinati di tutte le sezioni principali della pagina
     marcatori_fine = []
     for m_x in (m_bf, m_ht, m_ap):
         if m_x:
             marcatori_fine.append(m_x.start())
-    for pat_stop in [r"\bSPELL\s+LORE\b", r"\bPRAYER\s+LORE\b", r"\bMANIFESTATION\s+LORE\b", r"\bSPEARHEAD\b", r"\bREGIMENTS\s+OF\s+RENOWN\b"]:
+    for pat_stop in [r"SPELL\s+LORE", r"PRAYER\s+LORE", r"MANIFESTATION\s+LORE", r"SPEARHEAD", r"REGIMENTS\s+OF\s+RENOWN", r"ARMIES\s+OF\s+RENOWN"]:
         m_s = _trova_sezione_reale(testo_pagina, pat_stop)
         if m_s:
             marcatori_fine.append(m_s.start())
     marcatori_fine = sorted(set(marcatori_fine))
 
-    def _estrai_slice_sezione(match_inizio, max_len=5000):
+    def _estrai_slice_sezione(match_inizio, max_len=6000):
         if not match_inizio:
             return ""
         start_pos = match_inizio.end()
@@ -943,40 +954,51 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
         return testo_pagina[start_pos:end_pos]
 
     n_form, n_traits, n_art = 0, 0, 0
-    nomi_gia_usati = set()
 
     # 1. FORMAZIONI DI BATTAGLIA
-    testo_bf = _estrai_slice_sezione(m_bf, max_len=6000)
+    testo_bf = _estrai_slice_sezione(m_bf, max_len=6500)
     if testo_bf:
         if fazione not in formazioni_db or not isinstance(formazioni_db[fazione], dict):
             formazioni_db[fazione] = {}
-        lista_bf = _estrai_blocchi_regole_sezione(testo_bf)
-        for ab_f in lista_bf:
-            n_low = ab_f["nome"].strip().lower()
-            if n_low in nomi_gia_usati:
-                continue
-            nomi_gia_usati.add(n_low)
-            mods_p = {
-                k: v for k, v in ab_f["modificatori"].items()
-                if k in ["bonus_rend", "bonus_atk", "bonus_dmg", "mod_hit", "mod_wnd", "bonus_save", "ward_nativo", "bonus_movimento", "bonus_controllo", "crit_on"]
-            }
-            formazioni_db[fazione][ab_f["nome"]] = {
-                "fase_attivazione": _mappa_fase_formazione(ab_f["fasi"], ab_f["tipo"]),
-                "monouso": ab_f["once_per_battle"],
-                "modificatori": mods_p,
-                "descrizione": ab_f["descrizione"]
-            }
-            n_form += 1
+        linee_bf = [l.strip() for l in testo_bf.split("\n") if l.strip()]
+        pattern_fase = re.compile(
+            r"^(?:Passive|Once Per (?:Turn|Battle).*|Any .* Phase|Your .* Phase|Enemy .* Phase|Deployment Phase|Start of .*|End of .*|Reaction:.*)$",
+            re.IGNORECASE
+        )
+        indici_bf = [i for i, l in enumerate(linee_bf) if pattern_fase.match(l)]
+        for idx_pos, start_i in enumerate(indici_bf):
+            end_i = indici_bf[idx_pos + 1] if idx_pos + 1 < len(indici_bf) else min(len(linee_bf), start_i + 12)
+            # Il nome della Formazione su Wahapedia è sulla riga subito sopra l'header di fase
+            nome_formazione = ""
+            if start_i > 0:
+                cand_nome = linee_bf[start_i - 1].strip(" •:-")
+                if 3 <= len(cand_nome) <= 45 and not any(k in cand_nome.lower() for k in ["keywords", "effect:", "declare:", "points", "battle profile"]):
+                    nome_formazione = cand_nome.title()
+
+            blocco_txt = "\n".join(linee_bf[start_i:end_i])
+            if "effect:" in blocco_txt.lower() or "effetto:" in blocco_txt.lower():
+                ab_f = analizza_abilita_warscroll(blocco_txt)
+                if ab_f:
+                    nome_finale = nome_formazione if nome_formazione else ab_f["nome"].strip()
+                    if nome_finale.lower() in ABILITA_CORE_DA_IGNORARE:
+                        continue
+                    mods_p = {
+                        k: v for k, v in ab_f["modificatori"].items()
+                        if k in ["bonus_rend", "bonus_atk", "bonus_dmg", "mod_hit", "mod_wnd", "bonus_save", "ward_nativo", "bonus_movimento", "bonus_controllo", "crit_on"]
+                    }
+                    formazioni_db[fazione][nome_finale] = {
+                        "fase_attivazione": _mappa_fase_formazione(ab_f["fasi"], ab_f["tipo"]),
+                        "monouso": ab_f["once_per_battle"],
+                        "modificatori": mods_p,
+                        "descrizione": ab_f["descrizione"]
+                    }
+                    n_form += 1
 
     # 2. TRATTI EROICI (Heroic Traits)
     testo_ht = _estrai_slice_sezione(m_ht, max_len=4500)
     if testo_ht:
         lista_ht = _estrai_blocchi_regole_sezione(testo_ht)
         for ab_t in lista_ht:
-            n_low = ab_t["nome"].strip().lower()
-            if n_low in nomi_gia_usati:
-                continue
-            nomi_gia_usati.add(n_low)
             mods_t = {
                 k: v for k, v in ab_t["modificatori"].items()
                 if k in ["bonus_save", "mod_hit", "mod_wnd", "bonus_atk", "bonus_rend", "bonus_dmg", "ward_nativo", "bonus_movimento", "bonus_salute", "bonus_controllo", "crit_on", "mod_hit_subito"]
@@ -994,10 +1016,6 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
     if testo_ap:
         lista_ap = _estrai_blocchi_regole_sezione(testo_ap)
         for ab_a in lista_ap:
-            n_low = ab_a["nome"].strip().lower()
-            if n_low in nomi_gia_usati:
-                continue
-            nomi_gia_usati.add(n_low)
             mods_a = {
                 k: v for k, v in ab_a["modificatori"].items()
                 if k in ["bonus_save", "mod_hit", "mod_wnd", "bonus_atk", "bonus_rend", "bonus_dmg", "ward_nativo", "bonus_movimento", "bonus_salute", "bonus_controllo", "crit_on", "mod_hit_subito"]

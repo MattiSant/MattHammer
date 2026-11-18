@@ -107,9 +107,36 @@ def render_forgia_db():
     v_key = st.session_state["forgia_version"]
 
     opzioni_db = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])    
-    # Mantiene in memoria la tab attiva anche dopo i rerun di Streamlit
-    if "forgia_tab_attiva" not in st.session_state:
-        st.session_state["forgia_tab_attiva"] = 0
+    # CSS per trasformare il radio orizzontale in schede dorate persistenti
+    st.markdown("""
+    <style>
+        div[data-testid="stRadio"][aria-label="Sezioni Forgia"] > div,
+        div[role="radiogroup"]:has(input[name*="forgia_tab_attiva"]) {
+            gap: 8px;
+        }
+        div[data-testid="stMainBlockContainer"] div[role="radiogroup"] label div:first-child {
+            display: none !important;
+        }
+        div[data-testid="stMainBlockContainer"] div[role="radiogroup"] label {
+            background-color: #1a120b;
+            border: 1px solid #4a3723;
+            border-radius: 6px 6px 0 0;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        div[data-testid="stMainBlockContainer"] div[role="radiogroup"] label:has(input:checked) {
+            background: linear-gradient(180deg, #3d2c1b 0%, #20150b 100%) !important;
+            border-top: 3px solid #d4af37 !important;
+            border-color: #8c6d46 !important;
+        }
+        div[data-testid="stMainBlockContainer"] div[role="radiogroup"] label:has(input:checked) p {
+            color: #f7d57f !important;
+            font-family: 'Cinzel', serif !important;
+            font-weight: 700 !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
     nomi_tabs = [
         "📜 Forgia Warscroll",
@@ -117,16 +144,16 @@ def render_forgia_db():
         "✨ Tratti & Artefatti",
         "🗑️ Gestione / Elimina Unità"
     ]
-    
-    # Crea le tabs tracciando l'indice corrente
-    tabs_creati = st.tabs(nomi_tabs)
-    
-    tab_unita = tabs_creati[0]
-    tab_formazioni = tabs_creati[1]
-    tab_tratti_artefatti = tabs_creati[2]
-    tab_elimina = tabs_creati[3]
 
-    with tab_unita:
+    tab_attiva = st.radio(
+        "Sezioni Forgia",
+        nomi_tabs,
+        horizontal=True,
+        label_visibility="collapsed",
+        key="forgia_tab_attiva"
+    )
+
+    if tab_attiva == "📜 Forgia Warscroll":
         
         # ==========================================
         # CARICAMENTO / RESET
@@ -629,7 +656,7 @@ def render_forgia_db():
     # ==========================================
     # TAB: FORMAZIONI DI BATTAGLIA (MULTI-MODIFICATORE)
     # ==========================================
-    with tab_formazioni:
+    elif tab_attiva == "⚔️ Formazioni di Battaglia":
         st.markdown('<div class="subsection-title">Archivio Formazioni di Battaglia</div>', unsafe_allow_html=True)
         st.caption("Configura le Formazioni ufficiali per fazione associando regole, tempistiche e modificatori numerici attivi.")
         
@@ -731,7 +758,7 @@ def render_forgia_db():
     # ==========================================
     # TAB: TRATTI EROICI & ARTEFATTI (BLINDATO CON CHIAVI UNICHE)
     # ==========================================
-    with tab_tratti_artefatti:
+    elif tab_attiva == "✨ Tratti & Artefatti":
         st.markdown('<div class="subsection-title">Tratti Eroici ed Artefatti di Potere</div>', unsafe_allow_html=True)
         st.caption("Configura tratti e artefatti associando costo in punti e modificatori attivi (Save, Hit, Wound, Atk, Rend, Dmg, Ward, ecc.).")
 
@@ -915,7 +942,7 @@ def render_forgia_db():
     # ==========================================
     # TAB: GESTIONE ED ELIMINAZIONE UNITÀ DAL DB
     # ==========================================
-    with tab_elimina:
+    elif tab_attiva == "🗑️ Gestione / Elimina Unità":
         st.markdown('<div class="subsection-title">Eliminazione Protetta dal Database</div>', unsafe_allow_html=True)
         st.caption("Rimuovi in sicurezza profili obsoleti o non più necessari.")
         
