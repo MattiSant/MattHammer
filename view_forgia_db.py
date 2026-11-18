@@ -264,7 +264,7 @@ def render_forgia_db():
                         traits_db_curr = _carica_json_ausiliario(TRAITS_FILE, {})
                         art_db_curr = _carica_json_ausiliario(ARTEFACTS_FILE, {})
 
-                        testo_reg_opt = inp_waha if len(inp_waha.strip()) > 300 else ""
+                        testo_reg_opt = inp_waha.strip() if (inp_waha.strip().startswith("http") or len(inp_waha.strip()) > 300) else ""
                         nf, nt, na, msg_r, ok_r = sincronizza_regole_fazione_da_wahapedia(
                             faz_sync, form_db_curr, traits_db_curr, art_db_curr, url_o_testo_opzionale=testo_reg_opt
                         )

@@ -862,27 +862,42 @@ def _estrai_blocchi_regole_sezione(testo_sezione):
     return risultati
 
 
+def _trova_sezione_reale(testo, pattern_titolo):
+    """
+    Trova la vera sezione nel corpo della pagina Wahapedia, saltando
+    le voci dell'Indice (Table of Contents) in cima alla pagina.
+    """
+    matches = list(re.finditer(pattern_titolo, testo, re.IGNORECASE))
+    if not matches:
+        return None
+    # Scorre i match e prende il primo che ha almeno un 'Effect:' nei 2500 caratteri successivi
+    for m in matches:
+        finestra = testo[m.end():m.end() + 2500].lower()
+        if "effect:" in finestra or "effetto:" in finestra:
+            return m
+    return matches[-1]
+
+
 def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, artefacts_db, url_o_testo_opzionale=""):
     """
-    Scarica la pagina regole della fazione da Wahapedia (https://wahapedia.ru/aos4/factions/<slug>)
-    oppure analizza il testo incollato, ed estrae automaticamente:
-    1) Battle Formations -> salvate in formazioni_db[fazione]
-    2) Heroic Traits     -> salvati in traits_db
-    3) Artefacts of Power -> salvati in artefacts_db
-    Restituisce: (n_form, n_traits, n_art, messaggio_stato, successo_bool)
+    Scarica la pagina regole della fazione da Wahapedia (con slash finale '/')
+    oppure analizza il testo incollato, saltando l'indice in alto e separando
+    in modo netto Battle Formations, Heroic Traits e Artefacts of Power.
     """
-    if url_o_testo_opzionale and not url_o_testo_opzionale.startswith("http"):
-        fazione = estrai_fazione_da_url_o_testo(url_o_testo_opzionale, default_fazione=fazione)
+    inp = (url_o_testo_opzionale or "").strip()
+    if inp:
+        fazione = estrai_fazione_da_url_o_testo(inp, default_fazione=fazione)
 
     slug_fazione = FAZIONI_SLUG_WAHAPEDIA.get(fazione, fazione.lower().replace(" ", "-"))
-    url_fazione = f"https://wahapedia.ru/aos4/factions/{slug_fazione}"
+    url_fazione = f"https://wahapedia.ru/aos4/factions/{slug_fazione}/"
 
-    inp = (url_o_testo_opzionale or "").strip()
     testo_pagina = ""
     righe_html_pagina = []
 
     if not inp or inp.startswith("http"):
         url_target = inp if (inp.startswith("http") and "warscrolls" not in inp) else url_fazione
+        if not url_target.endswith("/"):
+            url_target += "/"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
@@ -903,76 +918,65 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
     else:
         testo_pagina = _normalizza_trattini(inp)
 
+    # Trova le vere sezioni nel corpo pagina (saltando l'indice in cima!)
+    m_bf = _trova_sezione_reale(testo_pagina, r"\bBATTLE\s+FORMATIONS\b")
+    m_ht = _trova_sezione_reale(testo_pagina, r"\bHEROIC\s+TRAITS\b")
+    m_ap = _trova_sezione_reale(testo_pagina, r"\bARTEFACTS\s+OF\s+POWER\b")
+
+    # Calcola i confini esatti di ogni sezione ordinandoli per posizione nel testo
+    marcatori_fine = []
+    for m_x in (m_bf, m_ht, m_ap):
+        if m_x:
+            marcatori_fine.append(m_x.start())
+    for pat_stop in [r"\bSPELL\s+LORE\b", r"\bPRAYER\s+LORE\b", r"\bMANIFESTATION\s+LORE\b", r"\bSPEARHEAD\b", r"\bREGIMENTS\s+OF\s+RENOWN\b"]:
+        m_s = _trova_sezione_reale(testo_pagina, pat_stop)
+        if m_s:
+            marcatori_fine.append(m_s.start())
+    marcatori_fine = sorted(set(marcatori_fine))
+
+    def _estrai_slice_sezione(match_inizio, max_len=5000):
+        if not match_inizio:
+            return ""
+        start_pos = match_inizio.end()
+        prossimi = [p for p in marcatori_fine if p > start_pos]
+        end_pos = min(prossimi[0], start_pos + max_len) if prossimi else min(len(testo_pagina), start_pos + max_len)
+        return testo_pagina[start_pos:end_pos]
+
     n_form, n_traits, n_art = 0, 0, 0
+    nomi_gia_usati = set()
 
-    # 1. Estrazione Formazioni di Battaglia leggendo la tabella BATTLE PROFILE ufficiale
-    formazioni_trovate = {}
-    capturing_profile = False
-    for r in righe_html_pagina:
-        r_joined = " ".join(r).upper()
-        if "BATTLE PROFILE" in r_joined and ("NAME" in r_joined or "POINTS" in r_joined):
-            capturing_profile = True
-            continue
-        if capturing_profile:
-            if any(x in r_joined for x in ["HEROIC TRAITS", "ARTEFACTS", "SPELL LORE"]):
-                capturing_profile = False
+    # 1. FORMAZIONI DI BATTAGLIA
+    testo_bf = _estrai_slice_sezione(m_bf, max_len=6000)
+    if testo_bf:
+        if fazione not in formazioni_db or not isinstance(formazioni_db[fazione], dict):
+            formazioni_db[fazione] = {}
+        lista_bf = _estrai_blocchi_regole_sezione(testo_bf)
+        for ab_f in lista_bf:
+            n_low = ab_f["nome"].strip().lower()
+            if n_low in nomi_gia_usati:
                 continue
-            if len(r) >= 2 and r[0].lower() not in ["name", "points", "battle profile"]:
-                nome_form = r[0].strip()
-                pt_form = estrai_intero_sicuro(r[1], 0)
-                if nome_form and len(nome_form) < 40:
-                    formazioni_trovate[nome_form.lower()] = {"nome_reale": nome_form, "punti": pt_form}
-
-    # Estraiamo i testi completi delle abilità dalla pagina tramite il parser
-    linee = [l.strip() for l in testo_pagina.split("\n") if l.strip()]
-    pattern_header_fase = re.compile(
-        r"^(?:Passive|Once Per (?:Turn|Battle).*|Any .* Phase|Your .* Phase|Enemy .* Phase|Deployment Phase|Start of .*|End of .*|Reaction:.*)$",
-        re.IGNORECASE
-    )
-
-    indici_inizio = [i for i, l in enumerate(linee) if pattern_header_fase.match(l)]
-    abilita_estratte = []
-    for idx_pos, start_i in enumerate(indici_inizio):
-        end_i = indici_inizio[idx_pos + 1] if idx_pos + 1 < len(indici_inizio) else min(len(linee), start_i + 12)
-        blocco_linee = [linee[start_i - 1]] if start_i > 0 else []
-        for l_sub in linee[start_i:end_i]:
-            blocco_linee.append(l_sub)
-        blocco_txt = "\n".join(blocco_linee)
-        if "effect:" in blocco_txt.lower() or "effetto:" in blocco_txt.lower():
-            ab_p = analizza_abilita_warscroll(blocco_txt)
-            if ab_p:
-                abilita_estratte.append(ab_p)
-
-    if fazione not in formazioni_db or not isinstance(formazioni_db[fazione], dict):
-        formazioni_db[fazione] = {}
-
-    # Associa i testi estratti ai veri nomi delle formazioni trovate nella tabella Battle Profile
-    for ab in abilita_estratte:
-        n_low = ab["nome"].strip().lower()
-        if n_low in formazioni_trovate:
-            nome_ufficiale = formazioni_trovate[n_low]["nome_reale"]
+            nomi_gia_usati.add(n_low)
             mods_p = {
-                k: v for k, v in ab["modificatori"].items()
+                k: v for k, v in ab_f["modificatori"].items()
                 if k in ["bonus_rend", "bonus_atk", "bonus_dmg", "mod_hit", "mod_wnd", "bonus_save", "ward_nativo", "bonus_movimento", "bonus_controllo", "crit_on"]
             }
-            formazioni_db[fazione][nome_ufficiale] = {
-                "fase_attivazione": _mappa_fase_formazione(ab["fasi"], ab["tipo"]),
-                "monouso": ab["once_per_battle"],
+            formazioni_db[fazione][ab_f["nome"]] = {
+                "fase_attivazione": _mappa_fase_formazione(ab_f["fasi"], ab_f["tipo"]),
+                "monouso": ab_f["once_per_battle"],
                 "modificatori": mods_p,
-                "descrizione": ab["descrizione"]
+                "descrizione": ab_f["descrizione"]
             }
             n_form += 1
 
-    # 2. Estrazione Tratti Eroici (Heroic Traits) e 3. Artefatti di Potere (Artefacts of Power)
-    idx_ht = re.search(r"\bHEROIC\s+TRAITS\b", testo_pagina, re.IGNORECASE)
-    idx_ap = re.search(r"\bARTEFACTS\s+OF\s+POWER\b", testo_pagina, re.IGNORECASE)
-    idx_end = re.search(r"\b(?:SPELL\s+LORE|PRAYER\s+LORE|MANIFESTATION\s+LORE|SPEARHEAD)\b", testo_pagina[idx_ap.end():] if idx_ap else testo_pagina, re.IGNORECASE)
-
-    if idx_ht:
-        fine_ht = idx_ap.start() if (idx_ap and idx_ap.start() > idx_ht.end()) else idx_ht.end() + 3500
-        testo_ht = testo_pagina[idx_ht.end():fine_ht]
+    # 2. TRATTI EROICI (Heroic Traits)
+    testo_ht = _estrai_slice_sezione(m_ht, max_len=4500)
+    if testo_ht:
         lista_ht = _estrai_blocchi_regole_sezione(testo_ht)
         for ab_t in lista_ht:
+            n_low = ab_t["nome"].strip().lower()
+            if n_low in nomi_gia_usati:
+                continue
+            nomi_gia_usati.add(n_low)
             mods_t = {
                 k: v for k, v in ab_t["modificatori"].items()
                 if k in ["bonus_save", "mod_hit", "mod_wnd", "bonus_atk", "bonus_rend", "bonus_dmg", "ward_nativo", "bonus_movimento", "bonus_salute", "bonus_controllo", "crit_on", "mod_hit_subito"]
@@ -985,11 +989,15 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
             }
             n_traits += 1
 
-    if idx_ap:
-        fine_ap = (idx_ap.end() + idx_end.start()) if idx_end else (idx_ap.end() + 3500)
-        testo_ap = testo_pagina[idx_ap.end():fine_ap]
+    # 3. ARTEFATTI DI POTERE (Artefacts of Power)
+    testo_ap = _estrai_slice_sezione(m_ap, max_len=4500)
+    if testo_ap:
         lista_ap = _estrai_blocchi_regole_sezione(testo_ap)
         for ab_a in lista_ap:
+            n_low = ab_a["nome"].strip().lower()
+            if n_low in nomi_gia_usati:
+                continue
+            nomi_gia_usati.add(n_low)
             mods_a = {
                 k: v for k, v in ab_a["modificatori"].items()
                 if k in ["bonus_save", "mod_hit", "mod_wnd", "bonus_atk", "bonus_rend", "bonus_dmg", "ward_nativo", "bonus_movimento", "bonus_salute", "bonus_controllo", "crit_on", "mod_hit_subito"]
@@ -1004,5 +1012,5 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
 
     tot = n_form + n_traits + n_art
     if tot > 0:
-        return n_form, n_traits, n_art, f"{fazione}: importati {n_form} Formazioni, {n_traits} Tratti e {n_art} Artefatti!", True
-    return 0, 0, 0, f"Nessuna regola trovata per {fazione}.", False
+        return n_form, n_traits, n_art, f"{fazione}: importati {n_form} Formazioni, {n_traits} Tratti Eroici e {n_art} Artefatti!", True
+    return 0, 0, 0, f"Nessuna regola trovata per {fazione}. Verifica l'URL ({url_fazione}) o incolla il testo completo della pagina.", False

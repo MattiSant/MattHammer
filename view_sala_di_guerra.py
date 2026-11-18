@@ -315,11 +315,11 @@ def render_sala_di_guerra():
     art_disp_lead = st.session_state["art_disp_lead"]
 
     if "sdg_nome_armata" not in st.session_state:
-        st.session_state["sdg_nome_armata"] = "Armata Path to Glory"
+        st.session_state["sdg_nome_armata"] = ""
     if "sdg_fazione_armata" not in st.session_state:
-        st.session_state["sdg_fazione_armata"] = "Nighthaunt"
+        st.session_state["sdg_fazione_armata"] = "--- Seleziona Fazione ---"
     if "sdg_formazione_scelta" not in st.session_state:
-        st.session_state["sdg_formazione_scelta"] = "Death Stalkers"
+        st.session_state["sdg_formazione_scelta"] = "--- Seleziona Formazione ---"
 
     opzioni_db = ordina_unita_per_fazione_e_nome(st.session_state["db_unita"])
 
@@ -364,12 +364,23 @@ def render_sala_di_guerra():
         
         col_f1, col_f2, col_f3, col_f4 = st.columns([1.5, 1.2, 1.3, 1])
         st.session_state["sdg_nome_armata"] = col_f1.text_input(
-            "Nome della Lista", 
+            "Nome della Lista",
             value=st.session_state["sdg_nome_armata"],
+            placeholder="Inserisci il nome della tua armata...",
             key=f"inp_nome_armata_v{st.session_state['sdg_roster_version']}"
         )
-        
-        lista_fazioni_disp = ["Nighthaunt", "Blades of Khorne", "Orruk Kruleboyz", "Sylvaneth", "Grande Alleanza / Altro"]
+
+        lista_fazioni_disp = [
+            "--- Seleziona Fazione ---",
+            "Blades of Khorne", "Cities of Sigmar", "Daughters of Khaine",
+            "Disciples of Tzeentch", "Flesh-eater Courts", "Fyreslayers",
+            "Gloomspite Gitz", "Hedonites of Slaanesh", "Idoneth Deepkin",
+            "Kharadron Overlords", "Lumineth Realm-lords", "Maggotkin of Nurgle",
+            "Nighthaunt", "Ogor Mawtribes", "Orruk Kruleboyz", "Orruk Warclans",
+            "Ossiarch Bonereapers", "Seraphon", "Skaven", "Slaves to Darkness",
+            "Sons of Behemat", "Soulblight Gravelords", "Stormcast Eternals",
+            "Sylvaneth", "Grande Alleanza / Altro"
+        ]
         idx_faz = lista_fazioni_disp.index(st.session_state["sdg_fazione_armata"]) if st.session_state["sdg_fazione_armata"] in lista_fazioni_disp else 0
         st.session_state["sdg_fazione_armata"] = col_f2.selectbox("Fazione", lista_fazioni_disp, index=idx_faz)
 
@@ -392,13 +403,10 @@ def render_sala_di_guerra():
         st.caption("Formazione ufficiale associata all'armata. Regole, fasi d'attivazione e modificatori numerici sono pre-impostati da database.")
 
         fazioni_disponibili_db = st.session_state["archivio_formazioni"]
-        formazioni_fazione = fazioni_disponibili_db.get(st.session_state["sdg_fazione_armata"], {
-            "Formazione Standard": {
-                "fase_attivazione": "Nessuna", "monouso": False, "modificatori": {}, "descrizione": "Nessuna abilità speciale attiva."
-            }
-        })
-
-        lista_nomi_formazioni = list(formazioni_fazione.keys()) if isinstance(formazioni_fazione, dict) else ["Formazione Standard"]
+        
+        formazioni_fazione = fazioni_disponibili_db.get(st.session_state["sdg_fazione_armata"], {})
+        lista_nomi_formazioni = ["--- Seleziona Formazione ---"] + (list(formazioni_fazione.keys()) if isinstance(formazioni_fazione, dict) else [])
+        
         idx_form = lista_nomi_formazioni.index(st.session_state["sdg_formazione_scelta"]) if st.session_state["sdg_formazione_scelta"] in lista_nomi_formazioni else 0
         
         formazione_selezionata = st.selectbox("Nome Formazione", lista_nomi_formazioni, index=idx_form)
