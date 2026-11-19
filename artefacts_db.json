@@ -1,8 +1,1 @@
-{
-    "The Seal Of Nagash": {
-        "fazione": "Nighthaunt",
-        "punti": 0,
-        "descrizione": "This sigil, magically seared into this gheist's spectral form, binds them to Nagash so that he may readily drain their power to sustain himself at a moment's notice.\nEffect: Allocate 3 damage points to this unit ( ward rolls cannot be made for those damage points). Then, Heal (3) the friendly Nagash.",
-        "modificatori": {}
-    }
-}
+{}
