@@ -1,7 +1,7 @@
 {
     "Ruler Of The Spectral Hosts": {
         "fazione": "Nighthaunt",
-        "punti": 0,
+        "punti": 20,
         "descrizione": "Declare: Pick up to 3 friendly non- HERO NIGHTHAUNT units wholly within 12\" of this unit to be the targets.\nEffect: Roll a D3 for each target. On a 2+: If the target is damaged, Heal (X) the target, where X is an amount equal to the roll.If the target is not damaged, return a number of slain models to it with a combined Health characteristic of up to X, where X is an amount equal to the roll.",
         "modificatori": {}
     },
@@ -15,6 +15,12 @@
         "fazione": "Nighthaunt",
         "punti": 0,
         "descrizione": "Effect: While they are wholly within 6\" of this unit, friendly NIGHTHAUNT INFANTRY and CAVALRY units are not visible to enemy units more than 9\" from them.",
+        "modificatori": {}
+    },
+    "Nessuno": {
+        "fazione": "Generale",
+        "punti": 0,
+        "descrizione": "Nessun tratto assegnato.",
         "modificatori": {}
     }
 }
