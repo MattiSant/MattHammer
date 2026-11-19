@@ -794,14 +794,22 @@ _VOID_HTML_TAGS = {
 }
 
 
+def _normalizza_chiave_regola(testo):
+    """Normalizza apostrofi curvi, trattini e spazi per abbinare esattamente i nomi alla tabella punti."""
+    if not testo:
+        return ""
+    s = re.sub(r"[’‘`´]", "'", str(testo))
+    s = _normalizza_trattini(s)
+    s = re.sub(r"\s+", " ", s).strip(" :\t\n•.")
+    return s.lower()
+
+
 class _WahapediaFactionRulesParser(HTMLParser):
     """
     Parser HTML strutturale per la pagina Fazione di Wahapedia AoS 4e:
     - Intercetta i titoli di sezione <h2> (Battle Formations, Heroic Traits, Artefacts of Power).
-    - Analizza solo il contenuto dentro <div class="Columns2">.
-    - Scarta <div class="faqErrataSpoiler"> (Errata duplicati) e il fluff (<span class="ShowFluff legend4">).
-    - Estrae punti dalla tabella PitchedBattleProfile, nomi formazione da <h3>,
-      fasi da <td class="abHeader"> e testi da <div class="abBody">.
+    - Legge le tabelle (Name | Points) ovunque compaiano nella sezione (sia prima che dentro Columns2).
+    - Legge le schede abilità solo dentro <div class="Columns2">, scartando Errata e Fluff.
     """
     def __init__(self):
         super().__init__()
@@ -817,8 +825,9 @@ class _WahapediaFactionRulesParser(HTMLParser):
         self.h3_buf = []
         self.current_h3 = ""
 
-        self.in_pbp = False
-        self.pbp_depth = 0
+        # Tracciamento tabelle Name | Points (valido in tutta la sezione)
+        self.in_table = False
+        self.is_points_table = False
         self.in_tr = False
         self.in_td = False
         self.tr_cells = []
@@ -870,6 +879,18 @@ class _WahapediaFactionRulesParser(HTMLParser):
         if not self.current_section:
             return
 
+        # 1. Intercetta tabelle punti (Name | Points) sia PRIMA sia DENTRO Columns2
+        if tag_l == "table":
+            self.in_table = True
+            self.is_points_table = False
+        elif tag_l == "tr" and self.in_table:
+            self.in_tr = True
+            self.tr_cells = []
+        elif tag_l in ("td", "th") and self.in_tr:
+            self.in_td = True
+            self.td_buf = []
+
+        # 2. Ingresso nel contenitore <div class="Columns2">
         if tag_l == "div" and "columns2" in cls_tokens and not self.in_columns2:
             self.in_columns2 = True
             self.columns2_depth = 1
@@ -881,22 +902,6 @@ class _WahapediaFactionRulesParser(HTMLParser):
 
         if tag_l == "div":
             self.columns2_depth += 1
-
-        if tag_l == "div" and "pitchedbattleprofile" in cls_tokens and not self.in_pbp:
-            self.in_pbp = True
-            self.pbp_depth = 1
-            return
-
-        if self.in_pbp:
-            if tag_l == "div":
-                self.pbp_depth += 1
-            elif tag_l == "tr":
-                self.in_tr = True
-                self.tr_cells = []
-            elif tag_l in ("td", "th") and self.in_tr:
-                self.in_td = True
-                self.td_buf = []
-            return
 
         if tag_l == "h3":
             self.in_h3 = True
@@ -951,27 +956,32 @@ class _WahapediaFactionRulesParser(HTMLParser):
             self.columns2_depth = 0
             return
 
-        if not self.in_columns2:
+        if not self.current_section:
             return
 
-        if self.in_pbp:
-            if tag_l in ("td", "th") and self.in_td:
-                self.in_td = False
-                self.tr_cells.append(_normalizza_trattini(re.sub(r"\s+", " ", "".join(self.td_buf))).strip())
-            elif tag_l == "tr" and self.in_tr:
-                self.in_tr = False
-                if len(self.tr_cells) >= 2 and self.tr_cells[0].lower() not in ("name", "battle profile"):
+        # 1. Chiusura righe tabella punti (valida anche fuori da Columns2)
+        if tag_l in ("td", "th") and self.in_td:
+            self.in_td = False
+            self.tr_cells.append(_normalizza_trattini(re.sub(r"\s+", " ", "".join(self.td_buf))).strip())
+        elif tag_l == "tr" and self.in_tr:
+            self.in_tr = False
+            if len(self.tr_cells) >= 2:
+                c0 = self.tr_cells[0].strip().lower()
+                c1 = self.tr_cells[1].strip().lower()
+                if c0 == "name" and "point" in c1:
+                    self.is_points_table = True
+                elif self.is_points_table and c0 not in ("name", "battle profile", ""):
                     nome_orig = self.tr_cells[0].strip()
                     pt = estrai_intero_sicuro(self.tr_cells[1], default=0)
-                    self.profile_map[self.current_section][nome_orig.lower()] = {"nome": nome_orig, "punti": pt}
-            elif tag_l == "div":
-                self.pbp_depth -= 1
-                if self.pbp_depth <= 0:
-                    self.in_pbp = False
-            if tag_l == "div":
-                self.columns2_depth -= 1
-                if self.columns2_depth <= 0:
-                    self.in_columns2 = False
+                    self.profile_map[self.current_section][_normalizza_chiave_regola(nome_orig)] = {
+                        "nome": nome_orig,
+                        "punti": pt
+                    }
+        elif tag_l == "table" and self.in_table:
+            self.in_table = False
+            self.is_points_table = False
+
+        if not self.in_columns2:
             return
 
         if tag_l == "h3" and self.in_h3:
@@ -1016,17 +1026,16 @@ class _WahapediaFactionRulesParser(HTMLParser):
             return
         if self.in_h2:
             self.h2_buf.append(data)
-        elif self.in_pbp and self.in_td:
+        if self.in_td:
             self.td_buf.append(data)
-        elif self.in_h3:
+        if self.in_h3:
             self.h3_buf.append(data)
-        elif self.in_ab_header:
+        if self.in_ab_header:
             self.ab_header_buf.append(data)
-        elif self.in_ab_body:
+        if self.in_ab_body:
             if self.in_first_b:
                 self.first_b_buf.append(data)
             self.ab_body_buf.append(data)
-
 
 def _mappa_fase_formazione(fasi_ab, tipo_ab):
     """Converte la fase estratta da ability_parser nel formato del menu Formazioni."""
@@ -1055,8 +1064,8 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
     Scarica l'HTML della pagina Fazione di Wahapedia (https://wahapedia.ru/aos4/factions/<slug>/)
     e legge in modo chirurgico le sezioni <h2> -> <div class="Columns2"> per:
     1) Battle Formations -> formazioni_db[fazione] (nome da <h3>)
-    2) Heroic Traits     -> traits_db
-    3) Artefacts of Power -> artefacts_db
+    2) Heroic Traits     -> traits_db (con punti da tabella Name | Points)
+    3) Artefacts of Power -> artefacts_db (con punti da tabella Name | Points)
     """
     inp = (url_o_testo_opzionale or "").strip()
     if inp:
@@ -1111,7 +1120,7 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
             if not ab_f:
                 continue
             nome_form = item["h3"].strip() if item["h3"].strip() else ab_f["nome"].strip()
-            prof = parser.profile_map["formations"].get(nome_form.lower())
+            prof = parser.profile_map["formations"].get(_normalizza_chiave_regola(nome_form))
             if prof:
                 nome_form = prof["nome"]
             mods_p = {k: v for k, v in ab_f["modificatori"].items() if k in MOD_FORM_KEYS}
@@ -1130,8 +1139,8 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
         if not ab_t:
             continue
         nome_grezzo = item["ability_name"].strip() or ab_t["nome"].strip()
-        prof = parser.profile_map["traits"].get(nome_grezzo.lower())
-        nome_t = prof["nome"] if prof else nome_grezzo.title()
+        prof = parser.profile_map["traits"].get(_normalizza_chiave_regola(nome_grezzo))
+        nome_t = prof["nome"].title() if prof else nome_grezzo.title()
         punti_t = prof["punti"] if prof else 0
         mods_t = {k: v for k, v in ab_t["modificatori"].items() if k in MOD_SUP_KEYS}
         traits_db[nome_t] = {
@@ -1149,8 +1158,8 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
         if not ab_a:
             continue
         nome_grezzo = item["ability_name"].strip() or ab_a["nome"].strip()
-        prof = parser.profile_map["artefacts"].get(nome_grezzo.lower())
-        nome_a = prof["nome"] if prof else nome_grezzo.title()
+        prof = parser.profile_map["artefacts"].get(_normalizza_chiave_regola(nome_grezzo))
+        nome_a = prof["nome"].title() if prof else nome_grezzo.title()
         punti_a = prof["punti"] if prof else 0
         mods_a = {k: v for k, v in ab_a["modificatori"].items() if k in MOD_SUP_KEYS}
         artefacts_db[nome_a] = {
