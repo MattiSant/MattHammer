@@ -7,7 +7,7 @@
     },
     "Lightshard Of The Harvest Moon": {
         "fazione": "Nighthaunt",
-        "punti": 0,
+        "punti": 20,
         "descrizione": "Effect: If this unit is in combat, add 1 to the Attacks characteristic of melee weapons used by friendly NIGHTHAUNT units while they are wholly within 12\" of this unit for the rest of the turn.",
         "modificatori": {
             "bonus_atk": 1
@@ -55,6 +55,12 @@
         "fazione": "Nighthaunt",
         "punti": 0,
         "descrizione": "Effect: Spend up to 3 rage dice. If your opponent’s fury level is lower than yours, they must increase their fury level by 1, to a maximum of 7.\nThen, roll XD6, where X is the number of rage dice spent. This unit can move a distance in inches up to the roll but must end that move in combat with a damaged enemy unit and/or an enemy unit that has fewer models than its starting size.",
+        "modificatori": {}
+    },
+    "Nessuno": {
+        "fazione": "Generale",
+        "punti": 0,
+        "descrizione": "Nessun artefatto equipaggiato.",
         "modificatori": {}
     }
 }
