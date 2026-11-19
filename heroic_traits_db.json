@@ -1,8 +1,1 @@
-{
-    "Damned Vessel": {
-        "fazione": "Nighthaunt",
-        "punti": 0,
-        "descrizione": "With a wretched wail, a gheist's will is temporarily eclipsed as Nagash channels his power through their ragged shape.\nEffect: Each time you declare a SPELL ability for a friendly Nagash within 18\" of this unit, you can measure the range and visibility of that SPELL ability from this unit instead of that Nagash.",
-        "modificatori": {}
-    }
-}
+{}

@@ -788,6 +788,246 @@ def sincronizza_fazione_da_wahapedia(fazione, db_unita_attuale, testo_collated_o
 # FUNZIONI PER SCRAPING ARTEFATTI, TRATTI EROICI E FORMAZIONI DI BATTAGLIA
 # ========================================================================
 
+_VOID_HTML_TAGS = {
+    "img", "br", "hr", "input", "meta", "link", "col",
+    "area", "base", "embed", "param", "source", "track", "wbr"
+}
+
+
+class _WahapediaFactionRulesParser(HTMLParser):
+    """
+    Parser HTML strutturale per la pagina Fazione di Wahapedia AoS 4e:
+    - Intercetta i titoli di sezione <h2> (Battle Formations, Heroic Traits, Artefacts of Power).
+    - Analizza solo il contenuto dentro <div class="Columns2">.
+    - Scarta <div class="faqErrataSpoiler"> (Errata duplicati) e il fluff (<span class="ShowFluff legend4">).
+    - Estrae punti dalla tabella PitchedBattleProfile, nomi formazione da <h3>,
+      fasi da <td class="abHeader"> e testi da <div class="abBody">.
+    """
+    def __init__(self):
+        super().__init__()
+        self.current_section = None
+        self.in_h2 = False
+        self.h2_buf = []
+
+        self.in_columns2 = False
+        self.columns2_depth = 0
+        self.ignore_depth = 0
+
+        self.in_h3 = False
+        self.h3_buf = []
+        self.current_h3 = ""
+
+        self.in_pbp = False
+        self.pbp_depth = 0
+        self.in_tr = False
+        self.in_td = False
+        self.tr_cells = []
+        self.td_buf = []
+        self.profile_map = {"formations": {}, "traits": {}, "artefacts": {}}
+
+        self.in_ab_header = False
+        self.ab_header_buf = []
+        self.current_ab_header = ""
+
+        self.in_ab_body = False
+        self.ab_body_depth = 0
+        self.ab_body_buf = []
+        self.in_first_b = False
+        self.captured_first_b = False
+        self.first_b_buf = []
+
+        self.items = {"formations": [], "traits": [], "artefacts": []}
+
+    def handle_starttag(self, tag, attrs):
+        tag_l = tag.lower()
+        is_void = tag_l in _VOID_HTML_TAGS
+
+        if self.ignore_depth > 0:
+            if not is_void:
+                self.ignore_depth += 1
+            return
+
+        attr_dict = {k.lower(): (v or "") for k, v in attrs}
+        cls_tokens = set(attr_dict.get("class", "").lower().split())
+        style_s = attr_dict.get("style", "").replace(" ", "").lower()
+
+        if (
+            tag_l in ("script", "style", "nav", "footer", "noscript")
+            or "faqerrataspoiler" in cls_tokens
+            or ("showfluff" in cls_tokens and "legend4" in cls_tokens)
+            or "display:none" in style_s
+            or "visibility:hidden" in style_s
+        ):
+            if not is_void:
+                self.ignore_depth = 1
+            return
+
+        if tag_l == "h2":
+            self.in_h2 = True
+            self.h2_buf = []
+            return
+
+        if not self.current_section:
+            return
+
+        if tag_l == "div" and "columns2" in cls_tokens and not self.in_columns2:
+            self.in_columns2 = True
+            self.columns2_depth = 1
+            self.current_h3 = ""
+            return
+
+        if not self.in_columns2:
+            return
+
+        if tag_l == "div":
+            self.columns2_depth += 1
+
+        if tag_l == "div" and "pitchedbattleprofile" in cls_tokens and not self.in_pbp:
+            self.in_pbp = True
+            self.pbp_depth = 1
+            return
+
+        if self.in_pbp:
+            if tag_l == "div":
+                self.pbp_depth += 1
+            elif tag_l == "tr":
+                self.in_tr = True
+                self.tr_cells = []
+            elif tag_l in ("td", "th") and self.in_tr:
+                self.in_td = True
+                self.td_buf = []
+            return
+
+        if tag_l == "h3":
+            self.in_h3 = True
+            self.h3_buf = []
+            return
+
+        if tag_l == "td" and "abheader" in cls_tokens and "abkeywordsbody" not in cls_tokens:
+            self.in_ab_header = True
+            self.ab_header_buf = []
+            return
+
+        if tag_l == "div" and "abbody" in cls_tokens and not self.in_ab_body:
+            self.in_ab_body = True
+            self.ab_body_depth = 1
+            self.ab_body_buf = []
+            self.captured_first_b = False
+            self.in_first_b = False
+            self.first_b_buf = []
+            return
+
+        if self.in_ab_body:
+            if tag_l == "div":
+                self.ab_body_depth += 1
+            elif tag_l == "br":
+                self.ab_body_buf.append("\n")
+            elif tag_l == "b" and not self.captured_first_b:
+                self.in_first_b = True
+            elif tag_l in ("span", "b", "strong", "a"):
+                self.ab_body_buf.append(" ")
+
+    def handle_endtag(self, tag):
+        tag_l = tag.lower()
+        if tag_l in _VOID_HTML_TAGS:
+            return
+
+        if self.ignore_depth > 0:
+            self.ignore_depth -= 1
+            return
+
+        if tag_l == "h2" and self.in_h2:
+            self.in_h2 = False
+            titolo = _normalizza_trattini(re.sub(r"\s+", " ", "".join(self.h2_buf))).strip().lower()
+            if "battle formations" in titolo:
+                self.current_section = "formations"
+            elif "heroic traits" in titolo:
+                self.current_section = "traits"
+            elif "artefacts of power" in titolo:
+                self.current_section = "artefacts"
+            else:
+                self.current_section = None
+            self.in_columns2 = False
+            self.columns2_depth = 0
+            return
+
+        if not self.in_columns2:
+            return
+
+        if self.in_pbp:
+            if tag_l in ("td", "th") and self.in_td:
+                self.in_td = False
+                self.tr_cells.append(_normalizza_trattini(re.sub(r"\s+", " ", "".join(self.td_buf))).strip())
+            elif tag_l == "tr" and self.in_tr:
+                self.in_tr = False
+                if len(self.tr_cells) >= 2 and self.tr_cells[0].lower() not in ("name", "battle profile"):
+                    nome_orig = self.tr_cells[0].strip()
+                    pt = estrai_intero_sicuro(self.tr_cells[1], default=0)
+                    self.profile_map[self.current_section][nome_orig.lower()] = {"nome": nome_orig, "punti": pt}
+            elif tag_l == "div":
+                self.pbp_depth -= 1
+                if self.pbp_depth <= 0:
+                    self.in_pbp = False
+            if tag_l == "div":
+                self.columns2_depth -= 1
+                if self.columns2_depth <= 0:
+                    self.in_columns2 = False
+            return
+
+        if tag_l == "h3" and self.in_h3:
+            self.in_h3 = False
+            txt_h3 = _normalizza_trattini(re.sub(r"\s+", " ", "".join(self.h3_buf))).strip()
+            if txt_h3 and txt_h3.lower() != "errata":
+                self.current_h3 = txt_h3
+            return
+
+        if tag_l == "td" and self.in_ab_header:
+            self.in_ab_header = False
+            self.current_ab_header = _normalizza_trattini(re.sub(r"\s+", " ", "".join(self.ab_header_buf))).strip()
+            return
+
+        if self.in_ab_body:
+            if tag_l == "b" and self.in_first_b:
+                self.in_first_b = False
+                self.captured_first_b = True
+            elif tag_l == "div":
+                self.ab_body_depth -= 1
+                if self.ab_body_depth <= 0:
+                    self.in_ab_body = False
+                    body_txt = _normalizza_trattini("".join(self.ab_body_buf))
+                    body_txt = re.sub(r"[ \t]+", " ", body_txt)
+                    body_txt = re.sub(r"\s*:\s*", ": ", body_txt)
+                    body_txt = re.sub(r"\n\s*\n+", "\n", body_txt).strip()
+                    first_b = _normalizza_trattini(re.sub(r"\s+", " ", "".join(self.first_b_buf))).strip(" :\t\n")
+                    self.items[self.current_section].append({
+                        "h3": self.current_h3,
+                        "ability_name": first_b,
+                        "header": self.current_ab_header,
+                        "body": body_txt
+                    })
+
+        if tag_l == "div":
+            self.columns2_depth -= 1
+            if self.columns2_depth <= 0:
+                self.in_columns2 = False
+
+    def handle_data(self, data):
+        if self.ignore_depth > 0:
+            return
+        if self.in_h2:
+            self.h2_buf.append(data)
+        elif self.in_pbp and self.in_td:
+            self.td_buf.append(data)
+        elif self.in_h3:
+            self.h3_buf.append(data)
+        elif self.in_ab_header:
+            self.ab_header_buf.append(data)
+        elif self.in_ab_body:
+            if self.in_first_b:
+                self.first_b_buf.append(data)
+            self.ab_body_buf.append(data)
+
+
 def _mappa_fase_formazione(fasi_ab, tipo_ab):
     """Converte la fase estratta da ability_parser nel formato del menu Formazioni."""
     f_str = " ".join(fasi_ab).lower()
@@ -810,92 +1050,13 @@ def _mappa_fase_formazione(fasi_ab, tipo_ab):
     return "Passiva / Permanente"
 
 
-def _estrai_blocchi_regole_sezione(testo_sezione):
-    """
-    Estrae tutte le abilità (Tratti o Artefatti) presenti in una sezione
-    della pagina Fazione di Wahapedia AoS 4e, inclusi eventuali costi in punti (es. '20 pts').
-    """
-    risultati = []
-    nomi_visti = set()
-    linee = [l.strip() for l in testo_sezione.split("\n") if l.strip()]
-
-    pattern_header_fase = re.compile(
-        r"^(?:Passive|Once Per (?:Turn|Battle).*|Any .* Phase|Your .* Phase|Enemy .* Phase|Deployment Phase|Start of .*|End of .*|Reaction:.*)$",
-        re.IGNORECASE
-    )
-
-    indici_inizio = [i for i, l in enumerate(linee) if pattern_header_fase.match(l)]
-    for idx_pos, start_i in enumerate(indici_inizio):
-        end_i = indici_inizio[idx_pos + 1] if idx_pos + 1 < len(indici_inizio) else min(len(linee), start_i + 12)
-        blocco_linee = []
-        punti_trovati = 0
-
-        finestra_pts = "\n".join(linee[max(0, start_i - 1):min(len(linee), start_i + 3)])
-        m_pts = re.search(r"\b(\d{1,3})\s*pts?\b", finestra_pts, re.IGNORECASE)
-        if m_pts:
-            val_p = int(m_pts.group(1))
-            if val_p <= 100:
-                punti_trovati = val_p
-
-        for l_sub in linee[start_i:end_i]:
-            if l_sub.upper().startswith(("KEYWORDS", "SPELL LORE", "PRAYER LORE", "MANIFESTATION LORE")):
-                break
-            if "keyword is used in the following" in l_sub.lower():
-                break
-            l_pulita = re.sub(r"\b\d{1,3}\s*pts?\b", "", l_sub, flags=re.IGNORECASE).strip()
-            if l_pulita:
-                blocco_linee.append(l_pulita)
-
-        blocco_txt = "\n".join(blocco_linee)
-        if "effect:" in blocco_txt.lower() or "effetto:" in blocco_txt.lower():
-            ab_parsed = analizza_abilita_warscroll(blocco_txt)
-            if ab_parsed:
-                nome_ab = ab_parsed["nome"].strip()
-                nome_low = nome_ab.lower()
-                if nome_low in ABILITA_CORE_DA_IGNORARE or len(nome_ab) < 3 or len(nome_ab) > 55:
-                    continue
-                if nome_low not in nomi_visti:
-                    nomi_visti.add(nome_low)
-                    ab_parsed["punti"] = punti_trovati
-                    risultati.append(ab_parsed)
-
-    return risultati
-
-
-def _trova_sezione_reale(testo, pattern_titolo):
-    """
-    Trova la vera intestazione di sezione nel corpo della pagina Wahapedia,
-    saltando l'Indice (Table of Contents) in cima alla pagina.
-    """
-    # Cerca il titolo come riga autonoma (non dentro una frase)
-    matches = list(re.finditer(rf"(?m)^\s*{pattern_titolo}\s*$", testo, re.IGNORECASE))
-    if not matches:
-        matches = list(re.finditer(rf"\b{pattern_titolo}\b", testo, re.IGNORECASE))
-    if not matches:
-        return None
-
-    # Scarta i match che appartengono all'indice in cima (dove gli altri titoli appaiono entro 250 caratteri)
-    candidati_validi = []
-    for m in matches:
-        subito_dopo = testo[m.end():m.end() + 250].upper()
-        # Se subito dopo il titolo compaiono altri 2 titoli di sezione, è l'indice!
-        altri_titoli = sum(
-            1 for kw in ["BATTLE TRAITS", "BATTLE FORMATIONS", "HEROIC TRAITS", "ARTEFACTS OF POWER", "SPELL LORE", "PRAYER LORE"]
-            if kw in subito_dopo and kw not in m.group(0).upper()
-        )
-        if altri_titoli >= 2:
-            continue
-        candidati_validi.append(m)
-
-    # Prende l'ultima occorrenza valida (nel corpo della pagina, mai nell'indice)
-    return candidati_validi[-1] if candidati_validi else matches[-1]
-
-
 def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, artefacts_db, url_o_testo_opzionale=""):
     """
-    Scarica la pagina regole della fazione da Wahapedia (con slash finale '/')
-    oppure analizza il testo incollato, saltando l'indice in alto e separando
-    in modo netto Battle Formations, Heroic Traits e Artefacts of Power.
+    Scarica l'HTML della pagina Fazione di Wahapedia (https://wahapedia.ru/aos4/factions/<slug>/)
+    e legge in modo chirurgico le sezioni <h2> -> <div class="Columns2"> per:
+    1) Battle Formations -> formazioni_db[fazione] (nome da <h3>)
+    2) Heroic Traits     -> traits_db
+    3) Artefacts of Power -> artefacts_db
     """
     inp = (url_o_testo_opzionale or "").strip()
     if inp:
@@ -904,8 +1065,7 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
     slug_fazione = FAZIONI_SLUG_WAHAPEDIA.get(fazione, fazione.lower().replace(" ", "-"))
     url_fazione = f"https://wahapedia.ru/aos4/factions/{slug_fazione}/"
 
-    testo_pagina = ""
-
+    html_sorgente = ""
     if not inp or inp.startswith("http"):
         url_target = inp if (inp.startswith("http") and "warscrolls" not in inp) else url_fazione
         if not url_target.endswith("/"):
@@ -917,118 +1077,91 @@ def sincronizza_regole_fazione_da_wahapedia(fazione, formazioni_db, traits_db, a
         try:
             resp = requests.get(url_target, headers=headers, timeout=15)
             if resp.status_code == 200:
-                parser = _WahapediaHTMLParser()
-                parser.feed(resp.text)
-                testo_pagina = parser.get_clean_text()
+                html_sorgente = resp.text
             elif resp.status_code in [403, 503]:
-                return 0, 0, 0, f"Cloudflare (403) ha protetto {url_target}. Apri {url_fazione} nel browser, premi CTRL+A / CTRL+C e incolla il testo nel box!", False
+                return 0, 0, 0, f"Cloudflare (403) ha protetto {url_target}.", False
             else:
                 return 0, 0, 0, f"Pagina regole fazione non trovata (HTTP {resp.status_code}): {url_target}", False
         except Exception as e:
             return 0, 0, 0, f"Errore di rete durante il download delle regole di {fazione}: {e}", False
     else:
-        testo_pagina = _normalizza_trattini(inp)
+        html_sorgente = inp
 
-    # Trova le vere sezioni nel corpo pagina (saltando l'indice in cima)
-    m_bf = _trova_sezione_reale(testo_pagina, r"BATTLE\s+FORMATIONS")
-    m_ht = _trova_sezione_reale(testo_pagina, r"HEROIC\s+TRAITS")
-    m_ap = _trova_sezione_reale(testo_pagina, r"ARTEFACTS\s+OF\s+POWER")
-
-    # Confini ordinati di tutte le sezioni principali della pagina
-    marcatori_fine = []
-    for m_x in (m_bf, m_ht, m_ap):
-        if m_x:
-            marcatori_fine.append(m_x.start())
-    for pat_stop in [r"SPELL\s+LORE", r"PRAYER\s+LORE", r"MANIFESTATION\s+LORE", r"SPEARHEAD", r"REGIMENTS\s+OF\s+RENOWN", r"ARMIES\s+OF\s+RENOWN"]:
-        m_s = _trova_sezione_reale(testo_pagina, pat_stop)
-        if m_s:
-            marcatori_fine.append(m_s.start())
-    marcatori_fine = sorted(set(marcatori_fine))
-
-    def _estrai_slice_sezione(match_inizio, max_len=6000):
-        if not match_inizio:
-            return ""
-        start_pos = match_inizio.end()
-        prossimi = [p for p in marcatori_fine if p > start_pos]
-        end_pos = min(prossimi[0], start_pos + max_len) if prossimi else min(len(testo_pagina), start_pos + max_len)
-        return testo_pagina[start_pos:end_pos]
+    parser = _WahapediaFactionRulesParser()
+    parser.feed(html_sorgente)
 
     n_form, n_traits, n_art = 0, 0, 0
 
-    # 1. FORMAZIONI DI BATTAGLIA
-    testo_bf = _estrai_slice_sezione(m_bf, max_len=6500)
-    if testo_bf:
+    MOD_FORM_KEYS = {
+        "bonus_rend", "bonus_atk", "bonus_dmg", "mod_hit", "mod_wnd",
+        "bonus_save", "ward_nativo", "bonus_movimento", "bonus_controllo", "crit_on"
+    }
+    MOD_SUP_KEYS = {
+        "bonus_save", "mod_hit", "mod_wnd", "bonus_atk", "bonus_rend", "bonus_dmg",
+        "ward_nativo", "bonus_movimento", "bonus_salute", "bonus_controllo", "crit_on", "mod_hit_subito"
+    }
+
+    # 1. BATTLE FORMATIONS
+    if parser.items["formations"]:
         if fazione not in formazioni_db or not isinstance(formazioni_db[fazione], dict):
             formazioni_db[fazione] = {}
-        linee_bf = [l.strip() for l in testo_bf.split("\n") if l.strip()]
-        pattern_fase = re.compile(
-            r"^(?:Passive|Once Per (?:Turn|Battle).*|Any .* Phase|Your .* Phase|Enemy .* Phase|Deployment Phase|Start of .*|End of .*|Reaction:.*)$",
-            re.IGNORECASE
-        )
-        indici_bf = [i for i, l in enumerate(linee_bf) if pattern_fase.match(l)]
-        for idx_pos, start_i in enumerate(indici_bf):
-            end_i = indici_bf[idx_pos + 1] if idx_pos + 1 < len(indici_bf) else min(len(linee_bf), start_i + 12)
-            # Il nome della Formazione su Wahapedia è sulla riga subito sopra l'header di fase
-            nome_formazione = ""
-            if start_i > 0:
-                cand_nome = linee_bf[start_i - 1].strip(" •:-")
-                if 3 <= len(cand_nome) <= 45 and not any(k in cand_nome.lower() for k in ["keywords", "effect:", "declare:", "points", "battle profile"]):
-                    nome_formazione = cand_nome.title()
+        for item in parser.items["formations"]:
+            blocco_txt = f"{item['header']}\n{item['body']}"
+            ab_f = analizza_abilita_warscroll(blocco_txt)
+            if not ab_f:
+                continue
+            nome_form = item["h3"].strip() if item["h3"].strip() else ab_f["nome"].strip()
+            prof = parser.profile_map["formations"].get(nome_form.lower())
+            if prof:
+                nome_form = prof["nome"]
+            mods_p = {k: v for k, v in ab_f["modificatori"].items() if k in MOD_FORM_KEYS}
+            formazioni_db[fazione][nome_form] = {
+                "fase_attivazione": _mappa_fase_formazione(ab_f["fasi"], ab_f["tipo"]),
+                "monouso": ab_f["once_per_battle"],
+                "modificatori": mods_p,
+                "descrizione": item["body"]
+            }
+            n_form += 1
 
-            blocco_txt = "\n".join(linee_bf[start_i:end_i])
-            if "effect:" in blocco_txt.lower() or "effetto:" in blocco_txt.lower():
-                ab_f = analizza_abilita_warscroll(blocco_txt)
-                if ab_f:
-                    nome_finale = nome_formazione if nome_formazione else ab_f["nome"].strip()
-                    if nome_finale.lower() in ABILITA_CORE_DA_IGNORARE:
-                        continue
-                    mods_p = {
-                        k: v for k, v in ab_f["modificatori"].items()
-                        if k in ["bonus_rend", "bonus_atk", "bonus_dmg", "mod_hit", "mod_wnd", "bonus_save", "ward_nativo", "bonus_movimento", "bonus_controllo", "crit_on"]
-                    }
-                    formazioni_db[fazione][nome_finale] = {
-                        "fase_attivazione": _mappa_fase_formazione(ab_f["fasi"], ab_f["tipo"]),
-                        "monouso": ab_f["once_per_battle"],
-                        "modificatori": mods_p,
-                        "descrizione": ab_f["descrizione"]
-                    }
-                    n_form += 1
+    # 2. HEROIC TRAITS
+    for item in parser.items["traits"]:
+        blocco_txt = f"{item['header']}\n{item['body']}"
+        ab_t = analizza_abilita_warscroll(blocco_txt)
+        if not ab_t:
+            continue
+        nome_grezzo = item["ability_name"].strip() or ab_t["nome"].strip()
+        prof = parser.profile_map["traits"].get(nome_grezzo.lower())
+        nome_t = prof["nome"] if prof else nome_grezzo.title()
+        punti_t = prof["punti"] if prof else 0
+        mods_t = {k: v for k, v in ab_t["modificatori"].items() if k in MOD_SUP_KEYS}
+        traits_db[nome_t] = {
+            "fazione": fazione,
+            "punti": punti_t,
+            "descrizione": ab_t["descrizione"],
+            "modificatori": mods_t
+        }
+        n_traits += 1
 
-    # 2. TRATTI EROICI (Heroic Traits)
-    testo_ht = _estrai_slice_sezione(m_ht, max_len=4500)
-    if testo_ht:
-        lista_ht = _estrai_blocchi_regole_sezione(testo_ht)
-        for ab_t in lista_ht:
-            mods_t = {
-                k: v for k, v in ab_t["modificatori"].items()
-                if k in ["bonus_save", "mod_hit", "mod_wnd", "bonus_atk", "bonus_rend", "bonus_dmg", "ward_nativo", "bonus_movimento", "bonus_salute", "bonus_controllo", "crit_on", "mod_hit_subito"]
-            }
-            traits_db[ab_t["nome"]] = {
-                "fazione": fazione,
-                "punti": ab_t.get("punti", 0),
-                "descrizione": ab_t["descrizione"],
-                "modificatori": mods_t
-            }
-            n_traits += 1
-
-    # 3. ARTEFATTI DI POTERE (Artefacts of Power)
-    testo_ap = _estrai_slice_sezione(m_ap, max_len=4500)
-    if testo_ap:
-        lista_ap = _estrai_blocchi_regole_sezione(testo_ap)
-        for ab_a in lista_ap:
-            mods_a = {
-                k: v for k, v in ab_a["modificatori"].items()
-                if k in ["bonus_save", "mod_hit", "mod_wnd", "bonus_atk", "bonus_rend", "bonus_dmg", "ward_nativo", "bonus_movimento", "bonus_salute", "bonus_controllo", "crit_on", "mod_hit_subito"]
-            }
-            artefacts_db[ab_a["nome"]] = {
-                "fazione": fazione,
-                "punti": ab_a.get("punti", 0),
-                "descrizione": ab_a["descrizione"],
-                "modificatori": mods_a
-            }
-            n_art += 1
+    # 3. ARTEFACTS OF POWER
+    for item in parser.items["artefacts"]:
+        blocco_txt = f"{item['header']}\n{item['body']}"
+        ab_a = analizza_abilita_warscroll(blocco_txt)
+        if not ab_a:
+            continue
+        nome_grezzo = item["ability_name"].strip() or ab_a["nome"].strip()
+        prof = parser.profile_map["artefacts"].get(nome_grezzo.lower())
+        nome_a = prof["nome"] if prof else nome_grezzo.title()
+        punti_a = prof["punti"] if prof else 0
+        mods_a = {k: v for k, v in ab_a["modificatori"].items() if k in MOD_SUP_KEYS}
+        artefacts_db[nome_a] = {
+            "fazione": fazione,
+            "punti": punti_a,
+            "descrizione": ab_a["descrizione"],
+            "modificatori": mods_a
+        }
+        n_art += 1
 
     tot = n_form + n_traits + n_art
     if tot > 0:
         return n_form, n_traits, n_art, f"{fazione}: importati {n_form} Formazioni, {n_traits} Tratti Eroici e {n_art} Artefatti!", True
-    return 0, 0, 0, f"Nessuna regola trovata per {fazione}. Verifica l'URL ({url_fazione}) o incolla il testo completo della pagina.", False
+    return 0, 0, 0, f"Nessuna regola trovata per {fazione}. Verifica l'URL ({url_fazione}).", False
