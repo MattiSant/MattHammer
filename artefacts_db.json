@@ -1,1 +1,60 @@
-{}
+{
+    "BRAZIER OF NAGASHIZZAR": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "Effect: If you roll a 1-3 when determining the distance that unit can move, you can use a value of 4 instead.",
+        "modificatori": {}
+    },
+    "LIGHTSHARD OF THE HARVEST MOON": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "Effect: If this unit is in combat, add 1 to the Attacks characteristic of melee weapons used by friendly NIGHTHAUNT units while they are wholly within 12\" of this unit for the rest of the turn.",
+        "modificatori": {
+            "bonus_atk": 1
+        }
+    },
+    "MIRROR OF ECHOING FAILURES": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "Declare: Pick each enemy WIZARD and PRIEST within 12\" of this unit to be the targets.\nEffect: Roll a D3. On a 2+, for the rest of the phase: Subtract 1 from casting rolls and chanting rolls for the targets.Each time any of the targets fails to cast a spell or chant a prayer, inflict 1 mortal damage on that target.",
+        "modificatori": {}
+    },
+    "STAVE OF SUFFERING": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "Effect: While this unit is within 12\" of any damaged enemy units or enemy units that have had any models slain, add 1 to casting rolls for friendly NIGHTHAUNT units while they are wholly within 12\" of this unit.",
+        "modificatori": {}
+    },
+    "TOMBSTONE OF THE PENITENT": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "Effect: Add 1 to the Attacks characteristic of this unit’s melee weapons for each non- FACTION TERRAIN terrain feature that is being contested by friendly units, to a maximum of 8.",
+        "modificatori": {
+            "bonus_atk": 1
+        }
+    },
+    "AMULET OF WAKING NIGHTMARES": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "Declare: Pick an enemy HERO within 18\" of this unit to be the target.\nEffect: Roll a dice. On a 3+, for the rest of the turn, the target cannot be affected by the ‘ Guarded Hero’ ability or the ‘ Obscuring’ terrain ability.",
+        "modificatori": {}
+    },
+    "TOME OF THE RESTLESS CRYPTS": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "Effect: If there are fewer than 3 friendly Nexuses of Grief on the battlefield, set up a Nexus of Grief within 3\" of a friendly NIGHTHAUNT unit, more than 3\" from all objectives and enemy units, more than 1\" from all other terrain features, and more than 12\" from all other friendly Nexuses of Grief.",
+        "modificatori": {}
+    },
+    "ETHEREAL FETTERS": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "Declare: Pick an enemy unit in combat with this unit to be the target.\nEffect: For the rest of the turn, if possible, this unit must be picked to be the target of pile-in moves made by the target.",
+        "modificatori": {}
+    },
+    "URN OF DESPONDENCY": {
+        "fazione": "Nighthaunt",
+        "punti": 0,
+        "descrizione": "Effect: Spend up to 3 rage dice. If your opponent’s fury level is lower than yours, they must increase their fury level by 1, to a maximum of 7.\nThen, roll XD6, where X is the number of rage dice spent. This unit can move a distance in inches up to the roll but must end that move in combat with a damaged enemy unit and/or an enemy unit that has fewer models than its starting size.",
+        "modificatori": {}
+    }
+}
